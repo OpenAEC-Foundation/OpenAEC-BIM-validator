@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3BM IFC Validator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'magic-violet': '#350E35',
+                        'verdigris': '#44B6A8',
+                        'friendly-yellow': '#EFBD75',
+                        'warm-magenta': '#A01C48',
+                        'flaming-peach': '#DB4C40',
+                    },
+                    fontFamily: {
+                        'gotham': ['Gotham', 'Helvetica', 'Arial', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @font-face {
+            font-family: 'Gotham';
+            src: local('Gotham'), local('Helvetica');
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-gotham">
+    <!-- Header -->
+    <header class="bg-magic-violet text-white py-4 shadow-lg">
+        <div class="container mx-auto px-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <svg class="w-10 h-10" viewBox="0 0 100 100" fill="none">
+                    <path d="M20 80 L50 20 L80 80 L50 60 Z" fill="#44B6A8"/>
+                    <path d="M30 75 L50 35 L70 75" stroke="#44B6A8" stroke-width="4" fill="none"/>
+                </svg>
+                <div>
+                    <h1 class="text-2xl font-bold">3bm</h1>
+                    <p class="text-xs text-verdigris">Ingenieurs van oplossingen</p>
+                </div>
+            </div>
+            <nav class="flex space-x-6 text-sm">
+                <a href="#" class="hover:text-verdigris transition-colors">Home</a>
+                <a href="#" class="hover:text-verdigris transition-colors">Documentatie</a>
+                <a href="#" class="hover:text-verdigris transition-colors">Over ons</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Hero Section -->
+        <section class="text-center mb-12">
+            <h2 class="text-4xl font-bold text-magic-violet mb-4">IFC Validator</h2>
+            <p class="text-gray-600 max-w-2xl mx-auto">
+                Valideer uw IFC-modellen tegen IDS-specificaties. Upload uw bestanden en ontvang 
+                direct een gedetailleerd validatierapport.
+            </p>
+        </section>
+
+        <!-- Upload Section -->
+        <section class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+                <h3 class="text-xl font-bold text-magic-violet mb-6">Bestanden uploaden</h3>
+                
+                <form id="upload-form" class="space-y-6">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <!-- IFC Upload -->
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-verdigris transition-colors">
+                            <div class="mb-4">
+                                <svg class="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                </svg>
+                            </div>
+                            <label class="block">
+                                <span class="text-gray-600 mb-2 block">IFC Bestand</span>
+                                <input type="file" name="ifc_file" accept=".ifc" required
+                                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-verdigris file:text-white hover:file:bg-opacity-80 cursor-pointer">
+                            </label>
+                            <p class="text-xs text-gray-400 mt-2">Max 1GB</p>
+                        </div>
+
+                        <!-- IDS Upload -->
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-verdigris transition-colors">
+                            <div class="mb-4">
+                                <svg class="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                            </div>
+                            <label class="block">
+                                <span class="text-gray-600 mb-2 block">IDS Specificatie</span>
+                                <input type="file" name="ids_file" accept=".ids,.xml" required
+                                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-verdigris file:text-white hover:file:bg-opacity-80 cursor-pointer">
+                            </label>
+                            <p class="text-xs text-gray-400 mt-2">Of kies een template</p>
+                        </div>
+                    </div>
+
+                    <!-- Template Selection -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Of gebruik een standaard template:</label>
+                        <select class="w-full rounded-lg border-gray-300 shadow-sm focus:border-verdigris focus:ring-verdigris">
+                            <option value="">-- Selecteer template --</option>
+                            <option value="nl_bim_basis">NL_BIM Basis ILS</option>
+                            <option value="rvb_bim_norm">RVB BIM Norm v1.1</option>
+                        </select>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="text-center">
+                        <button type="submit" 
+                                class="bg-verdigris hover:bg-opacity-90 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all transform hover:scale-105">
+                            Valideren
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Results Section (Hidden by default) -->
+            <div id="results" class="hidden">
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-bold text-magic-violet">Validatie Resultaten</h3>
+                        <div class="flex space-x-2">
+                            <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
+                                Export JSON
+                            </button>
+                            <button class="bg-verdigris hover:bg-opacity-90 text-white px-4 py-2 rounded-lg text-sm">
+                                Download BCF
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Summary -->
+                    <div class="grid grid-cols-4 gap-4 mb-8">
+                        <div class="bg-gray-50 rounded-lg p-4 text-center">
+                            <p class="text-3xl font-bold text-magic-violet" id="total-specs">12</p>
+                            <p class="text-sm text-gray-500">Totaal checks</p>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-4 text-center">
+                            <p class="text-3xl font-bold text-green-600" id="passed-specs">8</p>
+                            <p class="text-sm text-gray-500">Geslaagd</p>
+                        </div>
+                        <div class="bg-red-50 rounded-lg p-4 text-center">
+                            <p class="text-3xl font-bold text-red-600" id="failed-specs">3</p>
+                            <p class="text-sm text-gray-500">Gefaald</p>
+                        </div>
+                        <div class="bg-yellow-50 rounded-lg p-4 text-center">
+                            <p class="text-3xl font-bold text-yellow-600" id="warning-specs">1</p>
+                            <p class="text-sm text-gray-500">Waarschuwingen</p>
+                        </div>
+                    </div>
+
+                    <!-- Specifications List -->
+                    <div class="space-y-3" id="spec-list">
+                        <!-- Example items - will be populated by JS -->
+                        <div class="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                                    <span class="font-medium">3.3 Verdiepingsnaamgeving</span>
+                                </div>
+                                <span class="text-sm text-gray-500">5/5 elementen</span>
+                            </div>
+                        </div>
+                        <div class="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer border-red-200 bg-red-50">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                                    <span class="font-medium">3.6 NL/SfB Classificatie</span>
+                                </div>
+                                <span class="text-sm text-red-600">12 gefaald</span>
+                            </div>
+                            <div class="mt-3 pl-6 text-sm text-gray-600">
+                                <p class="mb-2">Gefaalde elementen:</p>
+                                <ul class="list-disc pl-4 space-y-1">
+                                    <li>Wand-001 (GlobalId: 2O2Fr$t4X7Zf8...)</li>
+                                    <li>Wand-002 (GlobalId: 3P3Gs$u5Y8Ag9...)</li>
+                                    <li class="text-gray-400">+ 10 meer...</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loading" class="hidden text-center py-12">
+                <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-verdigris mx-auto mb-4"></div>
+                <p class="text-gray-600">Model wordt gevalideerd...</p>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="max-w-6xl mx-auto mt-16 grid md:grid-cols-3 gap-8">
+            <div class="text-center p-6">
+                <div class="w-16 h-16 bg-verdigris bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-verdigris" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <h4 class="font-bold text-magic-violet mb-2">IDS Validatie</h4>
+                <p class="text-gray-600 text-sm">Valideer tegen buildingSMART IDS 1.0 standaard</p>
+            </div>
+            <div class="text-center p-6">
+                <div class="w-16 h-16 bg-verdigris bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-verdigris" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <h4 class="font-bold text-magic-violet mb-2">3D Viewer</h4>
+                <p class="text-gray-600 text-sm">Bekijk en selecteer elementen in 3D</p>
+            </div>
+            <div class="text-center p-6">
+                <div class="w-16 h-16 bg-verdigris bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-verdigris" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <h4 class="font-bold text-magic-violet mb-2">BCF Export</h4>
+                <p class="text-gray-600 text-sm">Export issues naar BIMcollab of andere BCF tools</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-magic-violet text-white mt-16 py-8">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-sm text-gray-300">
+                © 2025 3BM Bouwkunde - Ingenieurs van oplossingen
+            </p>
+            <p class="text-xs text-gray-400 mt-2">
+                Open source tool voor de BIM community
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Form submission handler
+        document.getElementById('upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            const form = e.target;
+            
+            // Show loading, hide results
+            loading.classList.remove('hidden');
+            results.classList.add('hidden');
+            
+            // Create form data
+            const formData = new FormData(form);
+            
+            try {
+                // In production, this would be the actual API call
+                // const response = await fetch('/api/validate', {
+                //     method: 'POST',
+                //     body: formData
+                // });
+                // const data = await response.json();
+                
+                // Simulate API delay
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Show results
+                loading.classList.add('hidden');
+                results.classList.remove('hidden');
+                
+            } catch (error) {
+                console.error('Validation error:', error);
+                loading.classList.add('hidden');
+                alert('Er is een fout opgetreden bij de validatie.');
+            }
+        });
+    </script>
+</body>
+</html>

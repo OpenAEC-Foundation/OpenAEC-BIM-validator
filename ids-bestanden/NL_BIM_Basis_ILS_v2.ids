@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ids xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+     xsi:schemaLocation="http://standards.buildingsmart.org/IDS http://standards.buildingsmart.org/IDS/1.0/ids.xsd" 
+     xmlns="http://standards.buildingsmart.org/IDS">
+  <info>
+    <title>NL_BIM Basis ILS</title>
+    <copyright>3BM Bouwkunde</copyright>
+    <version>2.0</version>
+    <description>IDS voor modelvalidatie volgens de BIM-basis informatieleveringsspecificatie (BIM-basis ILS). Geschikt voor IFC2X3 en IFC4.</description>
+    <author>info@3bm.nl</author>
+    <date>2025-01-01</date>
+    <purpose>Valideer IFC-modellen tegen de Nederlandse BIM-basis ILS eisen</purpose>
+    <milestone>Ontwerpfase</milestone>
+  </info>
+  <specifications>
+    <!-- 3.3 Verdiepingsnaamgeving -->
+    <specification name="3.3 Verdiepingsnaamgeving" ifcVersion="IFC2X3 IFC4" identifier="BIM-ILS-3.3" description="Controleer of elk model een consistente naamgeving gebruikt voor verdiepingen" instructions="Pas verdiepingsnamen aan volgens projectstructuur: -01, 00, 01, 02, etc.">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCBUILDINGSTOREY</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <attribute cardinality="required" instructions="Verdiepingsnaam moet beginnen met niveau-aanduiding">
+          <name>
+            <simpleValue>Name</simpleValue>
+          </name>
+          <value>
+            <xs:restriction base="xs:string">
+              <xs:pattern value="-?\d{2}\s.*"/>
+            </xs:restriction>
+          </value>
+        </attribute>
+      </requirements>
+    </specification>
+
+    <!-- 3.4 Vermijd IfcBuildingElementProxy -->
+    <specification name="3.4 Vermijd IfcBuildingElementProxy" ifcVersion="IFC2X3 IFC4" identifier="BIM-ILS-3.4" description="IfcBuildingElementProxy mag niet gebruikt worden" instructions="Vervang door correcte IFC entiteit">
+      <applicability minOccurs="0" maxOccurs="0">
+        <entity>
+          <name>
+            <simpleValue>IFCBUILDINGELEMENTPROXY</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <attribute cardinality="prohibited">
+          <name>
+            <simpleValue>GlobalId</simpleValue>
+          </name>
+        </attribute>
+      </requirements>
+    </specification>
+
+    <!-- 3.5 Deurnaamgeving -->
+    <specification name="3.5 Deurnaamgeving" ifcVersion="IFC2X3 IFC4" identifier="BIM-ILS-3.5" description="Deuren moeten consistente naamgeving volgen" instructions="Naam volgens patroon: D-[nummer]">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCDOOR</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <attribute cardinality="required">
+          <name>
+            <simpleValue>Name</simpleValue>
+          </name>
+          <value>
+            <xs:restriction base="xs:string">
+              <xs:pattern value="D-\d{2,3}.*"/>
+            </xs:restriction>
+          </value>
+        </attribute>
+      </requirements>
+    </specification>
+
+    <!-- 3.6 NL/SfB Classificatie -->
+    <specification name="3.6 NL/SfB Classificatie" ifcVersion="IFC2X3 IFC4" identifier="BIM-ILS-3.6" description="Alle objecten moeten NL/SfB classificatie hebben" instructions="Ken NL/SfB (4 cijfers) toe">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <attribute>
+          <name>
+            <simpleValue>GlobalId</simpleValue>
+          </name>
+        </attribute>
+      </applicability>
+      <requirements>
+        <classification cardinality="required">
+          <system>
+            <simpleValue>NL/SfB (4 cijfers)</simpleValue>
+          </system>
+        </classification>
+      </requirements>
+    </specification>
+
+    <!-- 4.1 Ruimte attributen -->
+    <specification name="4.1 Ruimte attributen" ifcVersion="IFC2X3 IFC4" identifier="BIM-ILS-4.1" description="IfcSpaces moeten verplichte attributen bevatten" instructions="Vul Name, LongName en hoeveelheden in">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCSPACE</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <attribute cardinality="required">
+          <name>
+            <simpleValue>Name</simpleValue>
+          </name>
+        </attribute>
+        <attribute cardinality="required">
+          <name>
+            <simpleValue>LongName</simpleValue>
+          </name>
+        </attribute>
+        <property dataType="IFCAREAMEASURE" cardinality="required">
+          <propertySet>
+            <simpleValue>Qto_SpaceBaseQuantities</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>NetFloorArea</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+
+    <!-- 4.3 LoadBearing wanden -->
+    <specification name="4.3 LoadBearing wanden" ifcVersion="IFC2X3 IFC4" identifier="BIM-ILS-4.3" description="Wanden moeten LoadBearing property hebben" instructions="Stel LoadBearing TRUE of FALSE in">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCWALL</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <property dataType="IFCBOOLEAN" cardinality="required">
+          <propertySet>
+            <simpleValue>Pset_WallCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>LoadBearing</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+
+    <!-- 4.4 IsExternal wanden -->
+    <specification name="4.4 IsExternal wanden" ifcVersion="IFC2X3 IFC4" identifier="BIM-ILS-4.4" description="Wanden moeten IsExternal property hebben" instructions="Stel IsExternal TRUE of FALSE in">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCWALL</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <property dataType="IFCBOOLEAN" cardinality="required">
+          <propertySet>
+            <simpleValue>Pset_WallCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>IsExternal</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+
+    <!-- 4.5 Brandwerendheid -->
+    <specification name="4.5 Brandwerendheid dragende binnenwanden" ifcVersion="IFC2X3 IFC4" identifier="BIM-ILS-4.5" description="Interne dragende wanden moeten FireRating hebben" instructions="Stel FireRating in: 30, 60, 90 of 120">
+      <applicability minOccurs="0" maxOccurs="unbounded">
+        <property>
+          <propertySet>
+            <simpleValue>Pset_WallCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>IsExternal</simpleValue>
+          </baseName>
+          <value>
+            <simpleValue>FALSE</simpleValue>
+          </value>
+        </property>
+        <property>
+          <propertySet>
+            <simpleValue>Pset_WallCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>LoadBearing</simpleValue>
+          </baseName>
+          <value>
+            <simpleValue>TRUE</simpleValue>
+          </value>
+        </property>
+      </applicability>
+      <requirements>
+        <property dataType="IFCLABEL" cardinality="required">
+          <propertySet>
+            <simpleValue>Pset_WallCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>FireRating</simpleValue>
+          </baseName>
+          <value>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="30"/>
+              <xs:enumeration value="60"/>
+              <xs:enumeration value="90"/>
+              <xs:enumeration value="120"/>
+            </xs:restriction>
+          </value>
+        </property>
+      </requirements>
+    </specification>
+
+    <!-- 4.6 ThermalTransmittance -->
+    <specification name="4.6 ThermalTransmittance buitenwanden" ifcVersion="IFC2X3 IFC4" identifier="BIM-ILS-4.6" description="Externe wanden moeten U-waarde hebben" instructions="Voer ThermalTransmittance in W/(m2K) in">
+      <applicability minOccurs="0" maxOccurs="unbounded">
+        <property>
+          <propertySet>
+            <simpleValue>Pset_WallCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>IsExternal</simpleValue>
+          </baseName>
+          <value>
+            <simpleValue>TRUE</simpleValue>
+          </value>
+        </property>
+      </applicability>
+      <requirements>
+        <property dataType="IFCTHERMALTRANSMITTANCEMEASURE" cardinality="required">
+          <propertySet>
+            <simpleValue>Pset_WallCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>ThermalTransmittance</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+
+    <!-- 4.7.1 Materiaal verplicht -->
+    <specification name="4.7.1 Materiaal verplicht" ifcVersion="IFC2X3 IFC4" identifier="BIM-ILS-4.7.1" description="Objecten moeten materiaal hebben" instructions="Ken materiaal toe">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <attribute>
+          <name>
+            <simpleValue>GlobalId</simpleValue>
+          </name>
+        </attribute>
+      </applicability>
+      <requirements>
+        <material cardinality="required"/>
+      </requirements>
+    </specification>
+
+    <!-- 4.7.2 Materialen dragende wanden -->
+    <specification name="4.7.2 Materialen dragende wanden" ifcVersion="IFC2X3 IFC4" identifier="BIM-ILS-4.7.2" description="Dragende wanden moeten constructiemateriaal hebben" instructions="Gebruik Beton, Kalkzandsteen, Metselwerk of Staal">
+      <applicability minOccurs="0" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCWALL</simpleValue>
+          </name>
+        </entity>
+        <property>
+          <propertySet>
+            <simpleValue>Pset_WallCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>LoadBearing</simpleValue>
+          </baseName>
+          <value>
+            <simpleValue>TRUE</simpleValue>
+          </value>
+        </property>
+      </applicability>
+      <requirements>
+        <material cardinality="required">
+          <value>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="Beton"/>
+              <xs:enumeration value="Concrete"/>
+              <xs:enumeration value="Kalkzandsteen"/>
+              <xs:enumeration value="Limestone"/>
+              <xs:enumeration value="Metselwerk"/>
+              <xs:enumeration value="Masonry"/>
+              <xs:enumeration value="Staal"/>
+              <xs:enumeration value="Steel"/>
+            </xs:restriction>
+          </value>
+        </material>
+      </requirements>
+    </specification>
+
+    <!-- 4.8 Renovatiestatus -->
+    <specification name="4.8 Renovatiestatus MEP" ifcVersion="IFC2X3 IFC4" identifier="BIM-ILS-4.8" description="MEP-elementen moeten renovatiestatus hebben" instructions="Stel status in: Bestaand, Nieuw of Te slopen">
+      <applicability minOccurs="0" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCFLOWSEGMENT</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <property dataType="IFCLABEL" cardinality="required">
+          <propertySet>
+            <simpleValue>Pset_Condition</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>RenovationStatus</simpleValue>
+          </baseName>
+          <value>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="Bestaand"/>
+              <xs:enumeration value="Nieuw"/>
+              <xs:enumeration value="Te slopen"/>
+            </xs:restriction>
+          </value>
+        </property>
+      </requirements>
+    </specification>
+  </specifications>
+</ids>

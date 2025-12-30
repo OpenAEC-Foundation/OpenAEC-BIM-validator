@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ids xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://standards.buildingsmart.org/IDS">
+  <info>
+    <title>NL_BIM Basis ILS</title>
+    <description>Voorbeeld IDS voor modelvalidatie volgens de BIM-basis informatieleveringsspecificatie (BIM-basis ILS)</description>
+    <author>sgolchinfar@bimcollab.com</author>
+    <date>2024-10-29</date>
+    <purpose>Specificeer een reeks afspraken waaraan IFC-modellen moeten voldoen volgens de BIM-basis ILS</purpose>
+  </info>
+  <specifications>
+    <specification name="(3.3) Rangschikking en naamgeving op constructieniveau" description="Controleer of elk model een consistente naamgeving gebruikt voor verdiepingen" ifcVersion="IFC2X3">
+      <applicability minOccurs="0">
+        <entity>
+          <n>
+            <simpleValue>IFCBUILDINGSTOREY</simpleValue>
+          </n>
+        </entity>
+      </applicability>
+      <requirements>
+        <attribute>
+          <n>
+            <simpleValue>Name</simpleValue>
+          </n>
+          <value>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="00 *" />
+              <xs:enumeration value="-01 *" />
+              <xs:enumeration value="01 *" />
+              <xs:enumeration value="02 *" />
+              <xs:enumeration value="03 *" />
+            </xs:restriction>
+          </value>
+        </attribute>
+      </requirements>
+    </specification>
+    <specification name="(3.4) Correct gebruik van entiteiten" description="Voer de controle uit om een lijst te krijgen van alle IfcBuildingElementProxy componenten in uw model." ifcVersion="IFC2X3">
+      <applicability minOccurs="0">
+        <entity>
+          <n>
+            <simpleValue>IFCBUILDINGELEMENTPROXY</simpleValue>
+          </n>
+        </entity>
+      </applicability>
+      <requirements>
+        <attribute>
+          <n>
+            <simpleValue>GlobalId</simpleValue>
+          </n>
+          <value>
+            <simpleValue>?</simpleValue>
+          </value>
+        </attribute>
+      </requirements>
+    </specification>
+    <specification name="(3.5) Structuur en naamgeving" description="Zorg ervoor dat consistente namen toegekend worden aan de componenten" ifcVersion="IFC2X3">
+      <applicability minOccurs="0">
+        <entity>
+          <n>
+            <simpleValue>IFCDOOR</simpleValue>
+          </n>
+        </entity>
+      </applicability>
+      <requirements>
+        <attribute>
+          <n>
+            <simpleValue>Name</simpleValue>
+          </n>
+          <value>
+            <simpleValue>Type ??.*</simpleValue>
+          </value>
+        </attribute>
+      </requirements>
+    </specification>
+    <specification name="(3.6) Classificatiesysteem" description="Ken aan objecten altijd een classificatiecode toe volgens NL/SfB" ifcVersion="IFC2X3">
+      <applicability minOccurs="0">
+        <attribute>
+          <n>
+            <simpleValue>GlobalId</simpleValue>
+          </n>
+        </attribute>
+      </applicability>
+      <requirements>
+        <classification>
+          <s>
+            <simpleValue>NL/SfB (4 cijfers)</simpleValue>
+          </s>
+        </classification>
+      </requirements>
+    </specification>
+    <specification name="(4.1) Ruimtes" description="Controleer attributen en basishoeveelheden van IfcSpaces" ifcVersion="IFC2X3">
+      <applicability minOccurs="0">
+        <entity>
+          <n>
+            <simpleValue>IFCSPACE</simpleValue>
+          </n>
+        </entity>
+      </applicability>
+      <requirements>
+        <attribute>
+          <n>
+            <simpleValue>Name</simpleValue>
+          </n>
+        </attribute>
+        <attribute>
+          <n>
+            <simpleValue>LongName</simpleValue>
+          </n>
+        </attribute>
+        <property>
+          <propertySet>
+            <simpleValue>BaseQuantities</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>NetFloorArea</simpleValue>
+          </baseName>
+        </property>
+        <property>
+          <propertySet>
+            <simpleValue>BaseQuantities</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>Height</simpleValue>
+          </baseName>
+        </property>
+        <property>
+          <propertySet>
+            <simpleValue>BaseQuantities</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>NetVolume</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+    <specification name="(4.3) Dragend /Niet Dragend" description="Controleer LoadBearing property voor wanden" ifcVersion="IFC2X3">
+      <applicability minOccurs="0">
+        <entity>
+          <n>
+            <simpleValue>IFCWALL</simpleValue>
+          </n>
+        </entity>
+      </applicability>
+      <requirements>
+        <property>
+          <propertySet>
+            <simpleValue>Pset_WallCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>LoadBearing</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+    <specification name="(4.4) Intern / Extern" description="Controleer IsExternal property voor wanden" ifcVersion="IFC2X3">
+      <applicability minOccurs="0">
+        <entity>
+          <n>
+            <simpleValue>IFCWALL</simpleValue>
+          </n>
+        </entity>
+      </applicability>
+      <requirements>
+        <property>
+          <propertySet>
+            <simpleValue>Pset_WallCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>IsExternal</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+    <specification name="(4.5) Brandveiligheid" description="Controleer FireRating voor interne dragende wanden" ifcVersion="IFC2X3">
+      <applicability minOccurs="0">
+        <property>
+          <propertySet>
+            <simpleValue>Pset_WallCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>IsExternal</simpleValue>
+          </baseName>
+          <value>
+            <simpleValue>False</simpleValue>
+          </value>
+        </property>
+        <property>
+          <propertySet>
+            <simpleValue>Pset_WallCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>LoadBearing</simpleValue>
+          </baseName>
+          <value>
+            <simpleValue>True</simpleValue>
+          </value>
+        </property>
+      </applicability>
+      <requirements>
+        <property>
+          <propertySet>
+            <simpleValue>Pset_WallCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>FireRating</simpleValue>
+          </baseName>
+          <value>
+            <simpleValue>30</simpleValue>
+          </value>
+        </property>
+      </requirements>
+    </specification>
+    <specification name="(4.6) Bouwfysische eigenschappen" description="Controleer ThermalTransmittance voor externe wanden" ifcVersion="IFC2X3">
+      <applicability minOccurs="0">
+        <property>
+          <propertySet>
+            <simpleValue>Pset_WallCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>IsExternal</simpleValue>
+          </baseName>
+          <value>
+            <simpleValue>True</simpleValue>
+          </value>
+        </property>
+      </applicability>
+      <requirements>
+        <property>
+          <propertySet>
+            <simpleValue>Pset_WallCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>ThermalTransmittance</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+    <specification name="(4.7.1) Materiaal" description="Controleer of materiaal is toegewezen" ifcVersion="IFC2X3">
+      <applicability minOccurs="0">
+        <attribute>
+          <n>
+            <simpleValue>GlobalId</simpleValue>
+          </n>
+        </attribute>
+      </applicability>
+      <requirements>
+        <material />
+      </requirements>
+    </specification>
+    <specification name="(4.7.2) Specifieke materialen" description="Controleer materialen voor dragende wanden" ifcVersion="IFC2X3">
+      <applicability minOccurs="0">
+        <entity>
+          <n>
+            <simpleValue>IFCWALL</simpleValue>
+          </n>
+        </entity>
+        <property>
+          <propertySet>
+            <simpleValue>Pset_WallCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>LoadBearing</simpleValue>
+          </baseName>
+          <value>
+            <simpleValue>True</simpleValue>
+          </value>
+        </property>
+      </applicability>
+      <requirements>
+        <material>
+          <value>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="Concrete" />
+              <xs:enumeration value="Limestone" />
+              <xs:enumeration value="Stone - limestone" />
+              <xs:enumeration value="Reinforced concrete - prefab" />
+            </xs:restriction>
+          </value>
+        </material>
+      </requirements>
+    </specification>
+    <specification name="(4.8) Projectspecifieke eigenschappen" description="Controleer renovatiestatus voor MEP elementen" ifcVersion="IFC2X3">
+      <applicability minOccurs="0">
+        <entity>
+          <n>
+            <simpleValue>IFCFLOWSEGMENT</simpleValue>
+          </n>
+        </entity>
+      </applicability>
+      <requirements>
+        <property>
+          <propertySet>
+            <simpleValue>AC_Pset_RenovationAndPhasing</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>Renovation Status</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+  </specifications>
+</ids>
