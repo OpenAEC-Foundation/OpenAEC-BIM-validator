@@ -1,0 +1,31 @@
+{
+  "name": "ifc-viewer-poc",
+  "version": "0.1.0",
+  "description": "That Open Engine IFC Viewer - Proof of Concept for Phase 0 Research",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "serve": "python -m http.server 8080"
+  },
+  "dependencies": {
+    "@thatopen/components": "^2.4.0",
+    "@thatopen/components-front": "^2.4.0",
+    "@thatopen/fragments": "^2.4.0",
+    "three": "^0.160.0",
+    "web-ifc": "^0.0.57"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  },
+  "keywords": [
+    "ifc",
+    "bim",
+    "3d-viewer",
+    "that-open-engine",
+    "webgl"
+  ],
+  "author": "3BM Research",
+  "license": "MIT"
+}
