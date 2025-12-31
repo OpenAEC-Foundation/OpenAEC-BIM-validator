@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3BM IFC Viewer - Interface Mockup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* 3BM Brand Colors */
+        :root {
+            --magic-violet: #350E35;
+            --magic-violet-light: #4a1a4a;
+            --magic-violet-dark: #280a28;
+            --verdigris: #44B6A8;
+            --verdigris-hover: #3aa396;
+            --friendly-yellow: #EFBD75;
+            --warm-magenta: #A01C48;
+            --flaming-peach: #DB4C40;
+            
+            --bg-primary: #1a0f1a;
+            --bg-secondary: #251525;
+            --bg-tertiary: #301a30;
+            --bg-panel: #2a1a2a;
+            
+            --text-primary: #ffffff;
+            --text-secondary: #b8a8b8;
+            --text-muted: #7a6a7a;
+            
+            --border-color: #3d2a3d;
+            --border-light: #4a3a4a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', 'Helvetica', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            height: 60px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .project-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--verdigris);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--magic-violet-dark);
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+
+        /* Left Sidebar */
+        .sidebar-left {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .nav-menu {
+            padding: 16px 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: var(--bg-tertiary);
+            color: var(--verdigris);
+            border-left: 3px solid var(--verdigris);
+            padding-left: 17px;
+        }
+
+        .nav-icon {
+            width: 18px;
+            height: 18px;
+            opacity: 0.8;
+        }
+
+        .nav-item.active .nav-icon {
+            opacity: 1;
+        }
+
+        /* Issues List */
+        .issues-section {
+            flex: 1;
+            overflow-y: auto;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .issues-header {
+            padding: 14px 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            background: var(--bg-tertiary);
+        }
+
+        .issue-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .issue-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .issue-item.active {
+            background: var(--magic-violet-light);
+            border-left: 3px solid var(--flaming-peach);
+            padding-left: 17px;
+        }
+
+        .issue-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-top: 4px;
+            flex-shrink: 0;
+        }
+
+        .issue-indicator.error {
+            background: var(--flaming-peach);
+            box-shadow: 0 0 8px rgba(219, 76, 64, 0.5);
+        }
+
+        .issue-indicator.warning {
+            background: var(--friendly-yellow);
+            box-shadow: 0 0 8px rgba(239, 189, 117, 0.5);
+        }
+
+        .issue-indicator.info {
+            background: var(--verdigris);
+            box-shadow: 0 0 8px rgba(68, 182, 168, 0.5);
+        }
+
+        .issue-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .issue-title {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-primary);
+            line-height: 1.4;
+            margin-bottom: 4px;
+        }
+
+        .issue-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Viewer Area */
+        .viewer-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: var(--bg-primary);
+        }
+
+        .viewer-canvas {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: 
+                radial-gradient(ellipse at center, var(--bg-tertiary) 0%, var(--bg-primary) 70%);
+        }
+
+        .viewer-placeholder {
+            color: var(--text-muted);
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .viewer-placeholder-icon {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        /* Annotation Label */
+        .annotation-label {
+            position: absolute;
+            top: 35%;
+            right: 30%;
+            background: var(--verdigris);
+            color: var(--magic-violet-dark);
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .annotation-label::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid var(--verdigris);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* Viewer Toolbar */
+        .viewer-toolbar {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .toolbar-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .toolbar-btn:hover {
+            background: var(--magic-violet-light);
+            border-color: var(--verdigris);
+            color: var(--verdigris);
+        }
+
+        .toolbar-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Right Panel */
+        .sidebar-right {
+            width: 320px;
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .panel-subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .panel-content {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .detail-group {
+            margin-bottom: 20px;
+        }
+
+        .detail-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .detail-value {
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-badge.open {
+            background: rgba(219, 76, 64, 0.2);
+            color: var(--flaming-peach);
+        }
+
+        .status-badge.resolved {
+            background: rgba(68, 182, 168, 0.2);
+            color: var(--verdigris);
+        }
+
+        .thumbnail-preview {
+            width: 100%;
+            height: 120px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .panel-actions {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 12px 20px;
+            background: var(--verdigris);
+            color: var(--magic-violet-dark);
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background: var(--verdigris-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(68, 182, 168, 0.3);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            padding: 10px 20px;
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--verdigris);
+            color: var(--verdigris);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .sidebar-right {
+                width: 280px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .sidebar-left {
+                width: 240px;
+            }
+        }
+
+        /* SVG Icons inline */
+        .icon {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <svg class="logo-icon" viewBox="0 0 40 40" fill="none">
+                <path d="M20 4L4 12v16l16 8 16-8V12L20 4z" fill="#44B6A8"/>
+                <path d="M20 4L4 12l16 8 16-8-16-8z" fill="#5fcfbf"/>
+                <path d="M20 20v16l16-8V12l-16 8z" fill="#3aa396"/>
+            </svg>
+            <span class="logo-text">3BM</span>
+        </div>
+        <div class="project-title">Project: Kantoorgebouw De Hoogte</div>
+        <div class="user-info">
+            <span>Gebruiker:</span>
+            <div class="user-avatar">JP</div>
+            <span>Jan Pietersen</span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Left Sidebar -->
+        <aside class="sidebar-left">
+            <nav class="nav-menu">
+                <div class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                        <path d="M9 22V12h6v10"/>
+                    </svg>
+                    Model Tree
+                </div>
+                <div class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 8v4M12 16h.01"/>
+                    </svg>
+                    Clash Detection
+                </div>
+                <div class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    Properties
+                </div>
+                <div class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    SmartViews
+                </div>
+                <div class="nav-item active">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 11l3 3L22 4"/>
+                        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                    </svg>
+                    IDS Checks
+                </div>
+            </nav>
+
+            <!-- Issues List -->
+            <div class="issues-section">
+                <div class="issues-header">IDS Violations (12)</div>
+                
+                <div class="issue-item active">
+                    <div class="issue-indicator error"></div>
+                    <div class="issue-content">
+                        <div class="issue-title">Clash #1: Ventilatiekanaal - Dragende Muur</div>
+                        <div class="issue-meta">IfcWall [ID: 5678]</div>
+                    </div>
+                </div>
+                
+                <div class="issue-item">
+                    <div class="issue-indicator error"></div>
+                    <div class="issue-content">
+                        <div class="issue-title">IfcFlowSegment ontbreekt classificatie</div>
+                        <div class="issue-meta">NL/SfB (4 cijfers) • 3 elementen</div>
+                    </div>
+                </div>
+                
+                <div class="issue-item">
+                    <div class="issue-indicator warning"></div>
+                    <div class="issue-content">
+                        <div class="issue-title">IsExternal niet gedefinieerd</div>
+                        <div class="issue-meta">IfcWall • Pset_WallCommon</div>
+                    </div>
+                </div>
+                
+                <div class="issue-item">
+                    <div class="issue-indicator warning"></div>
+                    <div class="issue-content">
+                        <div class="issue-title">FireRating waarde ontbreekt</div>
+                        <div class="issue-meta">Dragende binnenwanden • 8 elementen</div>
+                    </div>
+                </div>
+                
+                <div class="issue-item">
+                    <div class="issue-indicator info"></div>
+                    <div class="issue-content">
+                        <div class="issue-title">IfcBuildingElementProxy gebruik</div>
+                        <div class="issue-meta">Overweeg specifiekere IFC class</div>
+                    </div>
+                </div>
+                
+                <div class="issue-item">
+                    <div class="issue-indicator error"></div>
+                    <div class="issue-content">
+                        <div class="issue-title">BaseQuantities ontbreekt</div>
+                        <div class="issue-meta">IfcSpace • NetFloorArea, Height</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Viewer Area -->
+        <main class="viewer-container">
+            <div class="viewer-canvas">
+                <div class="viewer-placeholder">
+                    <svg class="viewer-placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+                        <path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/>
+                    </svg>
+                    <div>3D Viewer - That Open Engine</div>
+                    <div style="font-size: 12px; margin-top: 4px;">Sleep een IFC bestand hierheen of klik om te uploaden</div>
+                </div>
+                
+                <!-- Sample annotation -->
+                <div class="annotation-label">
+                    Overlap: 5 cm
+                </div>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="viewer-toolbar">
+                <button class="toolbar-btn" title="Pan">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/>
+                    </svg>
+                </button>
+                <button class="toolbar-btn" title="Orbit">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+                    </svg>
+                </button>
+                <button class="toolbar-btn" title="Zoom">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35M11 8v6M8 11h6"/>
+                    </svg>
+                </button>
+                <button class="toolbar-btn" title="Fit All">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                    </svg>
+                </button>
+                <button class="toolbar-btn" title="Section">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <path d="M3 12h18"/>
+                    </svg>
+                </button>
+                <button class="toolbar-btn" title="Hide/Isolate">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </button>
+                <button class="toolbar-btn" title="Fullscreen">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/>
+                    </svg>
+                </button>
+            </div>
+        </main>
+
+        <!-- Right Panel -->
+        <aside class="sidebar-right">
+            <div class="panel-header">
+                <div class="panel-title">Issue Details</div>
+                <div class="panel-subtitle">IDS Validation Report</div>
+            </div>
+
+            <div class="panel-content">
+                <div class="detail-group">
+                    <div class="detail-label">Status</div>
+                    <div class="detail-value">
+                        <span class="status-badge open">● Open</span>
+                    </div>
+                </div>
+
+                <div class="detail-group">
+                    <div class="detail-label">IDS Regel</div>
+                    <div class="detail-value">(3.6) Classificatiesysteem</div>
+                </div>
+
+                <div class="detail-group">
+                    <div class="detail-label">Toegewezen aan</div>
+                    <div class="detail-value">Klaas Jansen</div>
+                </div>
+
+                <div class="detail-group">
+                    <div class="detail-label">Element</div>
+                    <div class="detail-value">IfcFlowSegment [ID: 5678]</div>
+                </div>
+
+                <div class="detail-group">
+                    <div class="detail-label">Omschrijving</div>
+                    <div class="detail-value" style="line-height: 1.5;">
+                        Classificatiecode ontbreekt. Ken aan objecten altijd een classificatiecode toe volgens NL/SfB (4 cijfers).
+                    </div>
+                </div>
+
+                <div class="detail-group">
+                    <div class="detail-label">Viewpoint</div>
+                    <div class="thumbnail-preview">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <path d="M21 15l-5-5L5 21"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-actions">
+                <button class="btn-primary">Maak BCF Issue</button>
+                <button class="btn-secondary">Exporteer Rapport</button>
+            </div>
+        </aside>
+    </div>
+</body>
+</html>
