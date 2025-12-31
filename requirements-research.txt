@@ -1,0 +1,18 @@
+# Phase 0 Research Dependencies
+# Install with: pip install -r requirements-research.txt
+
+# IFC/IDS validation
+ifcopenshell>=0.8.4.post1
+ifctester>=0.8.4
+
+# Web API (for server-side POC)
+fastapi>=0.115.0
+python-multipart>=0.0.20
+uvicorn>=0.32.0
+
+# Testing
+pytest>=8.0.0
+
+# Development utilities
+ruff>=0.8.0
+black>=24.0.0
