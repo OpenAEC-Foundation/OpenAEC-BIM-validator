@@ -1,0 +1,17 @@
+# Server-Side Rendering POC Dependencies
+# Install with: pip install -r requirements.txt
+
+# Web API framework
+fastapi>=0.115.0
+python-multipart>=0.0.20  # Required for file uploads
+uvicorn>=0.32.0
+
+# IFC/IDS processing
+ifcopenshell>=0.8.4.post1
+ifctester>=0.8.4
+
+# For CORS support (cross-origin requests from viewer)
+# Included in fastapi as starlette.middleware.cors
+
+# Optional: for async file operations
+aiofiles>=24.0.0
