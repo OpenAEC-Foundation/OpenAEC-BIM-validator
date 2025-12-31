@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { resolve } from 'path';
 
 export default defineConfig({
     // Base public path for GitHub Pages or other deployments
@@ -21,6 +22,13 @@ export default defineConfig({
         sourcemap: true,
         // Increase chunk size warning limit for IFC-related bundles
         chunkSizeWarningLimit: 2000,
+        // Multi-page build configuration
+        rollupOptions: {
+            input: {
+                main: resolve(__dirname, 'index.html'),
+                demo: resolve(__dirname, 'thatopen-demo.html'),
+            },
+        },
     },
 
     // Optimize dependencies

@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>That Open Engine Demo - IFC 3D Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        #app {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: linear-gradient(135deg, #350E35 0%, #4a1a4a 100%);
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        header .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        header h1 {
+            font-size: 1.35rem;
+            font-weight: 600;
+        }
+
+        header .badge {
+            background: #44B6A8;
+            color: white;
+            font-size: 0.65rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        header .subtitle {
+            color: #44B6A8;
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+
+        .toolbar {
+            background: #f8f9fa;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #e0e0e0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: #44B6A8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: #3a9d91;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(68, 182, 168, 0.3);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn.secondary {
+            background: #6c757d;
+        }
+
+        .btn.secondary:hover:not(:disabled) {
+            background: #5a6268;
+        }
+
+        .btn.danger {
+            background: #dc3545;
+        }
+
+        .btn.danger:hover:not(:disabled) {
+            background: #c82333;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .toolbar-separator {
+            width: 1px;
+            height: 32px;
+            background: #ddd;
+            margin: 0 8px;
+        }
+
+        #status-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+            color: #555;
+            font-size: 0.875rem;
+        }
+
+        #status-bar .status-icon {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #28a745;
+        }
+
+        #status-bar .status-icon.loading {
+            background: #ffc107;
+            animation: pulse 1s infinite;
+        }
+
+        #status-bar .status-icon.error {
+            background: #dc3545;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            position: relative;
+        }
+
+        #viewer-container {
+            flex: 1;
+            position: relative;
+            background: #1a1a2e;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: #f8f9fa;
+            border-left: 1px solid #e0e0e0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-section {
+            padding: 16px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .sidebar-section h3 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #350E35;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .metric-card .label {
+            font-size: 0.7rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-card .value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #350E35;
+            margin-top: 4px;
+        }
+
+        .metric-card.full-width {
+            grid-column: span 2;
+        }
+
+        .webgl-info {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            font-size: 0.8rem;
+        }
+
+        .webgl-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .webgl-info-row:last-child {
+            border-bottom: none;
+        }
+
+        .webgl-info-row .key {
+            color: #666;
+        }
+
+        .webgl-info-row .val {
+            color: #333;
+            font-weight: 500;
+            text-align: right;
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .log-container {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .log-entries {
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 12px;
+            flex: 1;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.75rem;
+            color: #a0a0a0;
+            min-height: 120px;
+            max-height: 200px;
+        }
+
+        .log-entry {
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-entry.info {
+            color: #44B6A8;
+        }
+
+        .log-entry.success {
+            color: #28a745;
+        }
+
+        .log-entry.error {
+            color: #dc3545;
+        }
+
+        .log-entry .timestamp {
+            color: #666;
+            margin-right: 8px;
+        }
+
+        #welcome-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(26, 26, 46, 0.9);
+            z-index: 10;
+        }
+
+        #welcome-overlay.hidden {
+            display: none;
+        }
+
+        .welcome-content {
+            text-align: center;
+            color: white;
+            max-width: 400px;
+            padding: 40px;
+        }
+
+        .welcome-content h2 {
+            font-size: 1.75rem;
+            margin-bottom: 12px;
+            color: #44B6A8;
+        }
+
+        .welcome-content p {
+            color: #a0a0a0;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .welcome-content .file-drop-zone {
+            border: 2px dashed #44B6A8;
+            border-radius: 12px;
+            padding: 40px;
+            margin-bottom: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .welcome-content .file-drop-zone:hover,
+        .welcome-content .file-drop-zone.drag-over {
+            border-color: #fff;
+            background: rgba(68, 182, 168, 0.1);
+        }
+
+        .welcome-content .file-drop-zone p {
+            margin: 0;
+        }
+
+        .btn-clear {
+            background: transparent;
+            border: none;
+            color: #666;
+            font-size: 0.75rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .btn-clear:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: #333;
+        }
+
+        #loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(26, 26, 46, 0.85);
+            z-index: 20;
+        }
+
+        #loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+
+        .spinner {
+            width: 56px;
+            height: 56px;
+            border: 4px solid rgba(68, 182, 168, 0.3);
+            border-top-color: #44B6A8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-content p {
+            font-size: 0.9rem;
+            color: #a0a0a0;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <div class="brand">
+                <div>
+                    <h1>That Open Engine Demo</h1>
+                    <div class="subtitle">IFC 3D Viewer - Research POC Phase 0</div>
+                </div>
+                <span class="badge">WebGL</span>
+            </div>
+        </header>
+
+        <div class="toolbar">
+            <div class="file-input-wrapper">
+                <button class="btn" id="load-btn">
+                    <span>Load IFC File</span>
+                </button>
+                <input type="file" id="file-input" accept=".ifc">
+            </div>
+
+            <div class="toolbar-separator"></div>
+
+            <button class="btn secondary" id="fit-btn" disabled>Fit to View</button>
+            <button class="btn secondary" id="reset-btn" disabled>Reset View</button>
+
+            <div class="toolbar-separator"></div>
+
+            <button class="btn danger" id="clear-btn" disabled>Clear Models</button>
+
+            <div id="status-bar">
+                <div class="status-icon" id="status-icon"></div>
+                <span id="status-text">Initializing...</span>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div id="viewer-container">
+                <div id="welcome-overlay">
+                    <div class="welcome-content">
+                        <h2>Welcome to the IFC Viewer</h2>
+                        <p>This demo showcases That Open Engine's ability to load and render IFC files directly in the browser using WebGL.</p>
+                        <div class="file-drop-zone" id="drop-zone">
+                            <p>Drag & drop an IFC file here<br>or click "Load IFC File" above</p>
+                        </div>
+                        <p style="font-size: 0.8rem;">Supported format: .ifc</p>
+                    </div>
+                </div>
+
+                <div id="loading-overlay">
+                    <div class="loading-content">
+                        <div class="spinner"></div>
+                        <p id="loading-text">Loading IFC model...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <h3>Performance Metrics</h3>
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="label">Init Time</div>
+                            <div class="value" id="metric-init">--</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">Load Time</div>
+                            <div class="value" id="metric-load">--</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">File Size</div>
+                            <div class="value" id="metric-size">--</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">Meshes</div>
+                            <div class="value" id="metric-meshes">--</div>
+                        </div>
+                        <div class="metric-card full-width">
+                            <div class="label">Models Loaded</div>
+                            <div class="value" id="metric-models">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>WebGL Information</h3>
+                    <div class="webgl-info" id="webgl-info">
+                        <div class="webgl-info-row">
+                            <span class="key">Status</span>
+                            <span class="val" id="webgl-status">Checking...</span>
+                        </div>
+                        <div class="webgl-info-row">
+                            <span class="key">Renderer</span>
+                            <span class="val" id="webgl-renderer">--</span>
+                        </div>
+                        <div class="webgl-info-row">
+                            <span class="key">Max Texture</span>
+                            <span class="val" id="webgl-texture">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section log-container">
+                    <div class="log-header">
+                        <h3>Activity Log</h3>
+                        <button class="btn-clear" id="clear-log-btn">Clear</button>
+                    </div>
+                    <div class="log-entries" id="log-entries">
+                        <div class="log-entry info">
+                            <span class="timestamp">[--:--:--]</span>
+                            Starting viewer initialization...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { IFCViewer } from "./src/viewer.js";
+
+        // DOM Elements
+        const viewerContainer = document.getElementById("viewer-container");
+        const fileInput = document.getElementById("file-input");
+        const fitBtn = document.getElementById("fit-btn");
+        const resetBtn = document.getElementById("reset-btn");
+        const clearBtn = document.getElementById("clear-btn");
+        const statusIcon = document.getElementById("status-icon");
+        const statusText = document.getElementById("status-text");
+        const welcomeOverlay = document.getElementById("welcome-overlay");
+        const loadingOverlay = document.getElementById("loading-overlay");
+        const loadingText = document.getElementById("loading-text");
+        const dropZone = document.getElementById("drop-zone");
+        const logEntries = document.getElementById("log-entries");
+        const clearLogBtn = document.getElementById("clear-log-btn");
+
+        // Metric elements
+        const metricInit = document.getElementById("metric-init");
+        const metricLoad = document.getElementById("metric-load");
+        const metricSize = document.getElementById("metric-size");
+        const metricMeshes = document.getElementById("metric-meshes");
+        const metricModels = document.getElementById("metric-models");
+        const webglStatus = document.getElementById("webgl-status");
+        const webglRenderer = document.getElementById("webgl-renderer");
+        const webglTexture = document.getElementById("webgl-texture");
+
+        // State
+        let viewer = null;
+        let currentFileSize = 0;
+
+        /**
+         * Log a message to the activity log
+         */
+        function log(message, type = "info") {
+            const now = new Date();
+            const timestamp = now.toTimeString().split(" ")[0];
+            const entry = document.createElement("div");
+            entry.className = `log-entry ${type}`;
+            entry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
+            logEntries.appendChild(entry);
+            logEntries.scrollTop = logEntries.scrollHeight;
+        }
+
+        /**
+         * Update status display
+         */
+        function updateStatus(message, state = "ready") {
+            statusText.textContent = message;
+            statusIcon.className = "status-icon";
+            if (state === "loading") {
+                statusIcon.classList.add("loading");
+            } else if (state === "error") {
+                statusIcon.classList.add("error");
+            }
+        }
+
+        /**
+         * Show/hide loading overlay
+         */
+        function setLoading(show, text = "Loading IFC model...") {
+            loadingText.textContent = text;
+            loadingOverlay.classList.toggle("active", show);
+        }
+
+        /**
+         * Update metrics display
+         */
+        function updateMetrics() {
+            if (!viewer) return;
+
+            const metrics = viewer.getMetrics();
+
+            metricInit.textContent = `${metrics.initTime.toFixed(0)}ms`;
+            metricLoad.textContent = metrics.lastLoadTime > 0
+                ? `${metrics.lastLoadTime.toFixed(0)}ms`
+                : "--";
+            metricSize.textContent = currentFileSize > 0
+                ? viewer.formatFileSize(currentFileSize)
+                : "--";
+            metricMeshes.textContent = metrics.meshCount.toString();
+            metricModels.textContent = metrics.modelsLoaded.toString();
+
+            // WebGL info
+            const webgl = metrics.webglInfo;
+            if (webgl.supported) {
+                webglStatus.textContent = "Supported";
+                webglRenderer.textContent = webgl.renderer || "Unknown";
+                webglRenderer.title = webgl.renderer || "";
+                webglTexture.textContent = `${webgl.maxTextureSize}px`;
+            } else {
+                webglStatus.textContent = "Not Supported";
+                webglRenderer.textContent = "--";
+                webglTexture.textContent = "--";
+            }
+        }
+
+        /**
+         * Handle file selection
+         */
+        async function handleFile(file) {
+            if (!file || !file.name.toLowerCase().endsWith(".ifc")) {
+                log("Invalid file type. Please select an .ifc file.", "error");
+                updateStatus("Invalid file type", "error");
+                return;
+            }
+
+            try {
+                currentFileSize = file.size;
+                setLoading(true, `Loading ${file.name}...`);
+                updateStatus(`Loading ${file.name}...`, "loading");
+                log(`Starting to load: ${file.name} (${viewer.formatFileSize(file.size)})`);
+
+                const result = await viewer.loadFile(file);
+
+                welcomeOverlay.classList.add("hidden");
+                setLoading(false);
+                updateStatus(`Loaded: ${file.name}`, "ready");
+                log(`Successfully loaded: ${file.name} in ${result.loadTime.toFixed(0)}ms`, "success");
+
+                // Enable controls
+                fitBtn.disabled = false;
+                resetBtn.disabled = false;
+                clearBtn.disabled = false;
+
+                updateMetrics();
+
+            } catch (error) {
+                setLoading(false);
+                updateStatus(`Error loading file`, "error");
+                log(`Failed to load file: ${error.message}`, "error");
+            }
+        }
+
+        /**
+         * Initialize the viewer
+         */
+        async function init() {
+            log("Initializing That Open Engine viewer...");
+            updateStatus("Initializing...", "loading");
+
+            try {
+                // Create viewer instance
+                viewer = new IFCViewer(viewerContainer, {
+                    enablePostprocessing: false,
+                    backgroundColor: "#1a1a2e",
+                    gridEnabled: true,
+                    onStatusChange: (msg) => log(msg),
+                    onLoadStart: (name, size) => {
+                        log(`Loading ${name}...`);
+                    },
+                    onLoadEnd: (name, time) => {
+                        log(`Finished loading ${name} in ${time.toFixed(0)}ms`, "success");
+                    },
+                    onError: (msg) => {
+                        log(msg, "error");
+                    },
+                });
+
+                // Initialize the viewer
+                const result = await viewer.init();
+
+                log(`Viewer initialized in ${result.initTime.toFixed(0)}ms`, "success");
+                updateStatus("Ready - Load an IFC file", "ready");
+                updateMetrics();
+
+            } catch (error) {
+                log(`Initialization failed: ${error.message}`, "error");
+                updateStatus("Initialization failed", "error");
+            }
+        }
+
+        // Event Listeners
+        fileInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        fitBtn.addEventListener("click", () => {
+            if (viewer) {
+                viewer.fitToView();
+                log("Camera fitted to model");
+            }
+        });
+
+        resetBtn.addEventListener("click", async () => {
+            if (viewer) {
+                await viewer.resetView();
+                log("Camera reset to default position");
+            }
+        });
+
+        clearBtn.addEventListener("click", () => {
+            if (viewer) {
+                viewer.clearModels();
+                welcomeOverlay.classList.remove("hidden");
+                fitBtn.disabled = true;
+                resetBtn.disabled = true;
+                clearBtn.disabled = true;
+                currentFileSize = 0;
+                log("All models cleared");
+                updateMetrics();
+            }
+        });
+
+        clearLogBtn.addEventListener("click", () => {
+            logEntries.innerHTML = "";
+            log("Log cleared");
+        });
+
+        // Drag and drop support
+        dropZone.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            dropZone.classList.add("drag-over");
+        });
+
+        dropZone.addEventListener("dragleave", (e) => {
+            e.preventDefault();
+            dropZone.classList.remove("drag-over");
+        });
+
+        dropZone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            dropZone.classList.remove("drag-over");
+            const file = e.dataTransfer.files[0];
+            if (file) handleFile(file);
+        });
+
+        // Also allow drop on the main viewer container
+        viewerContainer.addEventListener("dragover", (e) => {
+            e.preventDefault();
+        });
+
+        viewerContainer.addEventListener("drop", (e) => {
+            e.preventDefault();
+            const file = e.dataTransfer.files[0];
+            if (file) handleFile(file);
+        });
+
+        // Initialize
+        init();
+    </script>
+</body>
+</html>
