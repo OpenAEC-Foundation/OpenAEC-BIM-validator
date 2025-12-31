@@ -28,6 +28,7 @@ export default defineConfig({
                 main: resolve(__dirname, 'index.html'),
                 demo: resolve(__dirname, 'thatopen-demo.html'),
                 clientRender: resolve(__dirname, 'client-render.html'),
+                serverRender: resolve(__dirname, 'server-render.html'),
             },
         },
     },
