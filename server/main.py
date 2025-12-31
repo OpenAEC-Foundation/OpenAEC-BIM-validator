@@ -3,7 +3,7 @@ FastAPI Server for Server-Side IFC Rendering POC
 
 This server provides endpoints for:
 - IFC file uploads
-- Server-side IFC processing (to be implemented in subtask 4.2)
+- Server-side IFC processing (converts IFC to optimized geometry)
 - Serving processed geometry to browser clients
 
 Run with: uvicorn server.main:app --reload --port 8000
@@ -17,9 +17,11 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+
+from server.ifc_processor import IFCProcessor, GLTF_AVAILABLE
 
 # Create FastAPI app with metadata for auto-docs
 app = FastAPI(
@@ -49,6 +51,13 @@ MAX_FILE_SIZE = 500 * 1024 * 1024  # 500MB in bytes
 # Track uploaded files for cleanup and status
 uploaded_files: dict[str, dict] = {}
 
+# Directory for processed files
+PROCESSED_DIR = Path(tempfile.gettempdir()) / "ifc_processed"
+PROCESSED_DIR.mkdir(exist_ok=True)
+
+# Initialize IFC processor
+ifc_processor = IFCProcessor(output_dir=PROCESSED_DIR)
+
 
 @app.get("/")
 async def root():
@@ -72,7 +81,9 @@ async def health_check():
         "status": "ok",
         "upload_dir": str(UPLOAD_DIR),
         "upload_dir_exists": UPLOAD_DIR.exists(),
+        "processed_dir": str(PROCESSED_DIR),
         "files_tracked": len(uploaded_files),
+        "processor_capabilities": ifc_processor.get_capabilities(),
     }
 
 
@@ -252,29 +263,151 @@ async def cleanup_files():
     }
 
 
-# Placeholder for future processing endpoint (subtask 4.2)
 @app.post("/api/process/{file_id}")
-async def process_ifc(file_id: str):
+async def process_ifc(
+    file_id: str,
+    output_format: str = Query(
+        "auto",
+        description="Output format: 'auto', 'gltf', or 'json-mesh'",
+        pattern="^(auto|gltf|json-mesh)$",
+    ),
+):
     """
-    Process an uploaded IFC file (placeholder for subtask 4.2).
+    Process an uploaded IFC file to optimized geometry format.
 
-    This endpoint will:
-    - Convert IFC to optimized geometry format
-    - Return processed data for browser rendering
+    Converts IFC to browser-optimized format:
+    - **gltf**: Binary glTF format (if available in ifcopenshell build)
+    - **json-mesh**: JSON with triangulated geometry for Three.js
+    - **auto**: Tries glTF first, falls back to JSON
 
-    Currently returns a placeholder response.
+    Returns:
+        Processing result with geometry data or path to output file
+    """
+    if file_id not in uploaded_files:
+        raise HTTPException(status_code=404, detail=f"File not found: {file_id}")
+
+    file_info = uploaded_files[file_id]
+    ifc_path = file_info["file_path"]
+
+    if not Path(ifc_path).exists():
+        raise HTTPException(
+            status_code=404, detail=f"IFC file no longer exists: {file_id}"
+        )
+
+    # Process the IFC file
+    result = ifc_processor.process(
+        ifc_path=ifc_path,
+        output_name=file_id,
+        preferred_format=output_format,
+    )
+
+    # Update file tracking with processing result
+    file_info["processing_status"] = "completed" if result.success else "failed"
+    file_info["processing_result"] = {
+        "success": result.success,
+        "format": result.output_format,
+        "processing_time_ms": result.processing_time_ms,
+        "element_count": result.element_count,
+        "vertex_count": result.vertex_count,
+        "face_count": result.face_count,
+        "output_size_bytes": result.file_size_bytes,
+        "error": result.error,
+    }
+    if result.output_path:
+        file_info["processed_file_path"] = result.output_path
+
+    if not result.success:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Processing failed: {result.error}",
+        )
+
+    # Build response
+    response = {
+        "success": True,
+        "file_id": file_id,
+        "filename": file_info["original_filename"],
+        "format": result.output_format,
+        "processing_time_ms": result.processing_time_ms,
+        "stats": {
+            "elements": result.element_count,
+            "vertices": result.vertex_count,
+            "faces": result.face_count,
+            "output_size_bytes": result.file_size_bytes,
+            "output_size_mb": round(result.file_size_bytes / 1024 / 1024, 2),
+        },
+    }
+
+    # Include geometry data or file path
+    if result.output_format == "json-mesh" and result.output_data:
+        response["geometry"] = result.output_data
+    elif result.output_path:
+        response["output_file"] = f"/api/download/{file_id}"
+        response["output_path"] = result.output_path
+
+    return JSONResponse(content=response)
+
+
+@app.get("/api/download/{file_id}")
+async def download_processed(file_id: str):
+    """
+    Download a processed geometry file (glTF/GLB).
+
+    Args:
+        file_id: UUID of the processed file
     """
     if file_id not in uploaded_files:
         raise HTTPException(status_code=404, detail=f"File not found: {file_id}")
 
     file_info = uploaded_files[file_id]
 
+    if "processed_file_path" not in file_info:
+        raise HTTPException(
+            status_code=404, detail=f"File not yet processed: {file_id}"
+        )
+
+    processed_path = Path(file_info["processed_file_path"])
+    if not processed_path.exists():
+        raise HTTPException(
+            status_code=404, detail=f"Processed file no longer exists: {file_id}"
+        )
+
+    # Determine media type
+    media_type = "application/octet-stream"
+    if processed_path.suffix.lower() == ".glb":
+        media_type = "model/gltf-binary"
+    elif processed_path.suffix.lower() == ".gltf":
+        media_type = "model/gltf+json"
+
+    return FileResponse(
+        path=str(processed_path),
+        media_type=media_type,
+        filename=processed_path.name,
+    )
+
+
+@app.get("/api/capabilities")
+async def get_capabilities():
+    """
+    Get server processing capabilities.
+
+    Returns available output formats and processing options.
+    """
     return {
-        "status": "not_implemented",
-        "message": "IFC processing will be implemented in subtask 4.2",
-        "file_id": file_id,
-        "filename": file_info["original_filename"],
-        "file_size_mb": file_info["file_size_mb"],
+        "formats": {
+            "gltf": {
+                "available": GLTF_AVAILABLE,
+                "description": "Binary glTF format, optimal for large models",
+                "file_extension": ".glb",
+            },
+            "json-mesh": {
+                "available": True,
+                "description": "JSON triangulated mesh for Three.js",
+                "file_extension": None,  # Returned inline
+            },
+        },
+        "recommended_format": "gltf" if GLTF_AVAILABLE else "json-mesh",
+        "processor": ifc_processor.get_capabilities(),
     }
 
 
