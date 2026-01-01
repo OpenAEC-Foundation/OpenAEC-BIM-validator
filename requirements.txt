@@ -1,2 +1,14 @@
-ifcopenshell
+# IFC Parser Module Dependencies
+
+# Core dependencies
+ifcopenshell>=0.8.0
 ifctester
+psutil
+
+# Testing
+pytest
+pytest-cov
+
+# Code quality
+black
+ruff
