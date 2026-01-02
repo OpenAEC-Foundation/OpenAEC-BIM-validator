@@ -51,6 +51,8 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["ifc_validator*"]
+exclude = ["test*", "tests*"]
+namespaces = false
 
 [tool.black]
 line-length = 88
