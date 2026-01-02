@@ -16,6 +16,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional
 
+import click
 import typer
 from rich.console import Console
 
@@ -155,6 +156,11 @@ def validate(
     except MemoryError as e:
         err_console.print(f"[red]Memory Error:[/red] {e}")
         raise typer.Exit(code=1)
+
+    except click.exceptions.Exit:
+        # Re-raise typer.Exit/click.Exit - don't catch these
+        # (they inherit from RuntimeError but should propagate)
+        raise
 
     except RuntimeError as e:
         err_console.print(f"[red]Runtime Error:[/red] {e}")
