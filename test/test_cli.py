@@ -14,18 +14,13 @@ Usage:
 """
 
 import os
-import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 from typer.testing import CliRunner
 
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from src.ifc_validator.cli import app
+from ifc_validator.cli import app
 
 # =============================================================================
 # Test Fixtures
