@@ -287,3 +287,150 @@ class TestValidationWorkflow:
             assert isinstance(spec.failures, list), (
                 f"Specification {i} failures should be a list"
             )
+
+
+# =============================================================================
+# Failed Entity Extraction Tests
+# =============================================================================
+
+
+class TestFailedEntityExtraction:
+    """Test that failed entities are extracted with all required fields."""
+
+    def test_failed_entities_extraction(self, ifc_path: Path, ids_path: Path) -> None:
+        """Test that failed entities are extracted with all required fields.
+
+        This test verifies:
+        - Validation that has failures produces EntityFailure objects
+        - Failed specifications have populated failures lists
+        - Each EntityFailure has all required fields:
+          - entity_id (int)
+          - entity_type (str)
+          - entity_name (Optional[str])
+          - global_id (Optional[str])
+
+        Acceptance Criteria:
+        - Runs validation that has failures
+        - Finds a specification with failed_count > 0
+        - Asserts failures list is populated
+        - Asserts each failure has entity_id, entity_type
+        - Asserts entity_name and global_id are present (may be None)
+        """
+        # Run validation - we know NL_BIM_Basis_ILS_v2.ids has failing specs
+        report = validate_ifc_against_ids(ifc_path, ids_path)
+
+        # Verify validation completed successfully
+        assert report.success is True, f"Validation should succeed, error: {report.error}"
+
+        # Find specifications with failures
+        specs_with_failures = [
+            spec for spec in report.specifications
+            if spec.failed_count > 0 and len(spec.failures) > 0
+        ]
+
+        # Verify we have at least one specification with failures
+        # (NL_BIM_Basis_ILS_v2.ids is known to have 8 failing specs)
+        assert len(specs_with_failures) > 0, (
+            "Expected at least one specification with failures to test entity extraction. "
+            f"Failed specs: {report.failed_specifications}, "
+            f"specs with failure details: {len(specs_with_failures)}"
+        )
+
+        # Test each specification with failures
+        for spec in specs_with_failures:
+            # Verify failures list is populated
+            assert len(spec.failures) > 0, (
+                f"Specification '{spec.name}' has failed_count={spec.failed_count} "
+                f"but empty failures list"
+            )
+
+            # Verify failure count matches list length
+            assert spec.failed_count == len(spec.failures), (
+                f"Specification '{spec.name}' failed_count ({spec.failed_count}) "
+                f"doesn't match failures list length ({len(spec.failures)})"
+            )
+
+            # Check each failed entity has all required fields
+            for i, failure in enumerate(spec.failures):
+                # Verify failure is an EntityFailure instance
+                assert isinstance(failure, EntityFailure), (
+                    f"Failure {i} in '{spec.name}' should be EntityFailure, "
+                    f"got {type(failure).__name__}"
+                )
+
+                # Verify entity_id is an integer
+                assert isinstance(failure.entity_id, int), (
+                    f"Failure {i} in '{spec.name}': entity_id should be int, "
+                    f"got {type(failure.entity_id).__name__}"
+                )
+                # entity_id should be positive (valid IFC instance ID)
+                assert failure.entity_id > 0, (
+                    f"Failure {i} in '{spec.name}': entity_id should be > 0, "
+                    f"got {failure.entity_id}"
+                )
+
+                # Verify entity_type is a non-empty string
+                assert isinstance(failure.entity_type, str), (
+                    f"Failure {i} in '{spec.name}': entity_type should be str, "
+                    f"got {type(failure.entity_type).__name__}"
+                )
+                assert len(failure.entity_type) > 0, (
+                    f"Failure {i} in '{spec.name}': entity_type should not be empty"
+                )
+
+                # Verify entity_name is present (can be str or None)
+                assert failure.entity_name is None or isinstance(failure.entity_name, str), (
+                    f"Failure {i} in '{spec.name}': entity_name should be str or None, "
+                    f"got {type(failure.entity_name).__name__}"
+                )
+
+                # Verify global_id is present (can be str or None)
+                assert failure.global_id is None or isinstance(failure.global_id, str), (
+                    f"Failure {i} in '{spec.name}': global_id should be str or None, "
+                    f"got {type(failure.global_id).__name__}"
+                )
+
+    def test_failed_entity_has_valid_ifc_type(self, ifc_path: Path, ids_path: Path) -> None:
+        """Test that extracted entity_type is a valid IFC type name.
+
+        IFC entity types follow a naming convention (e.g., IfcWall, IfcDoor).
+        This test verifies extracted types follow this pattern.
+        """
+        report = validate_ifc_against_ids(ifc_path, ids_path)
+
+        # Find first failure to inspect
+        for spec in report.specifications:
+            if spec.failures:
+                failure = spec.failures[0]
+
+                # IFC type names typically start with "Ifc" or are uppercase
+                # At minimum, they should be non-empty alphanumeric strings
+                assert failure.entity_type.isalnum() or "_" in failure.entity_type, (
+                    f"entity_type '{failure.entity_type}' should be alphanumeric"
+                )
+                return  # Test passed with one failure
+
+        # If no failures found, skip with informative message
+        pytest.skip("No failures found to test entity_type format")
+
+    def test_failed_entities_global_id_format(self, ifc_path: Path, ids_path: Path) -> None:
+        """Test that GlobalId values follow IFC GUID format when present.
+
+        IFC GlobalId is a 22-character compressed GUID. This test verifies
+        that when global_id is present, it has the expected format.
+        """
+        report = validate_ifc_against_ids(ifc_path, ids_path)
+
+        found_global_id = False
+        for spec in report.specifications:
+            for failure in spec.failures:
+                if failure.global_id is not None:
+                    found_global_id = True
+                    # IFC GlobalId is a 22-character encoded GUID
+                    assert len(failure.global_id) == 22, (
+                        f"global_id '{failure.global_id}' should be 22 characters "
+                        f"(IFC GUID format), got {len(failure.global_id)}"
+                    )
+
+        if not found_global_id:
+            pytest.skip("No failures with GlobalId found to test format")
