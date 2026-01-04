@@ -33,7 +33,6 @@ from server.ids_validator import (
     validate_ifc_against_ids,
 )
 
-
 # =============================================================================
 # Test Fixtures
 # =============================================================================
@@ -1401,10 +1400,10 @@ class TestReportSerialization:
 
                 # Verify optional fields are str or None
                 assert failure["entity_name"] is None or isinstance(failure["entity_name"], str), (
-                    f"entity_name should be str or None after serialization"
+                    "entity_name should be str or None after serialization"
                 )
                 assert failure["global_id"] is None or isinstance(failure["global_id"], str), (
-                    f"global_id should be str or None after serialization"
+                    "global_id should be str or None after serialization"
                 )
 
     def test_report_to_dict_json_pretty_print(
