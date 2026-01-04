@@ -8,10 +8,35 @@ The module provides:
 - Structured data models for validation results (dataclasses)
 - Core validation function to run IDS checks against IFC models
 - IDSValidator class for consistent API with other server modules
+
+Usage:
+    from server.ids_validator import IDSValidator, validate_ifc_against_ids
+    from pathlib import Path
+
+    # Using the function directly
+    report = validate_ifc_against_ids(
+        ifc_path=Path("model.ifc"),
+        ids_path=Path("spec.ids")
+    )
+    print(f"Pass rate: {report.pass_rate_percent}%")
+
+    # Using the class-based interface
+    validator = IDSValidator()
+    report = validator.validate(Path("model.ifc"), Path("spec.ids"))
+
+Run as module for testing: python -m server.ids_validator
 """
 
-from dataclasses import dataclass
+# Standard library imports
+import time
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from pathlib import Path
 from typing import Optional
+
+# Third-party imports
+import ifcopenshell
+from ifctester import ids
 
 
 @dataclass
