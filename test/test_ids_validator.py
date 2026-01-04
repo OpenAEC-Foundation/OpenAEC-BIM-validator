@@ -539,3 +539,263 @@ class TestFileNotFoundError:
 
         error_message = str(exc_info.value)
         assert "IDS file not found" in error_message
+
+
+# =============================================================================
+# ValidationReport Structure Tests
+# =============================================================================
+
+
+class TestValidationReportStructure:
+    """Test that ValidationReport has all required fields with correct types."""
+
+    def test_validation_report_structure(self, ifc_path: Path, ids_path: Path) -> None:
+        """Test ValidationReport has all required fields with correct types.
+
+        This test verifies:
+        - All 14 fields are present on ValidationReport
+        - timestamp is a string in ISO format
+        - ifc_file and ids_file are strings
+        - All count fields are integers
+        - pass_rate_percent and validation_time_seconds are floats
+        - specifications is a list of SpecificationResult objects
+        - success is a boolean and error is Optional[str]
+
+        Acceptance Criteria:
+        - Asserts timestamp is string in ISO format
+        - Asserts ifc_file and ids_file are strings
+        - Asserts counts are integers
+        - Asserts pass_rate_percent is float
+        - Asserts specifications is list
+        """
+        from datetime import datetime
+
+        # Run validation to get a real report
+        report = validate_ifc_against_ids(ifc_path, ids_path)
+
+        # Verify report is ValidationReport instance
+        assert isinstance(report, ValidationReport), (
+            f"Expected ValidationReport instance, got {type(report).__name__}"
+        )
+
+        # ===== Test timestamp field =====
+        # timestamp should be a string in ISO format
+        assert isinstance(report.timestamp, str), (
+            f"timestamp should be str, got {type(report.timestamp).__name__}"
+        )
+        assert len(report.timestamp) > 0, "timestamp should not be empty"
+
+        # Verify timestamp is valid ISO format by parsing it
+        try:
+            parsed_timestamp = datetime.fromisoformat(report.timestamp)
+            assert parsed_timestamp is not None
+        except ValueError as e:
+            pytest.fail(f"timestamp '{report.timestamp}' is not valid ISO format: {e}")
+
+        # ===== Test IFC file metadata fields =====
+        # ifc_file should be a non-empty string
+        assert isinstance(report.ifc_file, str), (
+            f"ifc_file should be str, got {type(report.ifc_file).__name__}"
+        )
+        assert len(report.ifc_file) > 0, "ifc_file should not be empty"
+
+        # ifc_schema should be a non-empty string
+        assert isinstance(report.ifc_schema, str), (
+            f"ifc_schema should be str, got {type(report.ifc_schema).__name__}"
+        )
+        assert len(report.ifc_schema) > 0, "ifc_schema should not be empty"
+
+        # ifc_entity_count should be a non-negative integer
+        assert isinstance(report.ifc_entity_count, int), (
+            f"ifc_entity_count should be int, got {type(report.ifc_entity_count).__name__}"
+        )
+        assert report.ifc_entity_count >= 0, (
+            f"ifc_entity_count should be >= 0, got {report.ifc_entity_count}"
+        )
+
+        # ===== Test IDS file metadata fields =====
+        # ids_file should be a non-empty string
+        assert isinstance(report.ids_file, str), (
+            f"ids_file should be str, got {type(report.ids_file).__name__}"
+        )
+        assert len(report.ids_file) > 0, "ids_file should not be empty"
+
+        # ids_title should be str or None
+        assert report.ids_title is None or isinstance(report.ids_title, str), (
+            f"ids_title should be str or None, got {type(report.ids_title).__name__}"
+        )
+
+        # ===== Test timing field =====
+        # validation_time_seconds should be a non-negative float
+        assert isinstance(report.validation_time_seconds, float), (
+            f"validation_time_seconds should be float, got {type(report.validation_time_seconds).__name__}"
+        )
+        assert report.validation_time_seconds >= 0.0, (
+            f"validation_time_seconds should be >= 0, got {report.validation_time_seconds}"
+        )
+
+        # ===== Test specification count fields =====
+        # total_specifications should be a non-negative integer
+        assert isinstance(report.total_specifications, int), (
+            f"total_specifications should be int, got {type(report.total_specifications).__name__}"
+        )
+        assert report.total_specifications >= 0, (
+            f"total_specifications should be >= 0, got {report.total_specifications}"
+        )
+
+        # passed_specifications should be a non-negative integer
+        assert isinstance(report.passed_specifications, int), (
+            f"passed_specifications should be int, got {type(report.passed_specifications).__name__}"
+        )
+        assert report.passed_specifications >= 0, (
+            f"passed_specifications should be >= 0, got {report.passed_specifications}"
+        )
+
+        # failed_specifications should be a non-negative integer
+        assert isinstance(report.failed_specifications, int), (
+            f"failed_specifications should be int, got {type(report.failed_specifications).__name__}"
+        )
+        assert report.failed_specifications >= 0, (
+            f"failed_specifications should be >= 0, got {report.failed_specifications}"
+        )
+
+        # ===== Test pass rate field =====
+        # pass_rate_percent should be a float between 0 and 100
+        assert isinstance(report.pass_rate_percent, float), (
+            f"pass_rate_percent should be float, got {type(report.pass_rate_percent).__name__}"
+        )
+        assert 0.0 <= report.pass_rate_percent <= 100.0, (
+            f"pass_rate_percent should be between 0-100, got {report.pass_rate_percent}"
+        )
+
+        # ===== Test specifications list field =====
+        # specifications should be a list
+        assert isinstance(report.specifications, list), (
+            f"specifications should be list, got {type(report.specifications).__name__}"
+        )
+
+        # Each item in specifications should be a SpecificationResult
+        for i, spec in enumerate(report.specifications):
+            assert isinstance(spec, SpecificationResult), (
+                f"specifications[{i}] should be SpecificationResult, "
+                f"got {type(spec).__name__}"
+            )
+
+        # ===== Test success/error fields =====
+        # success should be a boolean
+        assert isinstance(report.success, bool), (
+            f"success should be bool, got {type(report.success).__name__}"
+        )
+
+        # error should be str or None
+        assert report.error is None or isinstance(report.error, str), (
+            f"error should be str or None, got {type(report.error).__name__}"
+        )
+
+    def test_validation_report_field_count(self, ifc_path: Path, ids_path: Path) -> None:
+        """Test that ValidationReport has exactly 14 fields.
+
+        This verifies the dataclass hasn't been modified unexpectedly.
+        """
+        from dataclasses import fields
+
+        report = validate_ifc_against_ids(ifc_path, ids_path)
+
+        # Get all field names from the dataclass
+        field_names = [f.name for f in fields(report)]
+
+        # Expected 14 fields as documented in spec
+        expected_fields = [
+            "timestamp",
+            "ifc_file",
+            "ifc_schema",
+            "ifc_entity_count",
+            "ids_file",
+            "ids_title",
+            "validation_time_seconds",
+            "total_specifications",
+            "passed_specifications",
+            "failed_specifications",
+            "pass_rate_percent",
+            "specifications",
+            "success",
+            "error",
+        ]
+
+        assert len(field_names) == 14, (
+            f"ValidationReport should have 14 fields, got {len(field_names)}: {field_names}"
+        )
+
+        # Verify all expected fields are present
+        for expected_field in expected_fields:
+            assert expected_field in field_names, (
+                f"ValidationReport missing expected field: {expected_field}"
+            )
+
+    def test_specification_result_field_count(self, ifc_path: Path, ids_path: Path) -> None:
+        """Test that SpecificationResult has exactly 7 fields.
+
+        This verifies the dataclass structure matches the spec.
+        """
+        from dataclasses import fields
+
+        report = validate_ifc_against_ids(ifc_path, ids_path)
+
+        # Get a SpecificationResult to inspect
+        assert len(report.specifications) > 0, "Need at least one spec to test"
+        spec = report.specifications[0]
+
+        # Get all field names from the dataclass
+        field_names = [f.name for f in fields(spec)]
+
+        # Expected 7 fields as documented in spec
+        expected_fields = [
+            "name",
+            "description",
+            "passed",
+            "applicable_count",
+            "passed_count",
+            "failed_count",
+            "failures",
+        ]
+
+        assert len(field_names) == 7, (
+            f"SpecificationResult should have 7 fields, got {len(field_names)}: {field_names}"
+        )
+
+        # Verify all expected fields are present
+        for expected_field in expected_fields:
+            assert expected_field in field_names, (
+                f"SpecificationResult missing expected field: {expected_field}"
+            )
+
+    def test_entity_failure_field_count(self) -> None:
+        """Test that EntityFailure has exactly 4 fields.
+
+        This verifies the dataclass structure matches the spec.
+        """
+        from dataclasses import fields
+
+        # Create a sample EntityFailure to inspect fields
+        sample_failure = EntityFailure(
+            entity_id=1,
+            entity_type="IfcWall",
+            entity_name="Test Wall",
+            global_id="1234567890123456789012",
+        )
+
+        # Get all field names from the dataclass
+        field_names = [f.name for f in fields(sample_failure)]
+
+        # Expected 4 fields as documented in spec
+        expected_fields = ["entity_id", "entity_type", "entity_name", "global_id"]
+
+        assert len(field_names) == 4, (
+            f"EntityFailure should have 4 fields, got {len(field_names)}: {field_names}"
+        )
+
+        # Verify all expected fields are present
+        for expected_field in expected_fields:
+            assert expected_field in field_names, (
+                f"EntityFailure missing expected field: {expected_field}"
+            )
