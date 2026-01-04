@@ -110,3 +110,58 @@ class TestFixtures:
         """Verify nonexistent path fixtures point to non-existing files."""
         assert not nonexistent_ifc_path.exists()
         assert not nonexistent_ids_path.exists()
+
+
+# =============================================================================
+# IDS File Loading Tests
+# =============================================================================
+
+
+class TestIDSFileLoading:
+    """Test IDS file loading and specification count."""
+
+    def test_load_ids_file(self, ids_path: Path) -> None:
+        """Test that IDS files load correctly with correct specification count.
+
+        This test verifies:
+        - IDS file can be loaded using ifctester.ids.open()
+        - The NL_BIM_Basis_ILS_v2.ids file contains exactly 12 specifications
+        - Specifications can be iterated over
+
+        Acceptance Criteria:
+        - Test loads IDS file using ifctester.ids.open()
+        - Asserts specification count is 12
+        - Test passes with valid IDS file
+        """
+        from ifctester import ids
+
+        # Load IDS file using ifctester
+        ids_file = ids.open(str(ids_path))
+
+        # Verify IDS file was loaded successfully
+        assert ids_file is not None, "IDS file should load successfully"
+
+        # Verify specifications attribute exists
+        assert hasattr(ids_file, "specifications"), "IDS file should have specifications attribute"
+
+        # Verify specification count is exactly 12 for NL_BIM_Basis_ILS_v2.ids
+        spec_count = len(ids_file.specifications)
+        assert spec_count == 12, (
+            f"NL_BIM_Basis_ILS_v2.ids should contain 12 specifications, "
+            f"got {spec_count}"
+        )
+
+    def test_ids_specifications_have_names(self, ids_path: Path) -> None:
+        """Test that each specification in the IDS file has a name.
+
+        This verifies the IDS file is properly structured with named specifications
+        that can be used for validation reporting.
+        """
+        from ifctester import ids
+
+        ids_file = ids.open(str(ids_path))
+
+        for i, spec in enumerate(ids_file.specifications):
+            assert hasattr(spec, "name"), f"Specification {i} should have 'name' attribute"
+            assert spec.name is not None, f"Specification {i} name should not be None"
+            assert len(spec.name) > 0, f"Specification {i} name should not be empty"
