@@ -1133,3 +1133,305 @@ class TestTimingMetrics:
             f"validation_time_seconds should have sub-second precision, "
             f"got {report.validation_time_seconds} which appears to be a whole number"
         )
+
+
+# =============================================================================
+# Report Serialization Tests
+# =============================================================================
+
+
+class TestReportSerialization:
+    """Test that ValidationReport can be converted to dict and serialized to JSON."""
+
+    def test_report_to_dict_returns_dict(self, ifc_path: Path, ids_path: Path) -> None:
+        """Test that report_to_dict() returns a valid dictionary.
+
+        This test verifies:
+        - report_to_dict() function exists and is callable
+        - Returns a dict type when passed a ValidationReport
+
+        Acceptance Criteria:
+        - report_to_dict() returns valid dict
+        """
+        # Run validation to get a real report
+        report = validate_ifc_against_ids(ifc_path, ids_path)
+
+        # Convert report to dict
+        result = report_to_dict(report)
+
+        # Verify return type is dict
+        assert isinstance(result, dict), (
+            f"report_to_dict() should return dict, got {type(result).__name__}"
+        )
+
+    def test_report_to_dict_json_serializable(self, ifc_path: Path, ids_path: Path) -> None:
+        """Test that the dict from report_to_dict() can be serialized to JSON.
+
+        This test verifies:
+        - The dict returned by report_to_dict() can be passed to json.dumps()
+        - JSON serialization completes without errors
+        - The resulting JSON is a non-empty string
+
+        Acceptance Criteria:
+        - json.dumps() succeeds on result
+        """
+        # Run validation to get a real report
+        report = validate_ifc_against_ids(ifc_path, ids_path)
+
+        # Convert report to dict
+        report_dict = report_to_dict(report)
+
+        # Verify JSON serialization succeeds
+        try:
+            json_str = json.dumps(report_dict)
+        except (TypeError, ValueError) as e:
+            pytest.fail(f"json.dumps() failed on report_to_dict result: {e}")
+
+        # Verify we got a non-empty JSON string
+        assert isinstance(json_str, str), (
+            f"json.dumps() should return str, got {type(json_str).__name__}"
+        )
+        assert len(json_str) > 0, "JSON string should not be empty"
+
+    def test_report_to_dict_nested_structures_converted(
+        self, ifc_path: Path, ids_path: Path
+    ) -> None:
+        """Test that all nested dataclass structures are properly converted to dicts.
+
+        This test verifies:
+        - The specifications field is a list of dicts (not SpecificationResult objects)
+        - Each specification's failures field is a list of dicts (not EntityFailure objects)
+        - All nested dataclasses are recursively converted
+
+        Acceptance Criteria:
+        - All nested structures properly converted
+        """
+        # Run validation to get a real report
+        report = validate_ifc_against_ids(ifc_path, ids_path)
+
+        # Convert report to dict
+        report_dict = report_to_dict(report)
+
+        # Verify specifications is a list
+        assert "specifications" in report_dict, (
+            "report_dict should have 'specifications' key"
+        )
+        assert isinstance(report_dict["specifications"], list), (
+            f"specifications should be list, got {type(report_dict['specifications']).__name__}"
+        )
+
+        # Verify each specification is a dict (not SpecificationResult)
+        for i, spec in enumerate(report_dict["specifications"]):
+            assert isinstance(spec, dict), (
+                f"specifications[{i}] should be dict, got {type(spec).__name__}"
+            )
+
+            # Verify spec has expected keys
+            expected_spec_keys = [
+                "name",
+                "description",
+                "passed",
+                "applicable_count",
+                "passed_count",
+                "failed_count",
+                "failures",
+            ]
+            for key in expected_spec_keys:
+                assert key in spec, (
+                    f"specifications[{i}] should have '{key}' key, "
+                    f"available keys: {list(spec.keys())}"
+                )
+
+            # Verify failures is a list of dicts (not EntityFailure objects)
+            assert isinstance(spec["failures"], list), (
+                f"specifications[{i}]['failures'] should be list, "
+                f"got {type(spec['failures']).__name__}"
+            )
+
+            # Check each failure is a dict with expected keys
+            for j, failure in enumerate(spec["failures"]):
+                assert isinstance(failure, dict), (
+                    f"specifications[{i}]['failures'][{j}] should be dict, "
+                    f"got {type(failure).__name__}"
+                )
+
+                # Verify failure has expected keys
+                expected_failure_keys = [
+                    "entity_id",
+                    "entity_type",
+                    "entity_name",
+                    "global_id",
+                ]
+                for key in expected_failure_keys:
+                    assert key in failure, (
+                        f"specifications[{i}]['failures'][{j}] should have '{key}' key, "
+                        f"available keys: {list(failure.keys())}"
+                    )
+
+    def test_report_to_dict_preserves_all_fields(
+        self, ifc_path: Path, ids_path: Path
+    ) -> None:
+        """Test that all ValidationReport fields are preserved in the dict.
+
+        This verifies that report_to_dict() doesn't lose any data from the
+        original ValidationReport dataclass.
+        """
+        # Run validation to get a real report
+        report = validate_ifc_against_ids(ifc_path, ids_path)
+
+        # Convert report to dict
+        report_dict = report_to_dict(report)
+
+        # Verify all 14 expected fields are present in the dict
+        expected_fields = [
+            "timestamp",
+            "ifc_file",
+            "ifc_schema",
+            "ifc_entity_count",
+            "ids_file",
+            "ids_title",
+            "validation_time_seconds",
+            "total_specifications",
+            "passed_specifications",
+            "failed_specifications",
+            "pass_rate_percent",
+            "specifications",
+            "success",
+            "error",
+        ]
+
+        for field in expected_fields:
+            assert field in report_dict, (
+                f"report_dict should have '{field}' key, "
+                f"available keys: {list(report_dict.keys())}"
+            )
+
+        # Verify values match original report
+        assert report_dict["timestamp"] == report.timestamp
+        assert report_dict["ifc_file"] == report.ifc_file
+        assert report_dict["ifc_schema"] == report.ifc_schema
+        assert report_dict["ifc_entity_count"] == report.ifc_entity_count
+        assert report_dict["ids_file"] == report.ids_file
+        assert report_dict["ids_title"] == report.ids_title
+        assert report_dict["validation_time_seconds"] == report.validation_time_seconds
+        assert report_dict["total_specifications"] == report.total_specifications
+        assert report_dict["passed_specifications"] == report.passed_specifications
+        assert report_dict["failed_specifications"] == report.failed_specifications
+        assert report_dict["pass_rate_percent"] == report.pass_rate_percent
+        assert report_dict["success"] == report.success
+        assert report_dict["error"] == report.error
+
+    def test_report_to_dict_json_roundtrip(
+        self, ifc_path: Path, ids_path: Path
+    ) -> None:
+        """Test that JSON can be parsed back into a dict with correct values.
+
+        This tests the full serialization roundtrip:
+        ValidationReport -> dict -> JSON string -> dict
+
+        The final dict should have the same values as the intermediate dict.
+        """
+        # Run validation to get a real report
+        report = validate_ifc_against_ids(ifc_path, ids_path)
+
+        # Convert report to dict
+        report_dict = report_to_dict(report)
+
+        # Serialize to JSON
+        json_str = json.dumps(report_dict)
+
+        # Parse JSON back to dict
+        parsed_dict = json.loads(json_str)
+
+        # Verify key fields match
+        assert parsed_dict["timestamp"] == report_dict["timestamp"]
+        assert parsed_dict["ifc_file"] == report_dict["ifc_file"]
+        assert parsed_dict["total_specifications"] == report_dict["total_specifications"]
+        assert parsed_dict["passed_specifications"] == report_dict["passed_specifications"]
+        assert parsed_dict["pass_rate_percent"] == report_dict["pass_rate_percent"]
+        assert parsed_dict["success"] == report_dict["success"]
+
+        # Verify nested structures roundtrip correctly
+        assert len(parsed_dict["specifications"]) == len(report_dict["specifications"])
+        for i, spec in enumerate(parsed_dict["specifications"]):
+            orig_spec = report_dict["specifications"][i]
+            assert spec["name"] == orig_spec["name"]
+            assert spec["passed"] == orig_spec["passed"]
+            assert len(spec["failures"]) == len(orig_spec["failures"])
+
+    def test_report_to_dict_with_failures(
+        self, ifc_path: Path, ids_path: Path
+    ) -> None:
+        """Test that report with failures serializes correctly.
+
+        This specifically tests that EntityFailure objects with various
+        attribute values (including None) are properly serialized.
+        """
+        # Run validation - we know NL_BIM_Basis_ILS_v2.ids has failures
+        report = validate_ifc_against_ids(ifc_path, ids_path)
+
+        # Convert to dict
+        report_dict = report_to_dict(report)
+
+        # Find specifications with failures
+        specs_with_failures = [
+            spec for spec in report_dict["specifications"]
+            if len(spec["failures"]) > 0
+        ]
+
+        # Verify we have failures to test
+        assert len(specs_with_failures) > 0, (
+            "Expected at least one specification with failures to test serialization"
+        )
+
+        # Verify failure dict structure for each failure
+        for spec in specs_with_failures:
+            for failure in spec["failures"]:
+                # Verify entity_id is an integer
+                assert isinstance(failure["entity_id"], int), (
+                    f"entity_id should be int after serialization, "
+                    f"got {type(failure['entity_id']).__name__}"
+                )
+
+                # Verify entity_type is a string
+                assert isinstance(failure["entity_type"], str), (
+                    f"entity_type should be str after serialization, "
+                    f"got {type(failure['entity_type']).__name__}"
+                )
+
+                # Verify optional fields are str or None
+                assert failure["entity_name"] is None or isinstance(failure["entity_name"], str), (
+                    f"entity_name should be str or None after serialization"
+                )
+                assert failure["global_id"] is None or isinstance(failure["global_id"], str), (
+                    f"global_id should be str or None after serialization"
+                )
+
+    def test_report_to_dict_json_pretty_print(
+        self, ifc_path: Path, ids_path: Path
+    ) -> None:
+        """Test that report can be serialized to formatted JSON.
+
+        This tests that json.dumps() with formatting options (indent) works
+        correctly, which is important for human-readable output.
+        """
+        # Run validation
+        report = validate_ifc_against_ids(ifc_path, ids_path)
+
+        # Convert to dict
+        report_dict = report_to_dict(report)
+
+        # Serialize with pretty printing
+        try:
+            json_str = json.dumps(report_dict, indent=2)
+        except (TypeError, ValueError) as e:
+            pytest.fail(f"json.dumps() with indent failed: {e}")
+
+        # Verify the formatted output contains expected structure
+        assert "timestamp" in json_str
+        assert "specifications" in json_str
+        assert "\n" in json_str  # Should have newlines from indent
+
+        # Verify it's still valid JSON
+        parsed = json.loads(json_str)
+        assert parsed["total_specifications"] == report.total_specifications
