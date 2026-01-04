@@ -180,3 +180,153 @@ def extract_entity_failure(entity) -> EntityFailure:
             entity_name=None,
             global_id=None,
         )
+
+
+def validate_ifc_against_ids(ifc_path: Path, ids_path: Path) -> ValidationReport:
+    """
+    Validate an IFC model against an IDS specification.
+
+    This is the main validation function that loads both files, runs validation
+    using ifctester, and extracts results into a structured ValidationReport.
+    The function includes timing metrics and comprehensive error handling.
+
+    Args:
+        ifc_path: Path to the IFC model file (.ifc)
+        ids_path: Path to the IDS specification file (.ids)
+
+    Returns:
+        ValidationReport: Complete validation results including:
+            - Metadata about both files
+            - Aggregate statistics (pass/fail counts, pass rate)
+            - Detailed results for each specification
+            - Timing metrics
+            - success=True if validation completed successfully
+
+    Raises:
+        FileNotFoundError: If IFC or IDS file does not exist at the specified path.
+            The exception message includes the path that was not found.
+
+    Example:
+        >>> from pathlib import Path
+        >>> report = validate_ifc_against_ids(
+        ...     ifc_path=Path("model.ifc"),
+        ...     ids_path=Path("spec.ids")
+        ... )
+        >>> print(f"Pass rate: {report.pass_rate_percent}%")
+        Pass rate: 75.0%
+    """
+    # Validate file existence before attempting to load
+    if not ifc_path.exists():
+        raise FileNotFoundError(f"IFC file not found: {ifc_path}")
+    if not ids_path.exists():
+        raise FileNotFoundError(f"IDS file not found: {ids_path}")
+
+    try:
+        # Load IFC model using ifcopenshell
+        ifc_model = ifcopenshell.open(str(ifc_path))
+        ifc_schema = ifc_model.schema
+        # Count total entities in the model
+        ifc_entity_count = sum(1 for _ in ifc_model)
+
+        # Load IDS specification using ifctester
+        ids_file = ids.open(str(ids_path))
+
+        # Extract IDS title from metadata if available
+        ids_title = None
+        if hasattr(ids_file, "info") and ids_file.info:
+            ids_title = getattr(ids_file.info, "title", None)
+
+        # Run validation with timing
+        # Note: validate() modifies ids_file in-place with results
+        start_time = time.time()
+        ids_file.validate(ifc_model)
+        validation_time = time.time() - start_time
+
+        # Collect specification results
+        spec_results: list[SpecificationResult] = []
+        passed_specs = 0
+        failed_specs = 0
+
+        for spec in ids_file.specifications:
+            spec_name = spec.name
+            # Get pass/fail status - spec.status is set after validation
+            passed = spec.status if hasattr(spec, "status") else True
+            description = getattr(spec, "description", None)
+
+            # Get applicable entities (entities this spec applies to)
+            applicable_entities = []
+            if hasattr(spec, "applicable_entities"):
+                applicable_entities = list(spec.applicable_entities)
+            applicable_count = len(applicable_entities)
+
+            # CRITICAL: Use failed_entities, NOT failed_elements (documented gotcha)
+            # failed_elements is an incorrect attribute name that does not exist
+            failed_entities = []
+            if hasattr(spec, "failed_entities"):
+                failed_entities = list(spec.failed_entities)
+            failed_count = len(failed_entities)
+
+            # Calculate passed count from applicable minus failed
+            passed_count = applicable_count - failed_count if applicable_count > 0 else 0
+
+            # Extract failure details for each failed entity
+            failures = [extract_entity_failure(entity) for entity in failed_entities]
+
+            spec_result = SpecificationResult(
+                name=spec_name,
+                description=description,
+                passed=passed,
+                applicable_count=applicable_count,
+                passed_count=passed_count,
+                failed_count=failed_count,
+                failures=failures,
+            )
+            spec_results.append(spec_result)
+
+            # Track aggregate pass/fail counts
+            if passed:
+                passed_specs += 1
+            else:
+                failed_specs += 1
+
+        # Calculate overall pass rate percentage
+        total_specs = len(ids_file.specifications)
+        pass_rate = (passed_specs / total_specs * 100) if total_specs > 0 else 0.0
+
+        # Build successful validation report
+        return ValidationReport(
+            timestamp=datetime.now().isoformat(),
+            ifc_file=ifc_path.name,
+            ifc_schema=ifc_schema,
+            ifc_entity_count=ifc_entity_count,
+            ids_file=ids_path.name,
+            ids_title=ids_title,
+            validation_time_seconds=round(validation_time, 3),
+            total_specifications=total_specs,
+            passed_specifications=passed_specs,
+            failed_specifications=failed_specs,
+            pass_rate_percent=round(pass_rate, 1),
+            specifications=spec_results,
+            success=True,
+            error=None,
+        )
+
+    except Exception as e:
+        # Handle validation errors gracefully
+        # Return a report with success=False and error details
+        return ValidationReport(
+            timestamp=datetime.now().isoformat(),
+            ifc_file=ifc_path.name,
+            ifc_schema="Unknown",
+            ifc_entity_count=0,
+            ids_file=ids_path.name,
+            ids_title=None,
+            validation_time_seconds=0.0,
+            total_specifications=0,
+            passed_specifications=0,
+            failed_specifications=0,
+            pass_rate_percent=0.0,
+            specifications=[],
+            success=False,
+            error=str(e),
+        )
