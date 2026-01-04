@@ -330,3 +330,100 @@ def validate_ifc_against_ids(ifc_path: Path, ids_path: Path) -> ValidationReport
             success=False,
             error=str(e),
         )
+
+
+class IDSValidator:
+    """
+    IDS Validator for validating IFC models against IDS specifications.
+
+    This class provides a consistent interface for IDS validation, following
+    the pattern established by IFCProcessor in the server module. It wraps
+    the core validation function and provides module capability information.
+
+    Usage:
+        validator = IDSValidator()
+
+        # Check capabilities
+        caps = validator.get_capabilities()
+        print(f"ifctester version: {caps['ifctester_version']}")
+
+        # Validate an IFC model
+        report = validator.validate(Path("model.ifc"), Path("spec.ids"))
+        print(f"Pass rate: {report.pass_rate_percent}%")
+    """
+
+    def __init__(self) -> None:
+        """
+        Initialize the IDS validator.
+
+        The validator is stateless and does not require any configuration.
+        Each validation call is independent and returns a complete report.
+        """
+        pass
+
+    def get_capabilities(self) -> dict:
+        """
+        Return available validation capabilities and module information.
+
+        This method provides information about the validator module including
+        library versions and supported features. Useful for debugging and
+        for API endpoints that need to report module status.
+
+        Returns:
+            dict: A dictionary containing:
+                - ifcopenshell_version: Version of ifcopenshell library
+                - ifctester_version: Version of ifctester library (if available)
+                - supported_ids_versions: List of supported IDS versions
+                - validation_available: Always True for this module
+        """
+        # Get ifctester version if available
+        ifctester_version = "unknown"
+        try:
+            import ifctester
+
+            if hasattr(ifctester, "__version__"):
+                ifctester_version = ifctester.__version__
+            elif hasattr(ifctester, "version"):
+                ifctester_version = ifctester.version
+        except (ImportError, AttributeError):
+            pass
+
+        return {
+            "ifcopenshell_version": ifcopenshell.version,
+            "ifctester_version": ifctester_version,
+            "supported_ids_versions": ["1.0"],
+            "validation_available": True,
+        }
+
+    def validate(self, ifc_path: Path, ids_path: Path) -> ValidationReport:
+        """
+        Validate an IFC model against an IDS specification.
+
+        This method wraps the validate_ifc_against_ids() function, providing
+        a consistent class-based interface for validation operations.
+
+        Args:
+            ifc_path: Path to the IFC model file (.ifc)
+            ids_path: Path to the IDS specification file (.ids)
+
+        Returns:
+            ValidationReport: Complete validation results including:
+                - Metadata about both files
+                - Aggregate statistics (pass/fail counts, pass rate)
+                - Detailed results for each specification
+                - Timing metrics
+                - success=True if validation completed successfully
+
+        Raises:
+            FileNotFoundError: If IFC or IDS file does not exist at the specified path.
+                The exception message includes the path that was not found.
+
+        Example:
+            >>> validator = IDSValidator()
+            >>> report = validator.validate(Path("model.ifc"), Path("spec.ids"))
+            >>> if report.success:
+            ...     print(f"Pass rate: {report.pass_rate_percent}%")
+            ... else:
+            ...     print(f"Validation error: {report.error}")
+        """
+        return validate_ifc_against_ids(ifc_path, ids_path)
