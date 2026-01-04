@@ -802,6 +802,253 @@ class TestValidationReportStructure:
 
 
 # =============================================================================
+# IDSValidator Class Tests
+# =============================================================================
+
+
+class TestIDSValidatorClass:
+    """Test IDSValidator class instantiation, validate method, and get_capabilities."""
+
+    def test_ids_validator_can_be_instantiated(self) -> None:
+        """Test that IDSValidator can be instantiated without arguments.
+
+        This test verifies:
+        - IDSValidator class can be instantiated
+        - No constructor arguments are required
+        - Instance is a valid IDSValidator object
+
+        Acceptance Criteria:
+        - IDSValidator can be instantiated
+        """
+        # Instantiate the validator
+        validator = IDSValidator()
+
+        # Verify the instance is created
+        assert validator is not None, "IDSValidator should instantiate successfully"
+
+        # Verify it's the correct type
+        assert isinstance(validator, IDSValidator), (
+            f"Expected IDSValidator instance, got {type(validator).__name__}"
+        )
+
+    def test_ids_validator_validate_returns_validation_report(
+        self, validator: IDSValidator, ifc_path: Path, ids_path: Path
+    ) -> None:
+        """Test that IDSValidator.validate() returns a ValidationReport.
+
+        This test verifies:
+        - validate() method exists on IDSValidator
+        - validate() returns a ValidationReport instance
+        - The report is successfully populated with validation results
+
+        Acceptance Criteria:
+        - validate() method returns ValidationReport
+        """
+        # Run validation using the class-based interface
+        report = validator.validate(ifc_path, ids_path)
+
+        # Verify return type is ValidationReport
+        assert isinstance(report, ValidationReport), (
+            f"validate() should return ValidationReport, got {type(report).__name__}"
+        )
+
+        # Verify the validation completed successfully
+        assert report.success is True, (
+            f"Validation should succeed, error: {report.error}"
+        )
+
+    def test_ids_validator_validate_matches_function(
+        self, validator: IDSValidator, ifc_path: Path, ids_path: Path
+    ) -> None:
+        """Test that IDSValidator.validate() produces same results as function.
+
+        This verifies the class-based interface produces consistent results
+        with the standalone validate_ifc_against_ids() function.
+        """
+        # Run validation using both interfaces
+        class_report = validator.validate(ifc_path, ids_path)
+        func_report = validate_ifc_against_ids(ifc_path, ids_path)
+
+        # Verify key metrics match
+        assert class_report.total_specifications == func_report.total_specifications, (
+            f"total_specifications mismatch: class={class_report.total_specifications}, "
+            f"func={func_report.total_specifications}"
+        )
+        assert class_report.passed_specifications == func_report.passed_specifications, (
+            f"passed_specifications mismatch: class={class_report.passed_specifications}, "
+            f"func={func_report.passed_specifications}"
+        )
+        assert class_report.failed_specifications == func_report.failed_specifications, (
+            f"failed_specifications mismatch: class={class_report.failed_specifications}, "
+            f"func={func_report.failed_specifications}"
+        )
+
+        # Verify metadata matches
+        assert class_report.ifc_file == func_report.ifc_file
+        assert class_report.ids_file == func_report.ids_file
+        assert class_report.ifc_schema == func_report.ifc_schema
+
+    def test_ids_validator_validate_report_has_all_fields(
+        self, validator: IDSValidator, ifc_path: Path, ids_path: Path
+    ) -> None:
+        """Test that ValidationReport from validate() has all required fields.
+
+        This ensures the class method produces a complete report with all fields.
+        """
+        report = validator.validate(ifc_path, ids_path)
+
+        # Verify all 14 required fields are present and populated
+        assert hasattr(report, "timestamp") and report.timestamp
+        assert hasattr(report, "ifc_file") and report.ifc_file
+        assert hasattr(report, "ifc_schema") and report.ifc_schema
+        assert hasattr(report, "ifc_entity_count") and report.ifc_entity_count >= 0
+        assert hasattr(report, "ids_file") and report.ids_file
+        assert hasattr(report, "ids_title")  # Can be None
+        assert hasattr(report, "validation_time_seconds")
+        assert hasattr(report, "total_specifications") and report.total_specifications >= 0
+        assert hasattr(report, "passed_specifications") and report.passed_specifications >= 0
+        assert hasattr(report, "failed_specifications") and report.failed_specifications >= 0
+        assert hasattr(report, "pass_rate_percent")
+        assert hasattr(report, "specifications") and isinstance(report.specifications, list)
+        assert hasattr(report, "success") and isinstance(report.success, bool)
+        assert hasattr(report, "error")  # Can be None
+
+    def test_get_capabilities_returns_dict(self, validator: IDSValidator) -> None:
+        """Test that get_capabilities() returns a dictionary.
+
+        This test verifies:
+        - get_capabilities() method exists on IDSValidator
+        - Returns a dict type
+
+        Acceptance Criteria:
+        - get_capabilities() returns dict with expected keys
+        """
+        # Get capabilities
+        capabilities = validator.get_capabilities()
+
+        # Verify return type is dict
+        assert isinstance(capabilities, dict), (
+            f"get_capabilities() should return dict, got {type(capabilities).__name__}"
+        )
+
+    def test_get_capabilities_has_expected_keys(self, validator: IDSValidator) -> None:
+        """Test that get_capabilities() returns dict with all expected keys.
+
+        This verifies the capabilities dict includes:
+        - ifcopenshell_version
+        - ifctester_version
+        - supported_ids_versions
+        - validation_available
+
+        Acceptance Criteria:
+        - get_capabilities() returns dict with expected keys
+        """
+        capabilities = validator.get_capabilities()
+
+        # Define expected keys
+        expected_keys = [
+            "ifcopenshell_version",
+            "ifctester_version",
+            "supported_ids_versions",
+            "validation_available",
+        ]
+
+        # Verify all expected keys are present
+        for key in expected_keys:
+            assert key in capabilities, (
+                f"get_capabilities() should include '{key}' key, "
+                f"available keys: {list(capabilities.keys())}"
+            )
+
+    def test_get_capabilities_values_have_correct_types(self, validator: IDSValidator) -> None:
+        """Test that get_capabilities() values have correct types.
+
+        This verifies:
+        - ifcopenshell_version is a string
+        - ifctester_version is a string
+        - supported_ids_versions is a list
+        - validation_available is a boolean
+        """
+        capabilities = validator.get_capabilities()
+
+        # Verify ifcopenshell_version is string
+        assert isinstance(capabilities["ifcopenshell_version"], str), (
+            f"ifcopenshell_version should be str, "
+            f"got {type(capabilities['ifcopenshell_version']).__name__}"
+        )
+
+        # Verify ifctester_version is string
+        assert isinstance(capabilities["ifctester_version"], str), (
+            f"ifctester_version should be str, "
+            f"got {type(capabilities['ifctester_version']).__name__}"
+        )
+
+        # Verify supported_ids_versions is list
+        assert isinstance(capabilities["supported_ids_versions"], list), (
+            f"supported_ids_versions should be list, "
+            f"got {type(capabilities['supported_ids_versions']).__name__}"
+        )
+
+        # Verify validation_available is boolean
+        assert isinstance(capabilities["validation_available"], bool), (
+            f"validation_available should be bool, "
+            f"got {type(capabilities['validation_available']).__name__}"
+        )
+
+    def test_get_capabilities_validation_available_is_true(self, validator: IDSValidator) -> None:
+        """Test that validation_available capability is True.
+
+        The IDS validator module should always report that validation is available.
+        """
+        capabilities = validator.get_capabilities()
+
+        assert capabilities["validation_available"] is True, (
+            "validation_available should be True for IDS validator"
+        )
+
+    def test_get_capabilities_supported_ids_versions_not_empty(
+        self, validator: IDSValidator
+    ) -> None:
+        """Test that supported_ids_versions contains at least one version.
+
+        The validator should support at least IDS version 1.0.
+        """
+        capabilities = validator.get_capabilities()
+
+        assert len(capabilities["supported_ids_versions"]) > 0, (
+            "supported_ids_versions should not be empty"
+        )
+
+        # Verify "1.0" is in supported versions
+        assert "1.0" in capabilities["supported_ids_versions"], (
+            f"supported_ids_versions should include '1.0', "
+            f"got {capabilities['supported_ids_versions']}"
+        )
+
+    def test_multiple_validators_are_independent(self, ifc_path: Path, ids_path: Path) -> None:
+        """Test that multiple IDSValidator instances work independently.
+
+        This ensures the validator is stateless and multiple instances
+        can be used concurrently without interference.
+        """
+        # Create two separate validators
+        validator1 = IDSValidator()
+        validator2 = IDSValidator()
+
+        # Run validation on both
+        report1 = validator1.validate(ifc_path, ids_path)
+        report2 = validator2.validate(ifc_path, ids_path)
+
+        # Both should succeed independently
+        assert report1.success is True
+        assert report2.success is True
+
+        # Results should be consistent
+        assert report1.total_specifications == report2.total_specifications
+        assert report1.passed_specifications == report2.passed_specifications
+
+
+# =============================================================================
 # Timing Metrics Tests
 # =============================================================================
 
