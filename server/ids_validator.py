@@ -132,6 +132,67 @@ class ValidationReport:
     error: Optional[str]
 
 
+def report_to_dict(report: ValidationReport) -> dict:
+    """
+    Convert a ValidationReport to a dictionary for JSON serialization.
+
+    This function uses dataclasses.asdict to recursively convert the
+    ValidationReport and all its nested dataclasses (SpecificationResult,
+    EntityFailure) to a dictionary structure that can be directly
+    serialized to JSON using json.dumps().
+
+    Args:
+        report: A ValidationReport dataclass instance containing validation
+                results, specifications, and entity failures.
+
+    Returns:
+        dict: A dictionary representation of the report with all nested
+              dataclasses converted to dicts. The structure is:
+              {
+                  "timestamp": str,
+                  "ifc_file": str,
+                  "ifc_schema": str,
+                  "ifc_entity_count": int,
+                  "ids_file": str,
+                  "ids_title": str | None,
+                  "validation_time_seconds": float,
+                  "total_specifications": int,
+                  "passed_specifications": int,
+                  "failed_specifications": int,
+                  "pass_rate_percent": float,
+                  "specifications": [
+                      {
+                          "name": str,
+                          "description": str | None,
+                          "passed": bool,
+                          "applicable_count": int,
+                          "passed_count": int,
+                          "failed_count": int,
+                          "failures": [
+                              {
+                                  "entity_id": int,
+                                  "entity_type": str,
+                                  "entity_name": str | None,
+                                  "global_id": str | None
+                              },
+                              ...
+                          ]
+                      },
+                      ...
+                  ],
+                  "success": bool,
+                  "error": str | None
+              }
+
+    Example:
+        >>> report = validate_ifc_against_ids(ifc_path, ids_path)
+        >>> report_dict = report_to_dict(report)
+        >>> import json
+        >>> json_str = json.dumps(report_dict, indent=2)
+    """
+    return asdict(report)
+
+
 def extract_entity_failure(entity) -> EntityFailure:
     """
     Safely extract failure details from an IFC entity.
