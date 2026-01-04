@@ -49,8 +49,10 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["src*"]
+where = ["src"]
+include = ["ifc_validator*"]
+exclude = ["test*", "tests*"]
+namespaces = false
 
 [tool.black]
 line-length = 88

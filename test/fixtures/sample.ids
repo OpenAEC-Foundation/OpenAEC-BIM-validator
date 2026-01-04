@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ids xmlns:xs="http://www.w3.org/2001/XMLSchema"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://standards.buildingsmart.org/IDS http://standards.buildingsmart.org/IDS/1.0/ids.xsd"
+     xmlns="http://standards.buildingsmart.org/IDS">
+  <info>
+    <title>Test IDS Specification</title>
+    <copyright>Test Organization</copyright>
+    <version>1.0</version>
+    <description>Minimal IDS for CLI testing</description>
+    <author>test@example.com</author>
+    <date>2025-01-01</date>
+    <purpose>Unit and integration testing of ifc-validate CLI</purpose>
+  </info>
+  <specifications>
+    <!-- Test 1: Wall Naming Convention -->
+    <specification name="Wall Naming Convention" ifcVersion="IFC2X3 IFC4" identifier="TEST-001" description="Walls must have names starting with W-" instructions="Name walls using pattern: W-[number]">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCWALLSTANDARDCASE</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <attribute cardinality="required" instructions="Wall name must start with W-">
+          <name>
+            <simpleValue>Name</simpleValue>
+          </name>
+          <value>
+            <xs:restriction base="xs:string">
+              <xs:pattern value="W-\d{3}.*"/>
+            </xs:restriction>
+          </value>
+        </attribute>
+      </requirements>
+    </specification>
+  </specifications>
+</ids>
