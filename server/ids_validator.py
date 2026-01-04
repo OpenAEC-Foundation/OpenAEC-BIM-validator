@@ -130,3 +130,53 @@ class ValidationReport:
     specifications: list[SpecificationResult]
     success: bool
     error: Optional[str]
+
+
+def extract_entity_failure(entity) -> EntityFailure:
+    """
+    Safely extract failure details from an IFC entity.
+
+    This helper function extracts identifying information from an IFC entity
+    that failed validation. It uses defensive programming with getattr for
+    optional attributes and exception handling for robustness.
+
+    Args:
+        entity: An IFC entity object from ifcopenshell (typically from
+                spec.failed_entities after validation)
+
+    Returns:
+        EntityFailure: A dataclass containing entity details:
+            - entity_id: The IFC instance ID (from entity.id())
+            - entity_type: The IFC type/class (from entity.is_a())
+            - entity_name: The Name attribute if present, else None
+            - global_id: The GlobalId (GUID) if present, else None
+
+    Note:
+        If any exception occurs during extraction (e.g., malformed entity),
+        returns a fallback EntityFailure with entity_id=0 and entity_type="Unknown".
+    """
+    try:
+        # Extract required fields using IFC entity methods
+        entity_id = entity.id()
+        entity_type = entity.is_a()
+
+        # Extract optional attributes using getattr pattern
+        # Not all IFC entities have Name or GlobalId attributes
+        entity_name = getattr(entity, "Name", None)
+        global_id = getattr(entity, "GlobalId", None)
+
+        return EntityFailure(
+            entity_id=entity_id,
+            entity_type=entity_type,
+            entity_name=entity_name,
+            global_id=global_id,
+        )
+    except Exception:
+        # Handle malformed entities or unexpected errors gracefully
+        # Return a fallback entity that can still be serialized and reported
+        return EntityFailure(
+            entity_id=0,
+            entity_type="Unknown",
+            entity_name=None,
+            global_id=None,
+        )
