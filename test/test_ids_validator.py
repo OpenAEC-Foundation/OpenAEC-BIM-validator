@@ -799,3 +799,90 @@ class TestValidationReportStructure:
             assert expected_field in field_names, (
                 f"EntityFailure missing expected field: {expected_field}"
             )
+
+
+# =============================================================================
+# Timing Metrics Tests
+# =============================================================================
+
+
+class TestTimingMetrics:
+    """Test that validation timing metrics are captured correctly."""
+
+    def test_timing_metrics(self, ifc_path: Path, ids_path: Path) -> None:
+        """Test that validation_time_seconds is captured and is greater than 0.
+
+        This test verifies:
+        - validation_time_seconds is a float
+        - validation_time_seconds is strictly greater than 0 (validation takes time)
+        - The validation actually performs work (not returning a cached/instant result)
+
+        Acceptance Criteria:
+        - Runs validation and checks validation_time_seconds
+        - Asserts validation_time_seconds > 0
+        - Asserts validation_time_seconds is float
+        """
+        # Run validation to get timing metrics
+        report = validate_ifc_against_ids(ifc_path, ids_path)
+
+        # Verify validation completed successfully
+        assert report.success is True, f"Validation should succeed, error: {report.error}"
+
+        # Verify validation_time_seconds is a float
+        assert isinstance(report.validation_time_seconds, float), (
+            f"validation_time_seconds should be float, "
+            f"got {type(report.validation_time_seconds).__name__}"
+        )
+
+        # Verify validation_time_seconds is strictly greater than 0
+        # Validation of a real IFC file against IDS specs takes measurable time
+        assert report.validation_time_seconds > 0, (
+            f"validation_time_seconds should be > 0 (validation takes time), "
+            f"got {report.validation_time_seconds}"
+        )
+
+    def test_timing_is_reasonable(self, ifc_path: Path, ids_path: Path) -> None:
+        """Test that validation time is within reasonable bounds.
+
+        This test verifies validation doesn't take an unreasonably long time
+        or return an implausibly small time value.
+
+        The test file (2786_CLT_model.ifc, ~6.87 MB) should validate in:
+        - More than 0.001 seconds (can't be instant)
+        - Less than 60 seconds (should be reasonably fast)
+        """
+        report = validate_ifc_against_ids(ifc_path, ids_path)
+
+        # Validation should take more than 1ms (real work is being done)
+        assert report.validation_time_seconds > 0.001, (
+            f"validation_time_seconds should be > 0.001s (validation takes real time), "
+            f"got {report.validation_time_seconds}s"
+        )
+
+        # Validation should complete in less than 60 seconds for test file
+        assert report.validation_time_seconds < 60.0, (
+            f"validation_time_seconds should be < 60s for test file, "
+            f"got {report.validation_time_seconds}s - this may indicate a performance issue"
+        )
+
+    def test_timing_precision(self, ifc_path: Path, ids_path: Path) -> None:
+        """Test that timing has sufficient precision.
+
+        This verifies the timing mechanism captures sub-second precision,
+        which is expected from time.time() based measurements.
+        """
+        report = validate_ifc_against_ids(ifc_path, ids_path)
+
+        # The validation time should have decimal precision
+        # (i.e., not be a whole number like 0.0, 1.0, 2.0)
+        # This verifies we're using a precision timer, not just second-counting
+        time_str = f"{report.validation_time_seconds:.10f}"
+
+        # Check that there are non-zero digits after the decimal point
+        decimal_part = time_str.split(".")[1]
+        has_precision = any(c != "0" for c in decimal_part)
+
+        assert has_precision, (
+            f"validation_time_seconds should have sub-second precision, "
+            f"got {report.validation_time_seconds} which appears to be a whole number"
+        )
