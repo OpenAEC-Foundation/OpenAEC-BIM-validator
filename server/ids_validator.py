@@ -62,3 +62,46 @@ class SpecificationResult:
     passed_count: int
     failed_count: int
     failures: list[EntityFailure]
+
+
+@dataclass
+class ValidationReport:
+    """
+    Complete validation report for an IFC model against an IDS specification.
+
+    This dataclass represents the full validation outcome including metadata
+    about both files, aggregate statistics, timing metrics, and detailed
+    results for each specification. It follows the pattern from ifc_processor.py
+    with success/error fields for consistent error handling.
+
+    Attributes:
+        timestamp: ISO format timestamp when validation was performed
+        ifc_file: Name/path of the IFC file that was validated
+        ifc_schema: IFC schema version (e.g., 'IFC4X3', 'IFC2X3')
+        ifc_entity_count: Total number of entities in the IFC model
+        ids_file: Name/path of the IDS specification file used
+        ids_title: Title from the IDS file metadata, if present
+        validation_time_seconds: Time taken to run validation in seconds
+        total_specifications: Total number of specifications in the IDS file
+        passed_specifications: Number of specifications that passed
+        failed_specifications: Number of specifications that failed
+        pass_rate_percent: Percentage of specifications that passed (0-100)
+        specifications: List of SpecificationResult objects with detailed results
+        success: Whether the validation completed successfully (not pass/fail)
+        error: Error message if validation failed to complete, None otherwise
+    """
+
+    timestamp: str
+    ifc_file: str
+    ifc_schema: str
+    ifc_entity_count: int
+    ids_file: str
+    ids_title: Optional[str]
+    validation_time_seconds: float
+    total_specifications: int
+    passed_specifications: int
+    failed_specifications: int
+    pass_rate_percent: float
+    specifications: list[SpecificationResult]
+    success: bool
+    error: Optional[str]
