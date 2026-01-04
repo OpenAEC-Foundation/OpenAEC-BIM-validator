@@ -165,3 +165,125 @@ class TestIDSFileLoading:
             assert hasattr(spec, "name"), f"Specification {i} should have 'name' attribute"
             assert spec.name is not None, f"Specification {i} name should not be None"
             assert len(spec.name) > 0, f"Specification {i} name should not be empty"
+
+
+# =============================================================================
+# Validation Workflow Tests
+# =============================================================================
+
+
+class TestValidationWorkflow:
+    """Test complete validation workflow and ValidationReport structure."""
+
+    def test_validate_success(self, ifc_path: Path, ids_path: Path) -> None:
+        """Test complete validation workflow returns ValidationReport with correct structure.
+
+        This test verifies:
+        - validate_ifc_against_ids() successfully validates IFC against IDS
+        - Returns a ValidationReport instance
+        - Report contains exactly 12 specifications (for NL_BIM_Basis_ILS_v2.ids)
+        - All aggregate fields are populated with expected types/values
+
+        Acceptance Criteria:
+        - Calls validate_ifc_against_ids with valid files
+        - Asserts report is ValidationReport instance
+        - Asserts total_specifications == 12
+        - Asserts all aggregate fields populated
+        """
+        # Run validation with valid files
+        report = validate_ifc_against_ids(ifc_path, ids_path)
+
+        # Verify return type is ValidationReport
+        assert isinstance(report, ValidationReport), (
+            f"Expected ValidationReport instance, got {type(report).__name__}"
+        )
+
+        # Verify validation completed successfully
+        assert report.success is True, (
+            f"Validation should succeed, error: {report.error}"
+        )
+        assert report.error is None, (
+            f"Error should be None on success, got: {report.error}"
+        )
+
+        # Verify specification count is exactly 12 for NL_BIM_Basis_ILS_v2.ids
+        assert report.total_specifications == 12, (
+            f"Expected 12 specifications, got {report.total_specifications}"
+        )
+
+        # Verify aggregate counts are populated and consistent
+        assert report.passed_specifications >= 0, "passed_specifications should be >= 0"
+        assert report.failed_specifications >= 0, "failed_specifications should be >= 0"
+        assert report.passed_specifications + report.failed_specifications == report.total_specifications, (
+            f"passed ({report.passed_specifications}) + failed ({report.failed_specifications}) "
+            f"should equal total ({report.total_specifications})"
+        )
+
+        # Verify pass rate is calculated correctly
+        expected_pass_rate = (report.passed_specifications / report.total_specifications * 100)
+        assert abs(report.pass_rate_percent - expected_pass_rate) < 0.2, (
+            f"Pass rate {report.pass_rate_percent}% doesn't match expected "
+            f"{expected_pass_rate:.1f}%"
+        )
+        assert 0.0 <= report.pass_rate_percent <= 100.0, (
+            f"Pass rate should be between 0-100, got {report.pass_rate_percent}"
+        )
+
+        # Verify IFC file metadata is populated
+        assert report.ifc_file is not None and len(report.ifc_file) > 0, (
+            "ifc_file should be populated"
+        )
+        assert report.ifc_schema is not None and len(report.ifc_schema) > 0, (
+            "ifc_schema should be populated"
+        )
+        assert report.ifc_entity_count > 0, (
+            f"ifc_entity_count should be > 0 for a valid IFC file, got {report.ifc_entity_count}"
+        )
+
+        # Verify IDS file metadata is populated
+        assert report.ids_file is not None and len(report.ids_file) > 0, (
+            "ids_file should be populated"
+        )
+
+        # Verify timing metrics are captured
+        assert report.validation_time_seconds >= 0, (
+            f"validation_time_seconds should be >= 0, got {report.validation_time_seconds}"
+        )
+
+        # Verify timestamp is populated (ISO format string)
+        assert report.timestamp is not None and len(report.timestamp) > 0, (
+            "timestamp should be populated"
+        )
+
+        # Verify specifications list is populated with correct length
+        assert isinstance(report.specifications, list), (
+            f"specifications should be a list, got {type(report.specifications).__name__}"
+        )
+        assert len(report.specifications) == report.total_specifications, (
+            f"specifications list length ({len(report.specifications)}) should match "
+            f"total_specifications ({report.total_specifications})"
+        )
+
+        # Verify each specification result is properly structured
+        for i, spec in enumerate(report.specifications):
+            assert isinstance(spec, SpecificationResult), (
+                f"Specification {i} should be SpecificationResult, got {type(spec).__name__}"
+            )
+            assert spec.name is not None and len(spec.name) > 0, (
+                f"Specification {i} name should be populated"
+            )
+            assert isinstance(spec.passed, bool), (
+                f"Specification {i} passed should be bool, got {type(spec.passed).__name__}"
+            )
+            assert spec.applicable_count >= 0, (
+                f"Specification {i} applicable_count should be >= 0"
+            )
+            assert spec.passed_count >= 0, (
+                f"Specification {i} passed_count should be >= 0"
+            )
+            assert spec.failed_count >= 0, (
+                f"Specification {i} failed_count should be >= 0"
+            )
+            assert isinstance(spec.failures, list), (
+                f"Specification {i} failures should be a list"
+            )
