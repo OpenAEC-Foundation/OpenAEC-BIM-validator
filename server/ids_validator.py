@@ -34,3 +34,31 @@ class EntityFailure:
     entity_type: str
     entity_name: Optional[str]
     global_id: Optional[str]
+
+
+@dataclass
+class SpecificationResult:
+    """
+    Validation result for a single IDS specification.
+
+    This dataclass represents the validation outcome of a single specification
+    within an IDS file when validated against an IFC model. It includes
+    aggregate statistics and a list of failed entities for debugging.
+
+    Attributes:
+        name: The name/identifier of the IDS specification
+        description: Optional description of what the specification checks
+        passed: Whether all applicable entities passed this specification
+        applicable_count: Number of IFC entities this specification applies to
+        passed_count: Number of entities that passed the specification
+        failed_count: Number of entities that failed the specification
+        failures: List of EntityFailure objects with details about each failure
+    """
+
+    name: str
+    description: Optional[str]
+    passed: bool
+    applicable_count: int
+    passed_count: int
+    failed_count: int
+    failures: list[EntityFailure]
