@@ -434,3 +434,108 @@ class TestFailedEntityExtraction:
 
         if not found_global_id:
             pytest.skip("No failures with GlobalId found to test format")
+
+
+# =============================================================================
+# File Not Found Error Tests
+# =============================================================================
+
+
+class TestFileNotFoundError:
+    """Test that FileNotFoundError is raised with clear messages for missing files."""
+
+    def test_missing_ifc_file_raises_file_not_found_error(
+        self, nonexistent_ifc_path: Path, ids_path: Path
+    ) -> None:
+        """Test that missing IFC file raises FileNotFoundError with path in message.
+
+        This test verifies:
+        - FileNotFoundError is raised when IFC file doesn't exist
+        - The error message includes the file path for debugging
+
+        Acceptance Criteria:
+        - Tests missing IFC file raises FileNotFoundError
+        - Error message includes file path
+        """
+        with pytest.raises(FileNotFoundError) as exc_info:
+            validate_ifc_against_ids(nonexistent_ifc_path, ids_path)
+
+        # Verify error message includes the missing file path
+        error_message = str(exc_info.value)
+        assert "IFC file not found" in error_message, (
+            f"Error message should indicate IFC file not found, got: {error_message}"
+        )
+        assert str(nonexistent_ifc_path) in error_message or nonexistent_ifc_path.name in error_message, (
+            f"Error message should include file path, got: {error_message}"
+        )
+
+    def test_missing_ids_file_raises_file_not_found_error(
+        self, ifc_path: Path, nonexistent_ids_path: Path
+    ) -> None:
+        """Test that missing IDS file raises FileNotFoundError with path in message.
+
+        This test verifies:
+        - FileNotFoundError is raised when IDS file doesn't exist
+        - The error message includes the file path for debugging
+
+        Acceptance Criteria:
+        - Tests missing IDS file raises FileNotFoundError
+        - Error message includes file path
+        """
+        with pytest.raises(FileNotFoundError) as exc_info:
+            validate_ifc_against_ids(ifc_path, nonexistent_ids_path)
+
+        # Verify error message includes the missing file path
+        error_message = str(exc_info.value)
+        assert "IDS file not found" in error_message, (
+            f"Error message should indicate IDS file not found, got: {error_message}"
+        )
+        assert str(nonexistent_ids_path) in error_message or nonexistent_ids_path.name in error_message, (
+            f"Error message should include file path, got: {error_message}"
+        )
+
+    def test_both_files_missing_raises_ifc_error_first(
+        self, nonexistent_ifc_path: Path, nonexistent_ids_path: Path
+    ) -> None:
+        """Test that when both files are missing, IFC file error is raised first.
+
+        The validation function checks IFC file existence before IDS file,
+        so when both are missing, the IFC error should be raised first.
+        This tests the implementation order of validation checks.
+        """
+        with pytest.raises(FileNotFoundError) as exc_info:
+            validate_ifc_against_ids(nonexistent_ifc_path, nonexistent_ids_path)
+
+        error_message = str(exc_info.value)
+        # Should get IFC error first since it's checked first
+        assert "IFC" in error_message, (
+            f"When both files missing, IFC error should be raised first, got: {error_message}"
+        )
+
+    def test_validator_class_missing_ifc_file_raises_error(
+        self, validator: IDSValidator, nonexistent_ifc_path: Path, ids_path: Path
+    ) -> None:
+        """Test that IDSValidator.validate() also raises FileNotFoundError for missing IFC.
+
+        This verifies the class-based interface behaves consistently with the
+        standalone function for error handling.
+        """
+        with pytest.raises(FileNotFoundError) as exc_info:
+            validator.validate(nonexistent_ifc_path, ids_path)
+
+        error_message = str(exc_info.value)
+        assert "IFC file not found" in error_message
+
+    def test_validator_class_missing_ids_file_raises_error(
+        self, validator: IDSValidator, ifc_path: Path, nonexistent_ids_path: Path
+    ) -> None:
+        """Test that IDSValidator.validate() also raises FileNotFoundError for missing IDS.
+
+        This verifies the class-based interface behaves consistently with the
+        standalone function for error handling.
+        """
+        with pytest.raises(FileNotFoundError) as exc_info:
+            validator.validate(ifc_path, nonexistent_ids_path)
+
+        error_message = str(exc_info.value)
+        assert "IDS file not found" in error_message
