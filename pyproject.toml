@@ -54,6 +54,9 @@ include = ["ifc_validator*"]
 exclude = ["test*", "tests*"]
 namespaces = false
 
+[tool.setuptools.package-data]
+"ifc_validator" = ["standards/*.ids"]
+
 [tool.black]
 line-length = 88
 target-version = ["py39", "py310", "py311", "py312"]
