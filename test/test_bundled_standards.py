@@ -871,7 +871,252 @@ class TestIDSFilesValidity:
     - Test verifies both IDS files load successfully with ifctester.ids.open()
     """
 
-    pass  # Tests to be added in subtask 3.5
+    # -------------------------------------------------------------------------
+    # Basic Loading Tests
+    # -------------------------------------------------------------------------
+
+    def test_nl_bim_ids_loadable_by_ifctester(self) -> None:
+        """Verify NL_BIM IDS file can be opened by ifctester.ids.open().
+
+        This test ensures the bundled NL_BIM_Basis_ILS_v2.ids file is valid
+        and can be loaded by the ifctester library for validation.
+        """
+        from ifctester import ids
+
+        # Get the bundled IDS path
+        ids_path = get_bundled_ids('nl-bim')
+
+        # Load using ifctester - must convert Path to str for ifctester
+        ids_file = ids.open(str(ids_path))
+
+        # Verify file loaded successfully
+        assert ids_file is not None, (
+            "ifctester.ids.open() should return a valid IDS object for nl-bim"
+        )
+
+    def test_rvb_ids_loadable_by_ifctester(self) -> None:
+        """Verify RVB IDS file can be opened by ifctester.ids.open().
+
+        This test ensures the bundled RVB_BIM_Norm_v1.1.ids file is valid
+        and can be loaded by the ifctester library for validation.
+        """
+        from ifctester import ids
+
+        # Get the bundled IDS path
+        ids_path = get_bundled_ids('rvb')
+
+        # Load using ifctester - must convert Path to str for ifctester
+        ids_file = ids.open(str(ids_path))
+
+        # Verify file loaded successfully
+        assert ids_file is not None, (
+            "ifctester.ids.open() should return a valid IDS object for rvb"
+        )
+
+    # -------------------------------------------------------------------------
+    # Specifications Tests
+    # -------------------------------------------------------------------------
+
+    def test_nl_bim_ids_has_specifications(self) -> None:
+        """Verify NL_BIM IDS file contains specifications after parsing.
+
+        A valid IDS file must have a specifications attribute containing
+        one or more specification definitions.
+        """
+        from ifctester import ids
+
+        ids_path = get_bundled_ids('nl-bim')
+        ids_file = ids.open(str(ids_path))
+
+        # Verify specifications attribute exists
+        assert hasattr(ids_file, 'specifications'), (
+            "NL_BIM IDS file should have 'specifications' attribute"
+        )
+
+        # Verify file has at least one specification
+        spec_count = len(ids_file.specifications)
+        assert spec_count > 0, (
+            f"NL_BIM IDS file should contain at least one specification, "
+            f"got {spec_count}"
+        )
+
+    def test_rvb_ids_has_specifications(self) -> None:
+        """Verify RVB IDS file contains specifications after parsing.
+
+        A valid IDS file must have a specifications attribute containing
+        one or more specification definitions.
+        """
+        from ifctester import ids
+
+        ids_path = get_bundled_ids('rvb')
+        ids_file = ids.open(str(ids_path))
+
+        # Verify specifications attribute exists
+        assert hasattr(ids_file, 'specifications'), (
+            "RVB IDS file should have 'specifications' attribute"
+        )
+
+        # Verify file has at least one specification
+        spec_count = len(ids_file.specifications)
+        assert spec_count > 0, (
+            f"RVB IDS file should contain at least one specification, "
+            f"got {spec_count}"
+        )
+
+    def test_nl_bim_ids_expected_specification_count(self) -> None:
+        """Verify NL_BIM IDS file has expected specification count.
+
+        The NL_BIM_Basis_ILS_v2.ids file is known to contain 12 specifications.
+        This test ensures the bundled file matches the expected content.
+        """
+        from ifctester import ids
+
+        ids_path = get_bundled_ids('nl-bim')
+        ids_file = ids.open(str(ids_path))
+
+        # NL_BIM_Basis_ILS_v2.ids should contain 12 specifications
+        spec_count = len(ids_file.specifications)
+        assert spec_count == 12, (
+            f"NL_BIM_Basis_ILS_v2.ids should contain 12 specifications, "
+            f"got {spec_count}"
+        )
+
+    def test_rvb_ids_has_at_least_10_specifications(self) -> None:
+        """Verify RVB IDS file has substantial specification count.
+
+        The RVB BIM Norm is a comprehensive standard that should have
+        many specifications. This test ensures the bundled file is complete.
+        """
+        from ifctester import ids
+
+        ids_path = get_bundled_ids('rvb')
+        ids_file = ids.open(str(ids_path))
+
+        spec_count = len(ids_file.specifications)
+        assert spec_count >= 10, (
+            f"RVB_BIM_Norm_v1.1.ids should contain at least 10 specifications, "
+            f"got {spec_count}"
+        )
+
+    # -------------------------------------------------------------------------
+    # Specification Content Tests
+    # -------------------------------------------------------------------------
+
+    def test_nl_bim_specifications_have_names(self) -> None:
+        """Verify NL_BIM IDS specifications have valid names.
+
+        Each specification should have a name attribute for reporting.
+        """
+        from ifctester import ids
+
+        ids_path = get_bundled_ids('nl-bim')
+        ids_file = ids.open(str(ids_path))
+
+        for i, spec in enumerate(ids_file.specifications):
+            assert hasattr(spec, 'name'), (
+                f"NL_BIM specification {i} should have 'name' attribute"
+            )
+            assert spec.name is not None, (
+                f"NL_BIM specification {i} name should not be None"
+            )
+            assert len(spec.name) > 0, (
+                f"NL_BIM specification {i} name should not be empty"
+            )
+
+    def test_rvb_specifications_have_names(self) -> None:
+        """Verify RVB IDS specifications have valid names.
+
+        Each specification should have a name attribute for reporting.
+        """
+        from ifctester import ids
+
+        ids_path = get_bundled_ids('rvb')
+        ids_file = ids.open(str(ids_path))
+
+        for i, spec in enumerate(ids_file.specifications):
+            assert hasattr(spec, 'name'), (
+                f"RVB specification {i} should have 'name' attribute"
+            )
+            assert spec.name is not None, (
+                f"RVB specification {i} name should not be None"
+            )
+            assert len(spec.name) > 0, (
+                f"RVB specification {i} name should not be empty"
+            )
+
+    # -------------------------------------------------------------------------
+    # All Shortcuts Parameterized Tests
+    # -------------------------------------------------------------------------
+
+    def test_all_bundled_ids_files_loadable(self, all_shortcuts: list[str]) -> None:
+        """Verify all bundled IDS files can be loaded by ifctester.
+
+        This parameterized test ensures every shortcut in the system
+        resolves to a valid, loadable IDS file.
+        """
+        from ifctester import ids
+
+        for shortcut in all_shortcuts:
+            ids_path = get_bundled_ids(shortcut)
+            ids_file = ids.open(str(ids_path))
+
+            assert ids_file is not None, (
+                f"Shortcut '{shortcut}' should resolve to valid IDS file "
+                f"loadable by ifctester"
+            )
+            assert hasattr(ids_file, 'specifications'), (
+                f"IDS file for shortcut '{shortcut}' should have specifications"
+            )
+            assert len(ids_file.specifications) > 0, (
+                f"IDS file for shortcut '{shortcut}' should have at least "
+                f"one specification"
+            )
+
+    # -------------------------------------------------------------------------
+    # Path Conversion Tests (str() required for ifctester)
+    # -------------------------------------------------------------------------
+
+    def test_nl_bim_path_must_be_converted_to_string(self) -> None:
+        """Verify NL_BIM IDS path works when converted to string.
+
+        This test documents the requirement that ifctester.ids.open()
+        requires a string path, not a Path object.
+        """
+        from ifctester import ids
+
+        ids_path = get_bundled_ids('nl-bim')
+
+        # Path object conversion should work
+        assert isinstance(ids_path, Path), "get_bundled_ids should return Path"
+
+        # String conversion should produce valid path
+        str_path = str(ids_path)
+        assert isinstance(str_path, str), "str() should convert Path to string"
+
+        # Loading with string path should succeed
+        ids_file = ids.open(str_path)
+        assert ids_file is not None, "Loading with str(path) should succeed"
+
+    def test_rvb_path_must_be_converted_to_string(self) -> None:
+        """Verify RVB IDS path works when converted to string.
+
+        This test documents the requirement that ifctester.ids.open()
+        requires a string path, not a Path object.
+        """
+        from ifctester import ids
+
+        ids_path = get_bundled_ids('rvb')
+
+        # Path object conversion should work
+        assert isinstance(ids_path, Path), "get_bundled_ids should return Path"
+
+        # String conversion should produce valid path
+        str_path = str(ids_path)
+        assert isinstance(str_path, str), "str() should convert Path to string"
+
+        # Loading with string path should succeed
+        ids_file = ids.open(str_path)
+        assert ids_file is not None, "Loading with str(path) should succeed"
 
 
 # =============================================================================
