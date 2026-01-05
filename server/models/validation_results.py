@@ -56,3 +56,26 @@ class ElementResult(BaseModel):
     messages: list[str] = Field(
         default_factory=list, description="Validation failure messages"
     )
+
+
+class RequirementResult(BaseModel):
+    """Validation result for a single requirement within an IDS specification.
+
+    Captures the validation outcome for a specific requirement,
+    linking to all elements that were evaluated against it.
+    Includes aggregate statistics for pass/fail counts.
+    """
+
+    requirement_description: str = Field(
+        ..., description="Human-readable requirement description"
+    )
+    status: ValidationStatus = Field(
+        ..., description="Overall requirement validation status"
+    )
+    total_elements: int = Field(..., description="Total elements evaluated")
+    failed_elements: int = Field(
+        ..., description="Number of elements that failed this requirement"
+    )
+    elements: list[ElementResult] = Field(
+        default_factory=list, description="Per-element validation results"
+    )
