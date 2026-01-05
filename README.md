@@ -159,18 +159,98 @@ Gebruik `--ids nl-bim` voor:
 
 ### RVB BIM Norm v1.1
 
-De RVB BIM Norm is de BIM standaard van het Rijksvastgoedbedrijf voor rijkshuisvestingsprojecten. Deze uitgebreidere norm controleert:
+De RVB BIM Norm is de BIM standaard van het Rijksvastgoedbedrijf voor rijkshuisvestingsprojecten. Deze uitgebreide norm stelt hogere eisen dan de basis ILS en is specifiek ontwikkeld voor overheidsgebouwen en rijkshuisvesting.
 
-- **Project informatie** (2.2.7.1) - Projectnaam en beschrijving
-- **Terrein informatie** (2.2.7.2) - Locatie, coördinaten en kadastrale gegevens
-- **Gebouw informatie** (2.2.7.3) - RVB gebouwnummer
-- **Bouwlaag naamgeving** (2.2.7.4) - RVB-naamgevingsconventie
-- **Ruimte attributen** (2.2.7.6) - Uitgebreide ruimte-informatie
-- **En meer...** - Aanvullende eisen voor rijkshuisvesting
+#### Scope
 
-**Geschikt voor:** IFC2X3 en IFC4
-**Aantal specificaties:** 30+ checks
-**Wanneer gebruiken:** Projecten voor het Rijksvastgoedbedrijf of rijkshuisvesting
+De standaard valideert modellen op vijf hoofdgebieden:
+
+1. **Project & Locatie** - Projectgegevens, terreinlocatie met coördinaten, gebouwinformatie met RVB-nummering
+2. **Ruimtes & Zones** - Uitgebreide ruimteattributen, hoeveelheden, en zone-informatie
+3. **NL-SfB Classificatie** - Verplichte classificatie voor alle hoofdelementen (wanden, vloeren, daken, deuren, ramen, kolommen, balken, trappen)
+4. **Constructieve & Brandtechnische eigenschappen** - LoadBearing, IsExternal, FireRating, vluchtdeuren
+5. **Model kwaliteit** - Geen proxy-elementen, materiaal verplicht, meubilair classificatie
+
+#### Volledige Dekking (27 Specificaties)
+
+**Project & Locatie Informatie (4 specs)**
+
+| Code | Specificatie | Wat wordt gecontroleerd |
+|------|-------------|------------------------|
+| 2.2.7.1 | Project informatie | IfcProject bevat Name en LongName |
+| 2.2.7.2 | Terrein informatie | IfcSite met Name, RefLatitude, RefLongitude, RefElevation |
+| 2.2.7.3 | Gebouw informatie | IfcBuilding met Name en BuildingID (RVB-nummer) |
+| 2.2.7.4 | Bouwlaag naamgeving | Verdiepingen volgen RVB-patroon: "-01 Kelder", "00 BG", "01 Eerste", etc. |
+
+**Ruimtes & Zones (3 specs)**
+
+| Code | Specificatie | Wat wordt gecontroleerd |
+|------|-------------|------------------------|
+| 2.2.7.6a | Ruimte attributen | IfcSpace met Name, ObjectType, LongName en IsExternal |
+| 2.2.7.6b | Ruimte hoeveelheden | NetFloorArea, GrossFloorArea en Height in Qto_SpaceBaseQuantities |
+| 2.2.7.7 | Zone informatie | IfcZone met Name en ObjectType |
+
+**NL-SfB Classificatie (8 specs)**
+
+| Code | Specificatie | Wat wordt gecontroleerd |
+|------|-------------|------------------------|
+| 2.2.6.2a | NL-SfB Wanden | IfcWall met NL-SfB classificatie (21.xx) |
+| 2.2.6.2b | NL-SfB Vloeren | IfcSlab met NL-SfB classificatie (23.xx) |
+| 2.2.6.2c | NL-SfB Daken | IfcRoof met NL-SfB classificatie (27.xx) |
+| 2.2.6.2d | NL-SfB Deuren | IfcDoor met NL-SfB classificatie (31.xx) |
+| 2.2.6.2e | NL-SfB Ramen | IfcWindow met NL-SfB classificatie (31.xx) |
+| 2.2.6.2f | NL-SfB Kolommen | IfcColumn met NL-SfB classificatie (28.xx) |
+| 2.2.6.2g | NL-SfB Balken | IfcBeam met NL-SfB classificatie (28.xx) |
+| 2.2.6.2h | NL-SfB Trappen | IfcStair met NL-SfB classificatie (24.xx) |
+
+**Constructieve & Brandtechnische Eigenschappen (9 specs)**
+
+| Code | Specificatie | Wat wordt gecontroleerd |
+|------|-------------|------------------------|
+| 2.2.7.8a | Element materiaal | Alle bouwelementen hebben materiaal toegekend |
+| 2.2.7.8b | IsExternal wanden | Wanden hebben IsExternal property (Pset_WallCommon) |
+| 2.2.7.8.1a | FireRating wanden | Wanden hebben FireRating (brandwerendheid in minuten) |
+| 2.2.7.8.1b | FireRating deuren | Deuren hebben FireRating én SelfClosing property |
+| 2.2.7.8.1c | Vluchtdeuren | Deuren hebben FireExit property (TRUE/FALSE) |
+| 2.2.7.8.2a | LoadBearing wanden | Wanden hebben LoadBearing property (Pset_WallCommon) |
+| 2.2.7.8.2b | LoadBearing vloeren | Vloeren hebben LoadBearing property (Pset_SlabCommon) |
+| 2.2.7.8.2c | LoadBearing kolommen | Kolommen hebben LoadBearing property (Pset_ColumnCommon) |
+| 2.2.7.8.2d | LoadBearing balken | Balken hebben LoadBearing property (Pset_BeamCommon) |
+
+**Model Kwaliteit & Inventaris (3 specs)**
+
+| Code | Specificatie | Wat wordt gecontroleerd |
+|------|-------------|------------------------|
+| 2.1.4 | Vermijd IfcBuildingElementProxy | Geen proxy-elementen; gebruik correcte IFC-entiteiten |
+| 2.2.7.11 | Meubilair | IfcFurnishingElement met Name en NL-SfB classificatie |
+
+#### Technische Details
+
+- **IFC Versies:** IFC2X3 en IFC4
+- **Aantal specificaties:** 27 checks
+- **Bron:** Gebaseerd op [RVB BIM Norm v1.1](https://www.rijksvastgoedbedrijf.nl/) van het Rijksvastgoedbedrijf
+- **PropertySets:** Pset_WallCommon, Pset_SlabCommon, Pset_DoorCommon, Pset_BeamCommon, Pset_ColumnCommon, Pset_BuildingCommon, Pset_SpaceCommon, Qto_SpaceBaseQuantities
+
+#### Wanneer Gebruiken?
+
+Gebruik `--ids rvb` voor:
+- Projecten voor het Rijksvastgoedbedrijf (ministeries, gerechtsgebouwen, etc.)
+- Rijkshuisvestingsprojecten
+- Overheidsgebouwen met RVB-opdrachtgeverschap
+- Projecten waar uitgebreide locatie- en gebouwinformatie vereist is
+- BIM-modellen die aan RVB-inlevervoorwaarden moeten voldoen
+
+#### Vergelijking met NL_BIM Basis ILS
+
+| Aspect | NL_BIM Basis ILS | RVB BIM Norm |
+|--------|------------------|--------------|
+| Aantal checks | 12 | 27 |
+| Project/terrein info | Beperkt | Uitgebreid (coördinaten, RVB-nummer) |
+| NL-SfB classificatie | Algemeen | Per elementtype specifiek |
+| Constructieve props | Wanden alleen | Wanden, vloeren, kolommen, balken |
+| Brandtechnisch | FireRating wanden | FireRating + SelfClosing + FireExit |
+| Ruimte hoeveelheden | NetFloorArea | NetFloorArea + GrossFloorArea + Height |
+| Doelgroep | Algemeen bouwprojecten | Rijksvastgoed/overheid |
 
 ### Welke Standaard Kiezen?
 
