@@ -609,7 +609,254 @@ class TestInvalidShortcutError:
     - Verify graceful error for unknown shortcuts with helpful message
     """
 
-    pass  # Tests to be added in subtask 3.4
+    # -------------------------------------------------------------------------
+    # get_bundled_ids() Error Tests
+    # -------------------------------------------------------------------------
+
+    def test_get_bundled_ids_raises_valueerror_for_unknown_shortcut(self) -> None:
+        """Verify get_bundled_ids() raises ValueError for unknown shortcut.
+
+        This test ensures that passing an unrecognized shortcut raises a
+        ValueError instead of silently failing or returning None.
+        """
+        with pytest.raises(ValueError):
+            get_bundled_ids('unknown')
+
+    def test_get_bundled_ids_error_message_contains_invalid_shortcut(self) -> None:
+        """Verify error message includes the invalid shortcut that was provided.
+
+        This helps users identify typos in their shortcut names.
+        """
+        invalid_shortcut = 'nl-bimx'
+        with pytest.raises(ValueError) as exc_info:
+            get_bundled_ids(invalid_shortcut)
+
+        error_message = str(exc_info.value)
+        assert invalid_shortcut in error_message, (
+            f"Error message should contain invalid shortcut '{invalid_shortcut}', "
+            f"got: {error_message}"
+        )
+
+    def test_get_bundled_ids_error_message_lists_valid_shortcuts(self) -> None:
+        """Verify error message includes all valid shortcuts.
+
+        This helps users know what shortcuts are available.
+        """
+        with pytest.raises(ValueError) as exc_info:
+            get_bundled_ids('invalid')
+
+        error_message = str(exc_info.value)
+        assert 'nl-bim' in error_message, (
+            f"Error message should list 'nl-bim' as valid shortcut, "
+            f"got: {error_message}"
+        )
+        assert 'rvb' in error_message, (
+            f"Error message should list 'rvb' as valid shortcut, "
+            f"got: {error_message}"
+        )
+
+    def test_get_bundled_ids_error_message_is_descriptive(self) -> None:
+        """Verify error message is descriptive and user-friendly.
+
+        The error should clearly indicate:
+        - That the shortcut is unknown
+        - What the valid shortcuts are
+        """
+        with pytest.raises(ValueError) as exc_info:
+            get_bundled_ids('bad-shortcut')
+
+        error_message = str(exc_info.value)
+        assert 'unknown' in error_message.lower() or 'Unknown' in error_message, (
+            f"Error message should indicate 'unknown' shortcut, got: {error_message}"
+        )
+        assert 'valid' in error_message.lower() or 'Valid' in error_message, (
+            f"Error message should mention 'valid' shortcuts, got: {error_message}"
+        )
+
+    # -------------------------------------------------------------------------
+    # get_standard_filename() Error Tests
+    # -------------------------------------------------------------------------
+
+    def test_get_standard_filename_raises_valueerror_for_unknown_shortcut(self) -> None:
+        """Verify get_standard_filename() raises ValueError for unknown shortcut."""
+        with pytest.raises(ValueError):
+            get_standard_filename('unknown')
+
+    def test_get_standard_filename_error_message_contains_invalid_shortcut(self) -> None:
+        """Verify get_standard_filename() error contains invalid shortcut."""
+        invalid_shortcut = 'rvbx'
+        with pytest.raises(ValueError) as exc_info:
+            get_standard_filename(invalid_shortcut)
+
+        error_message = str(exc_info.value)
+        assert invalid_shortcut in error_message, (
+            f"Error message should contain invalid shortcut '{invalid_shortcut}'"
+        )
+
+    def test_get_standard_filename_error_message_lists_valid_shortcuts(self) -> None:
+        """Verify get_standard_filename() error lists valid shortcuts."""
+        with pytest.raises(ValueError) as exc_info:
+            get_standard_filename('bad')
+
+        error_message = str(exc_info.value)
+        assert 'nl-bim' in error_message, (
+            f"Error message should list 'nl-bim', got: {error_message}"
+        )
+        assert 'rvb' in error_message, (
+            f"Error message should list 'rvb', got: {error_message}"
+        )
+
+    # -------------------------------------------------------------------------
+    # Parameterized Error Tests for Various Invalid Inputs
+    # -------------------------------------------------------------------------
+
+    def test_get_bundled_ids_raises_for_empty_string(self) -> None:
+        """Verify get_bundled_ids() raises ValueError for empty string."""
+        with pytest.raises(ValueError):
+            get_bundled_ids('')
+
+    def test_get_bundled_ids_raises_for_uppercase_variants(self) -> None:
+        """Verify get_bundled_ids() raises ValueError for uppercase variants.
+
+        Shortcuts are case-sensitive - only lowercase versions are valid.
+        """
+        invalid_uppercase = ['NL-BIM', 'Nl-Bim', 'RVB', 'Rvb', 'NL-bim']
+        for variant in invalid_uppercase:
+            with pytest.raises(ValueError, match='[Uu]nknown'):
+                get_bundled_ids(variant)
+
+    def test_get_bundled_ids_raises_for_underscore_variant(self) -> None:
+        """Verify get_bundled_ids() raises for underscore instead of hyphen."""
+        with pytest.raises(ValueError):
+            get_bundled_ids('nl_bim')
+
+    def test_get_bundled_ids_raises_for_no_separator(self) -> None:
+        """Verify get_bundled_ids() raises for shortcuts without separator."""
+        invalid_nosep = ['nlbim', 'nlbimifc']
+        for variant in invalid_nosep:
+            with pytest.raises(ValueError):
+                get_bundled_ids(variant)
+
+    def test_get_bundled_ids_raises_for_partial_shortcut(self) -> None:
+        """Verify get_bundled_ids() raises for partial shortcuts."""
+        partials = ['nl', 'nl-', 'rv', 'bim', 'rvb-']
+        for partial in partials:
+            with pytest.raises(ValueError):
+                get_bundled_ids(partial)
+
+    # -------------------------------------------------------------------------
+    # CLI Error Message Tests
+    # -------------------------------------------------------------------------
+
+    def test_cli_invalid_shortcut_exits_with_code_1(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify CLI exits with code 1 for invalid shortcut.
+
+        When a user provides an invalid shortcut-like value, the CLI should
+        exit with code 1 (error).
+        """
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', 'unknown'],
+        )
+        assert result.exit_code == 1, (
+            f"CLI should exit with code 1 for invalid shortcut, "
+            f"got {result.exit_code}"
+        )
+
+    def test_cli_invalid_shortcut_shows_error_message(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify CLI shows error message for invalid shortcut.
+
+        The error message should contain the word 'Error' or similar.
+        """
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', 'unknown'],
+        )
+        assert 'error' in result.output.lower() or 'Error' in result.output, (
+            f"CLI should show error message, got: {result.output}"
+        )
+
+    def test_cli_invalid_shortcut_lists_valid_shortcuts(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify CLI error lists valid shortcuts for user guidance.
+
+        When user provides an invalid shortcut, the CLI should tell them
+        what the valid shortcuts are.
+        """
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', 'badshortcut'],
+        )
+        assert 'nl-bim' in result.output, (
+            f"CLI error should list 'nl-bim' as valid shortcut, "
+            f"got: {result.output}"
+        )
+        assert 'rvb' in result.output, (
+            f"CLI error should list 'rvb' as valid shortcut, "
+            f"got: {result.output}"
+        )
+
+    def test_cli_invalid_shortcut_shows_tip(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify CLI shows helpful tip about providing a file path.
+
+        When user provides an invalid shortcut, the CLI should suggest
+        providing a path to an IDS file as an alternative.
+        """
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', 'invalidstd'],
+        )
+        # The tip should mention file path or .ids
+        assert 'tip' in result.output.lower() or '.ids' in result.output.lower(), (
+            f"CLI should show helpful tip, got: {result.output}"
+        )
+
+    def test_cli_invalid_shortcut_contains_invalid_value_in_output(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify CLI error contains the invalid value user provided.
+
+        This helps users see what they typed wrong.
+        """
+        invalid_value = 'nl-bimx'
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', invalid_value],
+        )
+        assert invalid_value in result.output, (
+            f"CLI error should contain '{invalid_value}', got: {result.output}"
+        )
+
+    def test_cli_case_sensitive_shortcut_nl_bim_uppercase(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify CLI treats NL-BIM (uppercase) as invalid shortcut."""
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', 'NL-BIM'],
+        )
+        assert result.exit_code == 1, (
+            f"CLI should exit with code 1 for uppercase shortcut NL-BIM"
+        )
+
+    def test_cli_case_sensitive_shortcut_rvb_uppercase(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify CLI treats RVB (uppercase) as invalid shortcut."""
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', 'RVB'],
+        )
+        assert result.exit_code == 1, (
+            f"CLI should exit with code 1 for uppercase shortcut RVB"
+        )
 
 
 # =============================================================================
