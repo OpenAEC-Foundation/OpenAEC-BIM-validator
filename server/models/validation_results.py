@@ -79,3 +79,31 @@ class RequirementResult(BaseModel):
     elements: list[ElementResult] = Field(
         default_factory=list, description="Per-element validation results"
     )
+
+
+class SpecificationResult(BaseModel):
+    """Validation result for a single IDS specification.
+
+    Captures the validation outcome for a complete IDS specification,
+    including severity level and aggregate statistics across all requirements.
+    Contains nested RequirementResult objects for detailed requirement-level data.
+    """
+
+    specification_name: str = Field(
+        ..., description="Name of the IDS specification"
+    )
+    severity: SeverityLevel = Field(
+        ..., description="Severity level from IDS (error, warning, info)"
+    )
+    status: ValidationStatus = Field(
+        ..., description="Overall specification validation status"
+    )
+    total_requirements: int = Field(
+        ..., description="Total requirements in specification"
+    )
+    failed_requirements: int = Field(
+        ..., description="Number of failed requirements"
+    )
+    requirements: list[RequirementResult] = Field(
+        default_factory=list, description="Per-requirement validation results"
+    )
