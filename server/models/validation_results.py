@@ -107,3 +107,37 @@ class SpecificationResult(BaseModel):
     requirements: list[RequirementResult] = Field(
         default_factory=list, description="Per-requirement validation results"
     )
+
+
+class ValidationResult(BaseModel):
+    """Top-level container for IDS validation run.
+
+    Captures the complete validation outcome for an IFC file against an IDS
+    specification file. Contains aggregate statistics and nested SpecificationResult
+    objects for detailed per-specification data.
+    """
+
+    success: bool = Field(
+        ..., description="Overall validation success (all specifications passed)"
+    )
+    total_specifications: int = Field(
+        ..., description="Total specifications evaluated"
+    )
+    failed_specifications: int = Field(
+        ..., description="Number of failed specifications"
+    )
+    total_elements_validated: int = Field(
+        ..., description="Total IFC elements validated"
+    )
+    validation_timestamp: str = Field(
+        ..., description="ISO 8601 timestamp of validation run"
+    )
+    specifications: list[SpecificationResult] = Field(
+        default_factory=list, description="Per-specification validation results"
+    )
+    ifc_file_name: Optional[str] = Field(
+        None, description="Name of validated IFC file"
+    )
+    ids_file_name: Optional[str] = Field(
+        None, description="Name of IDS specification file"
+    )
