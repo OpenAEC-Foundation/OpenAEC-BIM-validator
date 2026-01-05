@@ -307,7 +307,294 @@ class TestShortcutResolution:
     - Verify nl-bim and rvb shortcuts resolve to correct file paths
     """
 
-    pass  # Tests to be added in subtask 3.3
+    # -------------------------------------------------------------------------
+    # Basic Resolution Tests
+    # -------------------------------------------------------------------------
+
+    def test_nl_bim_shortcut_resolves_to_path(self) -> None:
+        """Verify nl-bim shortcut resolves to a Path object.
+
+        This test verifies:
+        - get_bundled_ids('nl-bim') returns a Path instance
+        - The returned path is not None
+        """
+        result = get_bundled_ids('nl-bim')
+
+        assert result is not None, "nl-bim should resolve to a path"
+        assert isinstance(result, Path), (
+            f"Expected Path, got {type(result).__name__}"
+        )
+
+    def test_rvb_shortcut_resolves_to_path(self) -> None:
+        """Verify rvb shortcut resolves to a Path object.
+
+        This test verifies:
+        - get_bundled_ids('rvb') returns a Path instance
+        - The returned path is not None
+        """
+        result = get_bundled_ids('rvb')
+
+        assert result is not None, "rvb should resolve to a path"
+        assert isinstance(result, Path), (
+            f"Expected Path, got {type(result).__name__}"
+        )
+
+    # -------------------------------------------------------------------------
+    # Correct Filename Tests
+    # -------------------------------------------------------------------------
+
+    def test_nl_bim_resolves_to_correct_filename(
+        self, nl_bim_filename: str
+    ) -> None:
+        """Verify nl-bim shortcut resolves to the correct IDS filename.
+
+        This test verifies:
+        - The resolved path ends with 'NL_BIM_Basis_ILS_v2.ids'
+        - The filename matches exactly (case-sensitive)
+        """
+        result = get_bundled_ids('nl-bim')
+
+        assert result.name == nl_bim_filename, (
+            f"nl-bim should resolve to '{nl_bim_filename}', "
+            f"got '{result.name}'"
+        )
+
+    def test_rvb_resolves_to_correct_filename(
+        self, rvb_filename: str
+    ) -> None:
+        """Verify rvb shortcut resolves to the correct IDS filename.
+
+        This test verifies:
+        - The resolved path ends with 'RVB_BIM_Norm_v1.1.ids'
+        - The filename matches exactly (case-sensitive)
+        """
+        result = get_bundled_ids('rvb')
+
+        assert result.name == rvb_filename, (
+            f"rvb should resolve to '{rvb_filename}', "
+            f"got '{result.name}'"
+        )
+
+    # -------------------------------------------------------------------------
+    # Resolved Paths Exist and Are Valid
+    # -------------------------------------------------------------------------
+
+    def test_nl_bim_resolved_path_exists(self) -> None:
+        """Verify nl-bim resolved path points to an existing file."""
+        result = get_bundled_ids('nl-bim')
+
+        assert result.exists(), (
+            f"nl-bim resolved path should exist on filesystem: {result}"
+        )
+        assert result.is_file(), (
+            f"nl-bim resolved path should be a file, not directory: {result}"
+        )
+
+    def test_rvb_resolved_path_exists(self) -> None:
+        """Verify rvb resolved path points to an existing file."""
+        result = get_bundled_ids('rvb')
+
+        assert result.exists(), (
+            f"rvb resolved path should exist on filesystem: {result}"
+        )
+        assert result.is_file(), (
+            f"rvb resolved path should be a file, not directory: {result}"
+        )
+
+    def test_nl_bim_resolved_path_has_ids_extension(self) -> None:
+        """Verify nl-bim resolved path has .ids extension."""
+        result = get_bundled_ids('nl-bim')
+
+        assert result.suffix.lower() == '.ids', (
+            f"nl-bim should resolve to .ids file, got '{result.suffix}'"
+        )
+
+    def test_rvb_resolved_path_has_ids_extension(self) -> None:
+        """Verify rvb resolved path has .ids extension."""
+        result = get_bundled_ids('rvb')
+
+        assert result.suffix.lower() == '.ids', (
+            f"rvb should resolve to .ids file, got '{result.suffix}'"
+        )
+
+    # -------------------------------------------------------------------------
+    # is_shortcut() Function Tests
+    # -------------------------------------------------------------------------
+
+    def test_is_shortcut_returns_true_for_nl_bim(self) -> None:
+        """Verify is_shortcut() returns True for 'nl-bim'."""
+        assert is_shortcut('nl-bim') is True, (
+            "is_shortcut('nl-bim') should return True"
+        )
+
+    def test_is_shortcut_returns_true_for_rvb(self) -> None:
+        """Verify is_shortcut() returns True for 'rvb'."""
+        assert is_shortcut('rvb') is True, (
+            "is_shortcut('rvb') should return True"
+        )
+
+    def test_is_shortcut_returns_false_for_file_path(self) -> None:
+        """Verify is_shortcut() returns False for file paths."""
+        test_paths = [
+            '/path/to/file.ids',
+            'file.ids',
+            '../other/file.ids',
+            'C:\\path\\to\\file.ids',
+        ]
+        for path in test_paths:
+            assert is_shortcut(path) is False, (
+                f"is_shortcut('{path}') should return False"
+            )
+
+    def test_is_shortcut_returns_false_for_invalid_shortcuts(self) -> None:
+        """Verify is_shortcut() returns False for unrecognized shortcuts."""
+        invalid_values = [
+            'unknown',
+            'NL-BIM',  # Wrong case
+            'RVB',  # Wrong case
+            'nl_bim',  # Underscore instead of hyphen
+            'nlbim',  # No separator
+            '',  # Empty string
+        ]
+        for value in invalid_values:
+            assert is_shortcut(value) is False, (
+                f"is_shortcut('{value}') should return False"
+            )
+
+    # -------------------------------------------------------------------------
+    # get_standard_filename() Function Tests
+    # -------------------------------------------------------------------------
+
+    def test_get_standard_filename_for_nl_bim(
+        self, nl_bim_filename: str
+    ) -> None:
+        """Verify get_standard_filename() returns correct name for nl-bim."""
+        result = get_standard_filename('nl-bim')
+
+        assert result == nl_bim_filename, (
+            f"Expected '{nl_bim_filename}', got '{result}'"
+        )
+
+    def test_get_standard_filename_for_rvb(
+        self, rvb_filename: str
+    ) -> None:
+        """Verify get_standard_filename() returns correct name for rvb."""
+        result = get_standard_filename('rvb')
+
+        assert result == rvb_filename, (
+            f"Expected '{rvb_filename}', got '{result}'"
+        )
+
+    # -------------------------------------------------------------------------
+    # Case Sensitivity Tests
+    # -------------------------------------------------------------------------
+
+    def test_shortcuts_are_case_sensitive(self) -> None:
+        """Verify shortcuts are case-sensitive (lowercase only).
+
+        This test ensures that uppercase or mixed-case variants of shortcuts
+        are not recognized. Only lowercase shortcuts are valid.
+        """
+        invalid_case_variants = [
+            'NL-BIM',
+            'Nl-Bim',
+            'nl-BIM',
+            'RVB',
+            'Rvb',
+        ]
+        for variant in invalid_case_variants:
+            assert is_shortcut(variant) is False, (
+                f"is_shortcut('{variant}') should return False (case-sensitive)"
+            )
+
+    # -------------------------------------------------------------------------
+    # Resolved Paths Location Tests
+    # -------------------------------------------------------------------------
+
+    def test_nl_bim_resolved_in_standards_directory(self) -> None:
+        """Verify nl-bim resolves to a file in the standards package directory.
+
+        The resolved path should be inside the ifc_validator/standards/ directory.
+        """
+        result = get_bundled_ids('nl-bim')
+
+        # Parent directory should be named 'standards'
+        assert result.parent.name == 'standards', (
+            f"nl-bim should resolve to standards directory, "
+            f"got parent '{result.parent.name}'"
+        )
+
+    def test_rvb_resolved_in_standards_directory(self) -> None:
+        """Verify rvb resolves to a file in the standards package directory.
+
+        The resolved path should be inside the ifc_validator/standards/ directory.
+        """
+        result = get_bundled_ids('rvb')
+
+        # Parent directory should be named 'standards'
+        assert result.parent.name == 'standards', (
+            f"rvb should resolve to standards directory, "
+            f"got parent '{result.parent.name}'"
+        )
+
+    # -------------------------------------------------------------------------
+    # list_available_standards() Tests
+    # -------------------------------------------------------------------------
+
+    def test_list_available_standards_contains_both_shortcuts(self) -> None:
+        """Verify list_available_standards() returns both shortcuts."""
+        available = list_available_standards()
+
+        assert 'nl-bim' in available, "nl-bim should be in available standards"
+        assert 'rvb' in available, "rvb should be in available standards"
+
+    def test_list_available_standards_returns_list(self) -> None:
+        """Verify list_available_standards() returns a list."""
+        available = list_available_standards()
+
+        assert isinstance(available, list), (
+            f"Expected list, got {type(available).__name__}"
+        )
+
+    def test_all_listed_standards_can_be_resolved(self) -> None:
+        """Verify every shortcut from list_available_standards() can be resolved.
+
+        This is a comprehensive test that ensures consistency between
+        the listing and resolution functions.
+        """
+        for shortcut in list_available_standards():
+            # Should not raise
+            path = get_bundled_ids(shortcut)
+            assert path.exists(), (
+                f"Shortcut '{shortcut}' from list_available_standards() "
+                f"should resolve to an existing file"
+            )
+
+    # -------------------------------------------------------------------------
+    # STANDARD_SHORTCUTS Constant Tests
+    # -------------------------------------------------------------------------
+
+    def test_standard_shortcuts_contains_nl_bim(
+        self, nl_bim_filename: str
+    ) -> None:
+        """Verify STANDARD_SHORTCUTS constant contains nl-bim mapping."""
+        assert 'nl-bim' in STANDARD_SHORTCUTS, (
+            "STANDARD_SHORTCUTS should contain 'nl-bim' key"
+        )
+        assert STANDARD_SHORTCUTS['nl-bim'] == nl_bim_filename, (
+            f"STANDARD_SHORTCUTS['nl-bim'] should be '{nl_bim_filename}'"
+        )
+
+    def test_standard_shortcuts_contains_rvb(
+        self, rvb_filename: str
+    ) -> None:
+        """Verify STANDARD_SHORTCUTS constant contains rvb mapping."""
+        assert 'rvb' in STANDARD_SHORTCUTS, (
+            "STANDARD_SHORTCUTS should contain 'rvb' key"
+        )
+        assert STANDARD_SHORTCUTS['rvb'] == rvb_filename, (
+            f"STANDARD_SHORTCUTS['rvb'] should be '{rvb_filename}'"
+        )
 
 
 # =============================================================================
