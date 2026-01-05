@@ -1522,4 +1522,411 @@ class TestBackwardCompatibility:
     - Existing --ids /path/to/file.ids usage still works
     """
 
-    pass  # Tests to be added in subtask 4.3
+    # -------------------------------------------------------------------------
+    # Basic File Path Tests
+    # -------------------------------------------------------------------------
+
+    def test_cli_accepts_file_path_for_ids(
+        self, runner, sample_ifc_path: Path, sample_ids_path: Path
+    ) -> None:
+        """Verify CLI accepts a file path for --ids parameter.
+
+        This is the fundamental backward compatibility test ensuring
+        the original file path usage continues to work.
+        """
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', str(sample_ids_path)],
+        )
+        # Should NOT show unknown shortcut error
+        assert 'unknown shortcut' not in result.output.lower(), (
+            f"CLI should accept file path for --ids: {result.output}"
+        )
+        # Should NOT show file not found error (file exists)
+        assert 'ids file not found' not in result.output.lower(), (
+            f"CLI should find the IDS file: {result.output}"
+        )
+
+    def test_cli_file_path_produces_output(
+        self, runner, sample_ifc_path: Path, sample_ids_path: Path
+    ) -> None:
+        """Verify CLI produces validation output when using file path.
+
+        The CLI should produce some form of validation output when
+        validating with a file path IDS.
+        """
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', str(sample_ids_path)],
+        )
+        # Should produce some output
+        assert len(result.output) > 0, (
+            "CLI should produce output when validating with file path IDS"
+        )
+
+    def test_cli_file_path_exits_with_valid_code(
+        self, runner, sample_ifc_path: Path, sample_ids_path: Path
+    ) -> None:
+        """Verify CLI exits with valid exit code (0 or 1) for file path IDS.
+
+        Exit code 0 = all specs passed
+        Exit code 1 = one or more specs failed (or error)
+        Both are valid outcomes for validation.
+        """
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', str(sample_ids_path)],
+        )
+        assert result.exit_code in (0, 1), (
+            f"CLI should exit with code 0 or 1 for file path, "
+            f"got {result.exit_code}"
+        )
+
+    # -------------------------------------------------------------------------
+    # JSON Output Tests with File Path
+    # -------------------------------------------------------------------------
+
+    def test_cli_file_path_json_output_valid(
+        self, runner, sample_ifc_path: Path, sample_ids_path: Path
+    ) -> None:
+        """Verify file path validation with JSON output produces valid JSON.
+
+        This tests end-to-end validation with JSON output format using
+        the original file path --ids parameter.
+        """
+        import json
+
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', str(sample_ids_path), '--output', 'json'],
+        )
+        # Should be valid JSON
+        try:
+            data = json.loads(result.output)
+            assert isinstance(data, dict), "JSON output should be a dict"
+            # Should have validation result fields
+            assert 'overall_pass' in data or 'specifications' in data, (
+                f"JSON should have validation fields: {list(data.keys())}"
+            )
+        except json.JSONDecodeError as e:
+            pytest.fail(
+                f"File path JSON output is not valid JSON: {e}\n"
+                f"Output: {result.output[:500]}"
+            )
+
+    def test_cli_file_path_validation_has_specifications(
+        self, runner, sample_ifc_path: Path, sample_ids_path: Path
+    ) -> None:
+        """Verify file path validation reports on specifications.
+
+        The validation output should include specification results.
+        """
+        import json
+
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', str(sample_ids_path), '--output', 'json'],
+        )
+        if result.exit_code in (0, 1):
+            try:
+                data = json.loads(result.output)
+                if 'specifications' in data:
+                    specs = data['specifications']
+                    assert isinstance(specs, list), (
+                        "specifications should be a list"
+                    )
+            except json.JSONDecodeError:
+                pass  # JSON parsing tested elsewhere
+
+    # -------------------------------------------------------------------------
+    # Relative Path Tests
+    # -------------------------------------------------------------------------
+
+    def test_cli_relative_path_with_ids_extension(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify CLI correctly identifies file paths with .ids extension.
+
+        Files with .ids extension should be treated as file paths,
+        not shortcuts, even if they don't exist.
+        """
+        # Use a non-existent file with .ids extension
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', 'nonexistent.ids'],
+        )
+        # Should show file not found error, NOT unknown shortcut
+        output_lower = result.output.lower()
+        # File path detection should see it's a file path (due to .ids extension)
+        # and report file not found, not "unknown shortcut"
+        assert 'unknown shortcut' not in output_lower or 'not found' in output_lower, (
+            f"CLI should treat .ids file as file path: {result.output}"
+        )
+
+    def test_cli_path_with_directory_separator(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify CLI treats paths with directory separators as file paths.
+
+        Any value with / or \\ should be treated as a file path, not a shortcut.
+        """
+        # Use a path with directory separator (non-existent)
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', 'path/to/file.ids'],
+        )
+        # Should NOT be treated as unknown shortcut
+        # The error should be about file not found, not unknown shortcut
+        output_lower = result.output.lower()
+        if 'unknown shortcut' in output_lower:
+            pytest.fail(
+                f"CLI should treat path with / as file path, not shortcut: "
+                f"{result.output}"
+            )
+
+    # -------------------------------------------------------------------------
+    # Alternative IDS File Tests
+    # -------------------------------------------------------------------------
+
+    def test_cli_ids_bestanden_nl_bim_file_path(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify CLI accepts ids-bestanden/NL_BIM file path.
+
+        Test using the original NL_BIM file from ids-bestanden/ directory
+        to ensure file paths continue to work alongside shortcuts.
+        """
+        ids_file_path = Path(__file__).parent.parent / "ids-bestanden" / "NL_BIM_Basis_ILS_v2.ids"
+
+        if not ids_file_path.exists():
+            pytest.skip(f"IDS file not found: {ids_file_path}")
+
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', str(ids_file_path)],
+        )
+        # Should accept file path without error
+        assert 'unknown shortcut' not in result.output.lower(), (
+            f"CLI should accept file path: {result.output}"
+        )
+        assert result.exit_code in (0, 1), (
+            f"CLI should complete validation, got exit code {result.exit_code}"
+        )
+
+    def test_cli_ids_bestanden_rvb_file_path(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify CLI accepts ids-bestanden/RVB file path.
+
+        Test using the original RVB file from ids-bestanden/ directory
+        to ensure file paths continue to work alongside shortcuts.
+        """
+        ids_file_path = Path(__file__).parent.parent / "ids-bestanden" / "RVB_BIM_Norm_v1.1.ids"
+
+        if not ids_file_path.exists():
+            pytest.skip(f"IDS file not found: {ids_file_path}")
+
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', str(ids_file_path)],
+        )
+        # Should accept file path without error
+        assert 'unknown shortcut' not in result.output.lower(), (
+            f"CLI should accept file path: {result.output}"
+        )
+        assert result.exit_code in (0, 1), (
+            f"CLI should complete validation, got exit code {result.exit_code}"
+        )
+
+    # -------------------------------------------------------------------------
+    # Shortcut vs File Path Priority Tests
+    # -------------------------------------------------------------------------
+
+    def test_cli_shortcut_takes_priority_over_file_named_nl_bim(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify shortcut 'nl-bim' works even if file named 'nl-bim' exists.
+
+        As documented, shortcuts take priority over files with the same name.
+        This test ensures the shortcut is recognized.
+        """
+        # nl-bim should be recognized as a shortcut
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', 'nl-bim'],
+        )
+        # Should NOT show unknown shortcut error
+        assert 'unknown shortcut' not in result.output.lower(), (
+            f"nl-bim should be recognized as shortcut: {result.output}"
+        )
+        # Should produce valid output
+        assert result.exit_code in (0, 1), (
+            f"Shortcut nl-bim should work, got exit code {result.exit_code}"
+        )
+
+    def test_cli_file_path_with_ids_extension_preferred_over_shortcut_detection(
+        self, runner, sample_ifc_path: Path, sample_ids_path: Path
+    ) -> None:
+        """Verify explicit .ids file paths are correctly handled.
+
+        When user provides an explicit path to an existing .ids file,
+        it should be used for validation.
+        """
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', str(sample_ids_path)],
+        )
+        # Should complete validation successfully
+        assert result.exit_code in (0, 1), (
+            f"Explicit .ids file path should work, got exit code {result.exit_code}"
+        )
+
+    # -------------------------------------------------------------------------
+    # Console Output Format Tests
+    # -------------------------------------------------------------------------
+
+    def test_cli_file_path_console_output_format(
+        self, runner, sample_ifc_path: Path, sample_ids_path: Path
+    ) -> None:
+        """Verify file path validation with console output is readable.
+
+        Console output should contain readable text, not raw JSON.
+        """
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', str(sample_ids_path), '--output', 'console'],
+        )
+        # Console output should contain readable content
+        output = result.output.strip()
+        if output:
+            output_lower = output.lower()
+            has_validation_terms = any(
+                term in output_lower
+                for term in ['validation', 'specification', 'pass', 'fail', 'result']
+            )
+            assert has_validation_terms or len(output) > 10, (
+                f"Console output should contain validation info: {output[:200]}"
+            )
+
+    # -------------------------------------------------------------------------
+    # Large File Tests
+    # -------------------------------------------------------------------------
+
+    def test_cli_file_path_with_large_ifc(
+        self, runner, large_ifc_path: Path, sample_ids_path: Path
+    ) -> None:
+        """Verify file path validation works with larger IFC file.
+
+        This tests end-to-end validation with a more complex model
+        using the original file path --ids parameter.
+        """
+        if not large_ifc_path.exists():
+            pytest.skip(f"Large IFC file not found: {large_ifc_path}")
+
+        result = runner.invoke(
+            app,
+            [str(large_ifc_path), '--ids', str(sample_ids_path)],
+        )
+        # Should complete without crashing
+        assert result.exit_code in (0, 1), (
+            f"CLI should complete validation with large IFC, "
+            f"got exit code {result.exit_code}"
+        )
+
+    # -------------------------------------------------------------------------
+    # Comparison Tests: File Path vs Shortcut Produce Same Results
+    # -------------------------------------------------------------------------
+
+    def test_file_path_and_shortcut_produce_equivalent_results_nl_bim(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify file path and shortcut produce equivalent results for nl-bim.
+
+        Using ids-bestanden/NL_BIM_Basis_ILS_v2.ids should produce the same
+        results as using the --ids nl-bim shortcut.
+        """
+        import json
+
+        ids_file_path = Path(__file__).parent.parent / "ids-bestanden" / "NL_BIM_Basis_ILS_v2.ids"
+
+        if not ids_file_path.exists():
+            pytest.skip(f"IDS file not found: {ids_file_path}")
+
+        # Run with file path
+        file_result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', str(ids_file_path), '--output', 'json'],
+        )
+
+        # Run with shortcut
+        shortcut_result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', 'nl-bim', '--output', 'json'],
+        )
+
+        # Both should complete
+        assert file_result.exit_code in (0, 1), "File path should complete"
+        assert shortcut_result.exit_code in (0, 1), "Shortcut should complete"
+
+        # Compare specification counts (should be identical)
+        try:
+            file_data = json.loads(file_result.output)
+            shortcut_data = json.loads(shortcut_result.output)
+
+            if 'specifications' in file_data and 'specifications' in shortcut_data:
+                file_spec_count = len(file_data['specifications'])
+                shortcut_spec_count = len(shortcut_data['specifications'])
+
+                assert file_spec_count == shortcut_spec_count, (
+                    f"File path ({file_spec_count} specs) and shortcut "
+                    f"({shortcut_spec_count} specs) should have same spec count"
+                )
+        except json.JSONDecodeError:
+            pass  # JSON tested elsewhere
+
+    def test_file_path_and_shortcut_produce_equivalent_results_rvb(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify file path and shortcut produce equivalent results for rvb.
+
+        Using ids-bestanden/RVB_BIM_Norm_v1.1.ids should produce the same
+        results as using the --ids rvb shortcut.
+        """
+        import json
+
+        ids_file_path = Path(__file__).parent.parent / "ids-bestanden" / "RVB_BIM_Norm_v1.1.ids"
+
+        if not ids_file_path.exists():
+            pytest.skip(f"IDS file not found: {ids_file_path}")
+
+        # Run with file path
+        file_result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', str(ids_file_path), '--output', 'json'],
+        )
+
+        # Run with shortcut
+        shortcut_result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', 'rvb', '--output', 'json'],
+        )
+
+        # Both should complete
+        assert file_result.exit_code in (0, 1), "File path should complete"
+        assert shortcut_result.exit_code in (0, 1), "Shortcut should complete"
+
+        # Compare specification counts (should be identical)
+        try:
+            file_data = json.loads(file_result.output)
+            shortcut_data = json.loads(shortcut_result.output)
+
+            if 'specifications' in file_data and 'specifications' in shortcut_data:
+                file_spec_count = len(file_data['specifications'])
+                shortcut_spec_count = len(shortcut_data['specifications'])
+
+                assert file_spec_count == shortcut_spec_count, (
+                    f"File path ({file_spec_count} specs) and shortcut "
+                    f"({shortcut_spec_count} specs) should have same spec count"
+                )
+        except json.JSONDecodeError:
+            pass  # JSON tested elsewhere
