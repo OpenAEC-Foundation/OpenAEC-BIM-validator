@@ -10,4 +10,20 @@ This module exports Pydantic models for structured validation result data:
 - ValidationStatus: Enum for validation outcome status
 """
 
-# Models will be exported here once validation_results.py is created
+from server.models.validation_results import (
+    ElementResult,
+    RequirementResult,
+    SeverityLevel,
+    SpecificationResult,
+    ValidationResult,
+    ValidationStatus,
+)
+
+__all__ = [
+    "ValidationResult",
+    "SpecificationResult",
+    "RequirementResult",
+    "ElementResult",
+    "SeverityLevel",
+    "ValidationStatus",
+]
