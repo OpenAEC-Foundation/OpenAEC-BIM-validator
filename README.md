@@ -115,18 +115,47 @@ python -m ifc_validator.cli validate mijn_model.ifc --ids pad/naar/eigen.ids
 
 ### NL_BIM Basis ILS v2
 
-De NL_BIM Basis ILS is de Nederlandse standaard informatieleveringsspecificatie voor BIM-modellen. Deze baseline standaard controleert:
+De NL_BIM Basis ILS is de Nederlandse standaard informatieleveringsspecificatie voor BIM-modellen, ontwikkeld volgens de richtlijnen van BIM Loket. Deze baseline standaard zorgt voor consistente, uitwisselbare BIM-modellen in de Nederlandse bouwsector.
 
-- **Verdiepingsnaamgeving** (3.3) - Consistente naamgeving voor bouwlagen (-01, 00, 01, etc.)
-- **Vermijd IfcBuildingElementProxy** (3.4) - Correcte IFC entiteiten gebruiken
-- **Deurnaamgeving** (3.5) - Consistente naamgeving (D-001, D-002, etc.)
-- **NL/SfB Classificatie** (3.6) - Alle objecten moeten classificatie hebben
-- **Ruimte attributen** (4.1) - IfcSpace met Name, LongName en oppervlakte
-- **LoadBearing wanden** (4.3) - Wanden met draagkracht informatie
+#### Scope
 
-**Geschikt voor:** IFC2X3 en IFC4
-**Aantal specificaties:** 12 checks
-**Wanneer gebruiken:** Algemene BIM-projecten in Nederland die de basis ILS volgen
+De standaard valideert modellen op drie hoofdgebieden:
+
+1. **Naamgevingsconventies** - Consistente naamgeving voor verdiepingen, deuren en andere elementen
+2. **Classificatie & Materialen** - NL/SfB classificatie en materiaalspecificaties
+3. **Technische eigenschappen** - Constructieve, thermische en brandtechnische eigenschappen
+
+#### Volledige Dekking (12 Specificaties)
+
+| Code | Specificatie | Wat wordt gecontroleerd |
+|------|-------------|------------------------|
+| 3.3 | Verdiepingsnaamgeving | Bouwlagen volgen patroon: -01, 00, 01, 02, etc. |
+| 3.4 | Vermijd IfcBuildingElementProxy | Geen proxy-elementen; gebruik correcte IFC-entiteiten |
+| 3.5 | Deurnaamgeving | Deuren volgen patroon: D-001, D-002, etc. |
+| 3.6 | NL/SfB Classificatie | Alle objecten hebben NL/SfB (4 cijfers) classificatie |
+| 4.1 | Ruimte attributen | IfcSpace bevat Name, LongName en NetFloorArea |
+| 4.3 | LoadBearing wanden | Wanden hebben LoadBearing property (TRUE/FALSE) |
+| 4.4 | IsExternal wanden | Wanden hebben IsExternal property (TRUE/FALSE) |
+| 4.5 | Brandwerendheid | Interne dragende wanden hebben FireRating (30/60/90/120) |
+| 4.6 | ThermalTransmittance | Externe wanden hebben U-waarde (W/m²K) |
+| 4.7.1 | Materiaal verplicht | Alle objecten hebben materiaal toegekend |
+| 4.7.2 | Materialen dragende wanden | Dragende wanden: Beton, Kalkzandsteen, Metselwerk of Staal |
+| 4.8 | Renovatiestatus MEP | MEP-elementen: Bestaand, Nieuw of Te slopen |
+
+#### Technische Details
+
+- **IFC Versies:** IFC2X3 en IFC4
+- **Aantal specificaties:** 12 checks
+- **Bron:** Gebaseerd op [BIM Basis ILS](https://www.bimloket.nl/p/223/BIM-basis-ILS) van BIM Loket
+- **PropertySets:** Pset_WallCommon, Qto_SpaceBaseQuantities, Pset_Condition
+
+#### Wanneer Gebruiken?
+
+Gebruik `--ids nl-bim` voor:
+- Algemene bouwprojecten in Nederland
+- Projecten die de BIM Basis ILS volgen
+- Initiële modelvalidatie voordat specifiekere normen worden toegepast
+- Controle van basisinformatie-uitwisseling tussen disciplines
 
 ### RVB BIM Norm v1.1
 
