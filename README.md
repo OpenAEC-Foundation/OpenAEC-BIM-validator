@@ -84,12 +84,84 @@ Je kunt volledig lokaal werken. Git is pas nodig als je:
 
 ---
 
+## Nederlandse BIM Standaarden
+
+De IFC Validator ondersteunt ingebouwde Nederlandse BIM standaarden, zodat je IFC-modellen kunt valideren zonder externe IDS-bestanden te zoeken.
+
+### Beschikbare Standaard Shortcuts
+
+| Shortcut | Standaard | Beschrijving |
+|----------|-----------|--------------|
+| `--ids nl-bim` | NL_BIM Basis ILS v2 | Nederlandse basis informatieleveringsspecificatie |
+| `--ids rvb` | RVB BIM Norm v1.1 | Rijksvastgoedbedrijf BIM Norm voor rijkshuisvesting |
+
+### Gebruik
+
+Valideer een IFC-bestand met een Nederlandse standaard:
+
+```bash
+# Valideren met NL_BIM Basis ILS
+python -m ifc_validator.cli validate mijn_model.ifc --ids nl-bim
+
+# Valideren met RVB BIM Norm
+python -m ifc_validator.cli validate mijn_model.ifc --ids rvb
+
+# JSON output voor rapportage
+python -m ifc_validator.cli validate mijn_model.ifc --ids nl-bim --output json
+
+# Eigen IDS-bestand gebruiken (blijft ook werken)
+python -m ifc_validator.cli validate mijn_model.ifc --ids pad/naar/eigen.ids
+```
+
+### NL_BIM Basis ILS v2
+
+De NL_BIM Basis ILS is de Nederlandse standaard informatieleveringsspecificatie voor BIM-modellen. Deze baseline standaard controleert:
+
+- **Verdiepingsnaamgeving** (3.3) - Consistente naamgeving voor bouwlagen (-01, 00, 01, etc.)
+- **Vermijd IfcBuildingElementProxy** (3.4) - Correcte IFC entiteiten gebruiken
+- **Deurnaamgeving** (3.5) - Consistente naamgeving (D-001, D-002, etc.)
+- **NL/SfB Classificatie** (3.6) - Alle objecten moeten classificatie hebben
+- **Ruimte attributen** (4.1) - IfcSpace met Name, LongName en oppervlakte
+- **LoadBearing wanden** (4.3) - Wanden met draagkracht informatie
+
+**Geschikt voor:** IFC2X3 en IFC4
+**Aantal specificaties:** 12 checks
+**Wanneer gebruiken:** Algemene BIM-projecten in Nederland die de basis ILS volgen
+
+### RVB BIM Norm v1.1
+
+De RVB BIM Norm is de BIM standaard van het Rijksvastgoedbedrijf voor rijkshuisvestingsprojecten. Deze uitgebreidere norm controleert:
+
+- **Project informatie** (2.2.7.1) - Projectnaam en beschrijving
+- **Terrein informatie** (2.2.7.2) - Locatie, coördinaten en kadastrale gegevens
+- **Gebouw informatie** (2.2.7.3) - RVB gebouwnummer
+- **Bouwlaag naamgeving** (2.2.7.4) - RVB-naamgevingsconventie
+- **Ruimte attributen** (2.2.7.6) - Uitgebreide ruimte-informatie
+- **En meer...** - Aanvullende eisen voor rijkshuisvesting
+
+**Geschikt voor:** IFC2X3 en IFC4
+**Aantal specificaties:** 30+ checks
+**Wanneer gebruiken:** Projecten voor het Rijksvastgoedbedrijf of rijkshuisvesting
+
+### Welke Standaard Kiezen?
+
+| Situatie | Aanbevolen Standaard |
+|----------|---------------------|
+| Algemeen BIM-project in Nederland | `--ids nl-bim` |
+| Rijksvastgoedbedrijf / overheidsgebouwen | `--ids rvb` |
+| Eigen projectspecificaties | `--ids pad/naar/eigen.ids` |
+| Beide standaarden tegelijk controleren | Voer beide commands uit |
+
+---
+
 ## Links
 
 - [IfcOpenShell](https://ifcopenshell.org/)
 - [ifctester Docs](https://docs.ifcopenshell.org/ifctester.html)
 - [That Open Engine](https://thatopen.com/)
 - [IDS Specification](https://technical.buildingsmart.org/projects/information-delivery-specification-ids/)
+- [BIM Loket - BIM Basis ILS](https://www.bimloket.nl/p/223/BIM-basis-ILS)
+- [RVB BIM Norm](https://www.rijksvastgoedbedrijf.nl/)
 
 ---
 
