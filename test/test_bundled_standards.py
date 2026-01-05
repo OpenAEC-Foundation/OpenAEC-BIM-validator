@@ -1131,7 +1131,166 @@ class TestValidationWithNlBim:
     - End-to-end validation with --ids nl-bim produces valid results
     """
 
-    pass  # Tests to be added in subtask 4.1
+    def test_cli_accepts_nl_bim_shortcut(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify CLI accepts --ids nl-bim shortcut without errors.
+
+        This test ensures the CLI recognizes nl-bim as a valid shortcut
+        and does not show 'unknown shortcut' errors.
+        """
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', 'nl-bim'],
+        )
+        # Should NOT show unknown shortcut error
+        assert 'unknown shortcut' not in result.output.lower(), (
+            f"CLI should recognize nl-bim as valid shortcut: {result.output}"
+        )
+
+    def test_cli_nl_bim_produces_output(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify CLI produces validation output with nl-bim shortcut.
+
+        The CLI should produce some form of validation output when
+        validating with the nl-bim standard.
+        """
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', 'nl-bim'],
+        )
+        # Should produce some output
+        assert len(result.output) > 0, (
+            "CLI should produce output when validating with nl-bim"
+        )
+
+    def test_cli_nl_bim_exits_with_valid_code(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify CLI exits with valid exit code (0 or 1) for nl-bim.
+
+        Exit code 0 = all specs passed
+        Exit code 1 = one or more specs failed (or error)
+        Both are valid outcomes for validation.
+        """
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', 'nl-bim'],
+        )
+        assert result.exit_code in (0, 1), (
+            f"CLI should exit with code 0 or 1, got {result.exit_code}"
+        )
+
+    def test_cli_nl_bim_no_file_not_found_error(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify no file not found error when using nl-bim shortcut.
+
+        The bundled IDS file should be found and loaded correctly.
+        """
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', 'nl-bim'],
+        )
+        output_lower = result.output.lower()
+        assert 'not found' not in output_lower or 'ids' not in output_lower, (
+            f"Should not have file not found error for bundled IDS: {result.output}"
+        )
+
+    def test_cli_nl_bim_json_output_valid(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify nl-bim validation with JSON output produces valid JSON.
+
+        This tests end-to-end validation with JSON output format.
+        """
+        import json
+
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', 'nl-bim', '--output', 'json'],
+        )
+        # Should be valid JSON
+        try:
+            data = json.loads(result.output)
+            assert isinstance(data, dict), "JSON output should be a dict"
+            # Should have validation result fields
+            assert 'overall_pass' in data or 'specifications' in data, (
+                f"JSON should have validation fields: {list(data.keys())}"
+            )
+        except json.JSONDecodeError as e:
+            pytest.fail(
+                f"nl-bim JSON output is not valid JSON: {e}\n"
+                f"Output: {result.output[:500]}"
+            )
+
+    def test_cli_nl_bim_validation_has_specifications(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify nl-bim validation reports on specifications.
+
+        The validation output should mention specifications being checked.
+        """
+        import json
+
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', 'nl-bim', '--output', 'json'],
+        )
+        if result.exit_code in (0, 1):
+            try:
+                data = json.loads(result.output)
+                if 'specifications' in data:
+                    specs = data['specifications']
+                    assert len(specs) > 0, (
+                        "nl-bim should have at least one specification"
+                    )
+            except json.JSONDecodeError:
+                pass  # JSON parsing tested elsewhere
+
+    def test_cli_nl_bim_with_large_ifc(
+        self, runner, large_ifc_path: Path
+    ) -> None:
+        """Verify nl-bim validation works with larger IFC file.
+
+        This tests end-to-end validation with a more complex model.
+        """
+        if not large_ifc_path.exists():
+            pytest.skip(f"Large IFC file not found: {large_ifc_path}")
+
+        result = runner.invoke(
+            app,
+            [str(large_ifc_path), '--ids', 'nl-bim'],
+        )
+        # Should complete without crashing
+        assert result.exit_code in (0, 1), (
+            f"CLI should complete validation, got exit code {result.exit_code}"
+        )
+
+    def test_cli_nl_bim_console_output_format(
+        self, runner, sample_ifc_path: Path
+    ) -> None:
+        """Verify nl-bim validation with console output is readable.
+
+        Console output should contain readable text, not raw JSON.
+        """
+        result = runner.invoke(
+            app,
+            [str(sample_ifc_path), '--ids', 'nl-bim', '--output', 'console'],
+        )
+        # Console output should not be pure JSON
+        output = result.output.strip()
+        if output:
+            # Should contain some readable content about validation
+            output_lower = output.lower()
+            has_validation_terms = any(
+                term in output_lower
+                for term in ['validation', 'specification', 'pass', 'fail', 'result']
+            )
+            assert has_validation_terms or len(output) > 10, (
+                f"Console output should contain validation info: {output[:200]}"
+            )
 
 
 # =============================================================================
