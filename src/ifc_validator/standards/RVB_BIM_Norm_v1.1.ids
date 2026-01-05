@@ -1,0 +1,598 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ids xmlns:xs="http://www.w3.org/2001/XMLSchema"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://standards.buildingsmart.org/IDS http://standards.buildingsmart.org/IDS/1.0/ids.xsd"
+     xmlns="http://standards.buildingsmart.org/IDS">
+  <info>
+    <title>RVB BIM Norm v1.1</title>
+    <copyright>Rijksvastgoedbedrijf / Staat der Nederlanden</copyright>
+    <version>1.1-IDS</version>
+    <description>IDS implementatie van de Rijksvastgoedbedrijf BouwwerkInformatieModel Norm v1.1. Deze norm beschrijft de eisen voor BIM-modellen bij rijkshuisvestingsprojecten.</description>
+    <author>info@3bm.nl</author>
+    <date>2025-01-01</date>
+    <purpose>Valideer IFC-modellen tegen de RVB BIM Norm v1.1 eisen</purpose>
+    <milestone>Alle projectfases</milestone>
+  </info>
+  <specifications>
+    <!-- 2.2.7.1 Project -->
+    <specification name="2.2.7.1 Project informatie" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.7.1" description="IfcProject moet projectnaam bevatten" instructions="Vul projectnaam in bij IfcProject.Name">
+      <applicability minOccurs="1" maxOccurs="1">
+        <entity>
+          <name>
+            <simpleValue>IFCPROJECT</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <attribute cardinality="required">
+          <name>
+            <simpleValue>Name</simpleValue>
+          </name>
+        </attribute>
+        <attribute cardinality="required">
+          <name>
+            <simpleValue>LongName</simpleValue>
+          </name>
+        </attribute>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.7.2 Terrein -->
+    <specification name="2.2.7.2 Terrein informatie" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.7.2" description="IfcSite moet locatiegegevens bevatten" instructions="Vul kadastrale aanduiding en coordinaten in">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCSITE</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <attribute cardinality="required">
+          <name>
+            <simpleValue>Name</simpleValue>
+          </name>
+        </attribute>
+        <attribute cardinality="required">
+          <name>
+            <simpleValue>RefLatitude</simpleValue>
+          </name>
+        </attribute>
+        <attribute cardinality="required">
+          <name>
+            <simpleValue>RefLongitude</simpleValue>
+          </name>
+        </attribute>
+        <attribute cardinality="required">
+          <name>
+            <simpleValue>RefElevation</simpleValue>
+          </name>
+        </attribute>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.7.3 Bouwwerk -->
+    <specification name="2.2.7.3 Gebouw informatie" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.7.3" description="IfcBuilding moet gebouwnummer bevatten" instructions="Vul RVB gebouwnummer in">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCBUILDING</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <attribute cardinality="required">
+          <name>
+            <simpleValue>Name</simpleValue>
+          </name>
+        </attribute>
+        <property dataType="IFCLABEL" cardinality="required">
+          <propertySet>
+            <simpleValue>Pset_BuildingCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>BuildingID</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.7.4 Bouwlaag -->
+    <specification name="2.2.7.4 Bouwlaag naamgeving" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.7.4" description="Bouwlagen moeten RVB-naamgevingsconventie volgen" instructions="Gebruik: -01 kelder, 00 begane grond, 01 eerste verdieping, etc.">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCBUILDINGSTOREY</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <attribute cardinality="required">
+          <name>
+            <simpleValue>Name</simpleValue>
+          </name>
+          <value>
+            <xs:restriction base="xs:string">
+              <xs:pattern value="-?\d{2}\s.*"/>
+            </xs:restriction>
+          </value>
+        </attribute>
+        <attribute cardinality="required">
+          <name>
+            <simpleValue>Elevation</simpleValue>
+          </name>
+        </attribute>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.7.6 Ruimte -->
+    <specification name="2.2.7.6a Ruimte attributen" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.7.6a" description="Ruimtes moeten verplichte attributen bevatten" instructions="Vul Name, ObjectType en LongName in">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCSPACE</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <attribute cardinality="required">
+          <name>
+            <simpleValue>Name</simpleValue>
+          </name>
+        </attribute>
+        <attribute cardinality="required">
+          <name>
+            <simpleValue>ObjectType</simpleValue>
+          </name>
+        </attribute>
+        <attribute cardinality="required">
+          <name>
+            <simpleValue>LongName</simpleValue>
+          </name>
+        </attribute>
+        <property dataType="IFCLABEL" cardinality="required">
+          <propertySet>
+            <simpleValue>Pset_SpaceCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>IsExternal</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.7.6b Ruimte hoeveelheden -->
+    <specification name="2.2.7.6b Ruimte hoeveelheden" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.7.6b" description="Ruimtes moeten hoeveelheden bevatten" instructions="Voeg NetFloorArea, GrossFloorArea en Height toe">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCSPACE</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <property dataType="IFCAREAMEASURE" cardinality="required">
+          <propertySet>
+            <simpleValue>Qto_SpaceBaseQuantities</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>NetFloorArea</simpleValue>
+          </baseName>
+        </property>
+        <property dataType="IFCAREAMEASURE" cardinality="required">
+          <propertySet>
+            <simpleValue>Qto_SpaceBaseQuantities</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>GrossFloorArea</simpleValue>
+          </baseName>
+        </property>
+        <property dataType="IFCLENGTHMEASURE" cardinality="required">
+          <propertySet>
+            <simpleValue>Qto_SpaceBaseQuantities</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>Height</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.7.7 Zones -->
+    <specification name="2.2.7.7 Zone informatie" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.7.7" description="Zones moeten ObjectType hebben" instructions="Definieer zone type">
+      <applicability minOccurs="0" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCZONE</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <attribute cardinality="required">
+          <name>
+            <simpleValue>Name</simpleValue>
+          </name>
+        </attribute>
+        <attribute cardinality="required">
+          <name>
+            <simpleValue>ObjectType</simpleValue>
+          </name>
+        </attribute>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.6.2 Classificatie Wanden -->
+    <specification name="2.2.6.2a NL-SfB Wanden" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.6.2a" description="Wanden moeten NL-SfB classificatie hebben" instructions="Ken NL-SfB code toe (21.xx)">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCWALL</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <classification cardinality="required">
+          <system>
+            <simpleValue>NL-SfB</simpleValue>
+          </system>
+        </classification>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.6.2 Classificatie Vloeren -->
+    <specification name="2.2.6.2b NL-SfB Vloeren" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.6.2b" description="Vloeren moeten NL-SfB classificatie hebben" instructions="Ken NL-SfB code toe (23.xx)">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCSLAB</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <classification cardinality="required">
+          <system>
+            <simpleValue>NL-SfB</simpleValue>
+          </system>
+        </classification>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.6.2 Classificatie Daken -->
+    <specification name="2.2.6.2c NL-SfB Daken" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.6.2c" description="Daken moeten NL-SfB classificatie hebben" instructions="Ken NL-SfB code toe (27.xx)">
+      <applicability minOccurs="0" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCROOF</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <classification cardinality="required">
+          <system>
+            <simpleValue>NL-SfB</simpleValue>
+          </system>
+        </classification>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.6.2 Classificatie Deuren -->
+    <specification name="2.2.6.2d NL-SfB Deuren" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.6.2d" description="Deuren moeten NL-SfB classificatie hebben" instructions="Ken NL-SfB code toe (31.xx)">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCDOOR</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <classification cardinality="required">
+          <system>
+            <simpleValue>NL-SfB</simpleValue>
+          </system>
+        </classification>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.6.2 Classificatie Ramen -->
+    <specification name="2.2.6.2e NL-SfB Ramen" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.6.2e" description="Ramen moeten NL-SfB classificatie hebben" instructions="Ken NL-SfB code toe (31.xx)">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCWINDOW</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <classification cardinality="required">
+          <system>
+            <simpleValue>NL-SfB</simpleValue>
+          </system>
+        </classification>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.6.2 Classificatie Kolommen -->
+    <specification name="2.2.6.2f NL-SfB Kolommen" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.6.2f" description="Kolommen moeten NL-SfB classificatie hebben" instructions="Ken NL-SfB code toe (28.xx)">
+      <applicability minOccurs="0" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCCOLUMN</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <classification cardinality="required">
+          <system>
+            <simpleValue>NL-SfB</simpleValue>
+          </system>
+        </classification>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.6.2 Classificatie Balken -->
+    <specification name="2.2.6.2g NL-SfB Balken" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.6.2g" description="Balken moeten NL-SfB classificatie hebben" instructions="Ken NL-SfB code toe (28.xx)">
+      <applicability minOccurs="0" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCBEAM</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <classification cardinality="required">
+          <system>
+            <simpleValue>NL-SfB</simpleValue>
+          </system>
+        </classification>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.6.2 Classificatie Trappen -->
+    <specification name="2.2.6.2h NL-SfB Trappen" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.6.2h" description="Trappen moeten NL-SfB classificatie hebben" instructions="Ken NL-SfB code toe (24.xx)">
+      <applicability minOccurs="0" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCSTAIR</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <classification cardinality="required">
+          <system>
+            <simpleValue>NL-SfB</simpleValue>
+          </system>
+        </classification>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.7.8 Element materiaal -->
+    <specification name="2.2.7.8a Element materiaal" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.7.8a" description="Bouwelementen moeten materiaal hebben" instructions="Ken materiaal toe aan element">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCBUILDINGELEMENT</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <material cardinality="required"/>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.7.8 IsExternal wanden -->
+    <specification name="2.2.7.8b IsExternal wanden" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.7.8b" description="Wanden moeten IsExternal property hebben" instructions="Stel IsExternal TRUE of FALSE in">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCWALL</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <property dataType="IFCBOOLEAN" cardinality="required">
+          <propertySet>
+            <simpleValue>Pset_WallCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>IsExternal</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.7.8.1 Brandwerendheid wanden -->
+    <specification name="2.2.7.8.1a FireRating wanden" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.7.8.1a" description="Wanden moeten FireRating hebben" instructions="Stel FireRating in minuten in">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCWALL</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <property dataType="IFCLABEL" cardinality="required">
+          <propertySet>
+            <simpleValue>Pset_WallCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>FireRating</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.7.8.1 Brandwerendheid deuren -->
+    <specification name="2.2.7.8.1b FireRating deuren" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.7.8.1b" description="Deuren moeten FireRating hebben" instructions="Stel FireRating in minuten in">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCDOOR</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <property dataType="IFCLABEL" cardinality="required">
+          <propertySet>
+            <simpleValue>Pset_DoorCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>FireRating</simpleValue>
+          </baseName>
+        </property>
+        <property dataType="IFCBOOLEAN" cardinality="required">
+          <propertySet>
+            <simpleValue>Pset_DoorCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>SelfClosing</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.7.8.1 Vluchtdeuren -->
+    <specification name="2.2.7.8.1c Vluchtdeuren" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.7.8.1c" description="Vluchtdeuren moeten gemarkeerd zijn" instructions="Stel FireExit TRUE voor vluchtdeuren">
+      <applicability minOccurs="0" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCDOOR</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <property dataType="IFCBOOLEAN" cardinality="required">
+          <propertySet>
+            <simpleValue>Pset_DoorCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>FireExit</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.7.8.2 LoadBearing wanden -->
+    <specification name="2.2.7.8.2a LoadBearing wanden" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.7.8.2a" description="Wanden moeten LoadBearing property hebben" instructions="Stel LoadBearing TRUE of FALSE in">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCWALL</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <property dataType="IFCBOOLEAN" cardinality="required">
+          <propertySet>
+            <simpleValue>Pset_WallCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>LoadBearing</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.7.8.2 LoadBearing vloeren -->
+    <specification name="2.2.7.8.2b LoadBearing vloeren" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.7.8.2b" description="Vloeren moeten LoadBearing property hebben" instructions="Stel LoadBearing TRUE of FALSE in">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCSLAB</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <property dataType="IFCBOOLEAN" cardinality="required">
+          <propertySet>
+            <simpleValue>Pset_SlabCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>LoadBearing</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.7.8.2 LoadBearing kolommen -->
+    <specification name="2.2.7.8.2c LoadBearing kolommen" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.7.8.2c" description="Kolommen moeten LoadBearing property hebben" instructions="Stel LoadBearing TRUE of FALSE in">
+      <applicability minOccurs="0" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCCOLUMN</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <property dataType="IFCBOOLEAN" cardinality="required">
+          <propertySet>
+            <simpleValue>Pset_ColumnCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>LoadBearing</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.7.8.2 LoadBearing balken -->
+    <specification name="2.2.7.8.2d LoadBearing balken" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.7.8.2d" description="Balken moeten LoadBearing property hebben" instructions="Stel LoadBearing TRUE of FALSE in">
+      <applicability minOccurs="0" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCBEAM</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <property dataType="IFCBOOLEAN" cardinality="required">
+          <propertySet>
+            <simpleValue>Pset_BeamCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>LoadBearing</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+
+    <!-- 2.1.4 Vermijd IfcBuildingElementProxy -->
+    <specification name="2.1.4 Vermijd IfcBuildingElementProxy" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.1.4" description="IfcBuildingElementProxy mag niet gebruikt worden" instructions="Vervang door correcte IFC entiteit">
+      <applicability minOccurs="0" maxOccurs="0">
+        <entity>
+          <name>
+            <simpleValue>IFCBUILDINGELEMENTPROXY</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <attribute cardinality="prohibited">
+          <name>
+            <simpleValue>GlobalId</simpleValue>
+          </name>
+        </attribute>
+      </requirements>
+    </specification>
+
+    <!-- 2.2.7.11 Inventaris -->
+    <specification name="2.2.7.11 Meubilair" ifcVersion="IFC2X3 IFC4" identifier="RVB-2.2.7.11" description="Meubilair moet Name en classificatie hebben" instructions="Geef meubels een naam en NL-SfB code">
+      <applicability minOccurs="0" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCFURNISHINGELEMENT</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <attribute cardinality="required">
+          <name>
+            <simpleValue>Name</simpleValue>
+          </name>
+        </attribute>
+        <classification cardinality="required">
+          <system>
+            <simpleValue>NL-SfB</simpleValue>
+          </system>
+        </classification>
+      </requirements>
+    </specification>
+  </specifications>
+</ids>
