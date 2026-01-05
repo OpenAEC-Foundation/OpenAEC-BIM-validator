@@ -119,7 +119,11 @@ def validate(
         format_html_to_file,
         print_json,
     )
-    from ifc_validator.standards import get_bundled_ids, is_shortcut
+    from ifc_validator.standards import (
+        get_bundled_ids,
+        is_shortcut,
+        list_available_standards,
+    )
     from ifc_validator.validator import (
         validate as run_validation,
     )
@@ -131,6 +135,33 @@ def validate(
         if is_shortcut(ids):
             ids_path = str(get_bundled_ids(ids))
         else:
+            # Check if this looks like an invalid shortcut attempt
+            # A value looks like a shortcut if it:
+            # - Doesn't contain path separators (/ or \)
+            # - Doesn't end with .ids extension
+            # - Is a short string (< 30 chars)
+            # - And doesn't exist as a file
+            looks_like_shortcut = (
+                '/' not in ids
+                and '\\' not in ids
+                and not ids.lower().endswith('.ids')
+                and len(ids) < 30
+            )
+            ids_path_candidate = Path(ids)
+
+            if looks_like_shortcut and not ids_path_candidate.exists():
+                # User likely meant to use a shortcut but typed it wrong
+                valid_shortcuts = ', '.join(list_available_standards())
+                err_console.print(
+                    f"[red]Error:[/red] Unknown shortcut '[yellow]{ids}[/yellow]'. "
+                    f"Valid shortcuts are: [cyan]{valid_shortcuts}[/cyan]"
+                )
+                err_console.print(
+                    "\n[dim]Tip: Use a shortcut for Dutch BIM standards, or provide "
+                    "a path to an IDS file (.ids)[/dim]"
+                )
+                raise typer.Exit(code=1)
+
             ids_path = ids
 
         # Run validation (handles file validation, memory checks, and parsing)
