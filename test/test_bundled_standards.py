@@ -141,7 +141,158 @@ class TestBundledStandardsExist:
     - Verify NL_BIM and RVB IDS files accessible via importlib.resources
     """
 
-    pass  # Tests to be added in subtask 3.2
+    def test_standards_package_importable(self) -> None:
+        """Verify ifc_validator.standards package is importable.
+
+        This test ensures the standards subpackage is correctly set up
+        and can be imported via importlib.resources.
+        """
+        from importlib.resources import files
+
+        standards_dir = files('ifc_validator.standards')
+        assert standards_dir is not None, "Standards package should be accessible"
+
+    def test_nl_bim_ids_accessible_via_importlib(self, nl_bim_filename: str) -> None:
+        """Verify NL_BIM IDS file is accessible via importlib.resources.
+
+        This test verifies:
+        - NL_BIM_Basis_ILS_v2.ids exists in the standards package
+        - The file can be located using importlib.resources.files()
+        - The resolved path actually exists on the filesystem
+        """
+        from importlib.resources import files
+
+        standards_dir = files('ifc_validator.standards')
+        resource = standards_dir / nl_bim_filename
+
+        # Verify the resource can be resolved to a path
+        resource_path = Path(str(resource))
+        assert resource_path.exists(), (
+            f"NL_BIM IDS file should exist at {resource_path}"
+        )
+        assert resource_path.suffix.lower() == '.ids', (
+            f"File should have .ids extension, got {resource_path.suffix}"
+        )
+
+    def test_rvb_ids_accessible_via_importlib(self, rvb_filename: str) -> None:
+        """Verify RVB IDS file is accessible via importlib.resources.
+
+        This test verifies:
+        - RVB_BIM_Norm_v1.1.ids exists in the standards package
+        - The file can be located using importlib.resources.files()
+        - The resolved path actually exists on the filesystem
+        """
+        from importlib.resources import files
+
+        standards_dir = files('ifc_validator.standards')
+        resource = standards_dir / rvb_filename
+
+        # Verify the resource can be resolved to a path
+        resource_path = Path(str(resource))
+        assert resource_path.exists(), (
+            f"RVB IDS file should exist at {resource_path}"
+        )
+        assert resource_path.suffix.lower() == '.ids', (
+            f"File should have .ids extension, got {resource_path.suffix}"
+        )
+
+    def test_nl_bim_ids_file_not_empty(self, nl_bim_filename: str) -> None:
+        """Verify NL_BIM IDS file has content and is valid XML.
+
+        This ensures the bundled file is not corrupted or empty.
+        """
+        from importlib.resources import files
+
+        standards_dir = files('ifc_validator.standards')
+        resource_path = Path(str(standards_dir / nl_bim_filename))
+
+        # File should have content
+        file_size = resource_path.stat().st_size
+        assert file_size > 0, "NL_BIM IDS file should not be empty"
+
+        # File should start with XML declaration or IDS element
+        content = resource_path.read_text(encoding='utf-8')[:100]
+        assert '<?xml' in content or '<ids' in content.lower(), (
+            "NL_BIM IDS file should contain valid XML/IDS content"
+        )
+
+    def test_rvb_ids_file_not_empty(self, rvb_filename: str) -> None:
+        """Verify RVB IDS file has content and is valid XML.
+
+        This ensures the bundled file is not corrupted or empty.
+        """
+        from importlib.resources import files
+
+        standards_dir = files('ifc_validator.standards')
+        resource_path = Path(str(standards_dir / rvb_filename))
+
+        # File should have content
+        file_size = resource_path.stat().st_size
+        assert file_size > 0, "RVB IDS file should not be empty"
+
+        # File should start with XML declaration or IDS element
+        content = resource_path.read_text(encoding='utf-8')[:100]
+        assert '<?xml' in content or '<ids' in content.lower(), (
+            "RVB IDS file should contain valid XML/IDS content"
+        )
+
+    def test_get_bundled_ids_returns_valid_path_for_nl_bim(self) -> None:
+        """Verify get_bundled_ids() returns a valid Path for nl-bim shortcut.
+
+        This test verifies the resolver function correctly resolves the
+        nl-bim shortcut to a valid, existing file path.
+        """
+        path = get_bundled_ids('nl-bim')
+
+        assert isinstance(path, Path), f"Expected Path, got {type(path).__name__}"
+        assert path.exists(), f"Resolved path should exist: {path}"
+        assert path.name == 'NL_BIM_Basis_ILS_v2.ids', (
+            f"Expected NL_BIM_Basis_ILS_v2.ids, got {path.name}"
+        )
+
+    def test_get_bundled_ids_returns_valid_path_for_rvb(self) -> None:
+        """Verify get_bundled_ids() returns a valid Path for rvb shortcut.
+
+        This test verifies the resolver function correctly resolves the
+        rvb shortcut to a valid, existing file path.
+        """
+        path = get_bundled_ids('rvb')
+
+        assert isinstance(path, Path), f"Expected Path, got {type(path).__name__}"
+        assert path.exists(), f"Resolved path should exist: {path}"
+        assert path.name == 'RVB_BIM_Norm_v1.1.ids', (
+            f"Expected RVB_BIM_Norm_v1.1.ids, got {path.name}"
+        )
+
+    def test_all_shortcuts_resolve_to_existing_files(self, all_shortcuts: list[str]) -> None:
+        """Verify all defined shortcuts resolve to existing IDS files.
+
+        This is a parameterized-style test that ensures every shortcut
+        in the system can be resolved to a valid file.
+        """
+        for shortcut in all_shortcuts:
+            path = get_bundled_ids(shortcut)
+            assert path.exists(), (
+                f"Shortcut '{shortcut}' should resolve to existing file, "
+                f"but {path} does not exist"
+            )
+            assert path.suffix.lower() == '.ids', (
+                f"Shortcut '{shortcut}' should resolve to .ids file, "
+                f"got {path.suffix}"
+            )
+
+    def test_standard_shortcuts_matches_available_standards(self) -> None:
+        """Verify STANDARD_SHORTCUTS constant matches list_available_standards().
+
+        This ensures consistency between the constant and the function.
+        """
+        available = list_available_standards()
+        shortcut_keys = list(STANDARD_SHORTCUTS.keys())
+
+        assert set(available) == set(shortcut_keys), (
+            f"list_available_standards() should return same shortcuts as "
+            f"STANDARD_SHORTCUTS.keys(). Got {available} vs {shortcut_keys}"
+        )
 
 
 # =============================================================================
