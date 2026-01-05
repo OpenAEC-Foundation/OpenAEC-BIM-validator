@@ -263,6 +263,175 @@ Gebruik `--ids rvb` voor:
 
 ---
 
+## Praktische CLI Voorbeelden
+
+Deze sectie bevat copy-paste ready voorbeelden voor veelvoorkomende validatietaken. Alle voorbeelden werken direct na installatie.
+
+### Basisgebruik
+
+```bash
+# Valideer met NL_BIM Basis ILS (standaard console output)
+python -m ifc_validator.cli validate mijn_model.ifc --ids nl-bim
+
+# Valideer met RVB BIM Norm
+python -m ifc_validator.cli validate mijn_model.ifc --ids rvb
+
+# Korte optie (-i in plaats van --ids)
+python -m ifc_validator.cli validate mijn_model.ifc -i nl-bim
+```
+
+### Output Formaten
+
+```bash
+# Console output (standaard, voor snelle review)
+python -m ifc_validator.cli validate project.ifc --ids nl-bim --output console
+
+# JSON output (voor automatische verwerking)
+python -m ifc_validator.cli validate project.ifc --ids nl-bim --output json
+
+# HTML rapport (voor delen met projectteam)
+python -m ifc_validator.cli validate project.ifc --ids nl-bim --output html
+
+# HTML rapport met aangepaste bestandsnaam
+python -m ifc_validator.cli validate project.ifc --ids rvb --output html --html-output validatie_rapport.html
+```
+
+### Validatie Workflows
+
+**Scenario 1: Snelle check voor oplevering**
+```bash
+# Controleer of model voldoet aan NL_BIM basis eisen
+python -m ifc_validator.cli validate oplevering_model.ifc --ids nl-bim
+```
+
+**Scenario 2: RVB-project validatie met rapport**
+```bash
+# Genereer officieel validatierapport voor RVB-oplevering
+python -m ifc_validator.cli validate rvb_project_v2.ifc --ids rvb --output html --html-output RVB_Validatie_Rapport.html
+```
+
+**Scenario 3: Beide standaarden vergelijken**
+```bash
+# Valideer tegen beide Nederlandse standaarden
+python -m ifc_validator.cli validate gebouw.ifc --ids nl-bim --output json > nl_bim_resultaat.json
+python -m ifc_validator.cli validate gebouw.ifc --ids rvb --output json > rvb_resultaat.json
+```
+
+**Scenario 4: Meerdere modellen valideren (Windows PowerShell)**
+```powershell
+# Valideer alle IFC bestanden in een folder
+Get-ChildItem -Filter "*.ifc" | ForEach-Object {
+    Write-Host "Validating: $($_.Name)"
+    python -m ifc_validator.cli validate $_.FullName --ids nl-bim --output html
+}
+```
+
+**Scenario 5: Meerdere modellen valideren (Linux/Mac Bash)**
+```bash
+# Valideer alle IFC bestanden in een folder
+for file in *.ifc; do
+    echo "Validating: $file"
+    python -m ifc_validator.cli validate "$file" --ids nl-bim --output html
+done
+```
+
+### Werken met Eigen IDS Bestanden
+
+```bash
+# Gebruik een eigen/aangepast IDS bestand (backward compatible)
+python -m ifc_validator.cli validate model.ifc --ids mijn_specificaties.ids
+
+# Relatief pad naar IDS bestand
+python -m ifc_validator.cli validate model.ifc --ids specificaties/project_ids.ids
+
+# Absoluut pad (Windows)
+python -m ifc_validator.cli validate model.ifc --ids "C:\Projecten\IDS\custom.ids"
+
+# Absoluut pad (Linux/Mac)
+python -m ifc_validator.cli validate model.ifc --ids /home/user/ids/custom.ids
+```
+
+### Exit Codes voor Scripts
+
+De CLI retourneert exit codes die gebruikt kunnen worden in scripts:
+
+| Exit Code | Betekenis |
+|-----------|-----------|
+| `0` | ✅ Alle specificaties geslaagd |
+| `1` | ❌ Een of meer specificaties gefaald, of een fout opgetreden |
+
+**Voorbeeld: Conditionele workflow (Windows PowerShell)**
+```powershell
+python -m ifc_validator.cli validate model.ifc --ids nl-bim
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "Model voldoet aan NL_BIM standaard!"
+} else {
+    Write-Host "Model voldoet NIET aan NL_BIM standaard. Check het rapport."
+}
+```
+
+**Voorbeeld: Conditionele workflow (Linux/Mac Bash)**
+```bash
+if python -m ifc_validator.cli validate model.ifc --ids nl-bim; then
+    echo "Model voldoet aan NL_BIM standaard!"
+else
+    echo "Model voldoet NIET aan NL_BIM standaard. Check het rapport."
+fi
+```
+
+### JSON Output Verwerken
+
+```bash
+# Sla JSON output op in bestand
+python -m ifc_validator.cli validate model.ifc --ids nl-bim --output json > validatie.json
+
+# Bekijk alleen failed specs met jq (Linux/Mac)
+python -m ifc_validator.cli validate model.ifc --ids nl-bim --output json | jq '.specifications[] | select(.status == "FAIL")'
+
+# Bekijk alleen failed specs met PowerShell (Windows)
+python -m ifc_validator.cli validate model.ifc --ids nl-bim --output json | ConvertFrom-Json | Select-Object -ExpandProperty specifications | Where-Object { $_.status -eq "FAIL" }
+```
+
+### Foutafhandeling
+
+```bash
+# Onbekende shortcut - toont beschikbare opties
+python -m ifc_validator.cli validate model.ifc --ids unknown
+# Output: Error: Unknown shortcut 'unknown'. Valid shortcuts are: nl-bim, rvb
+
+# Bestand niet gevonden
+python -m ifc_validator.cli validate niet_bestaand.ifc --ids nl-bim
+# Output: Error: IFC file not found: niet_bestaand.ifc
+
+# Versie tonen
+python -m ifc_validator.cli validate --version
+```
+
+### Voorbeeldcommando's voor Specifieke Projecttypen
+
+**Woningbouw:**
+```bash
+python -m ifc_validator.cli validate woningen_blok_a.ifc --ids nl-bim --output html --html-output Woningbouw_Validatie.html
+```
+
+**Rijkshuisvesting (ministeries, rechtbanken):**
+```bash
+python -m ifc_validator.cli validate ministerie_nieuwbouw.ifc --ids rvb --output html --html-output RVB_Oplevering_Rapport.html
+```
+
+**Utiliteitsbouw:**
+```bash
+python -m ifc_validator.cli validate kantoorgebouw.ifc --ids nl-bim --output json > kantoor_validatie.json
+```
+
+**Renovatieproject:**
+```bash
+# Controleer renovatiestatus van MEP-elementen (NL_BIM 4.8)
+python -m ifc_validator.cli validate renovatie_project.ifc --ids nl-bim
+```
+
+---
+
 ## Links
 
 - [IfcOpenShell](https://ifcopenshell.org/)
