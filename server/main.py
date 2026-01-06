@@ -454,6 +454,46 @@ async def get_capabilities():
     }
 
 
+@app.post("/api/v1/validate")
+async def validate_ifc(
+    ifc_file: UploadFile = File(..., description="IFC file to validate"),  # noqa: B008
+    ids_file: Optional[UploadFile] = File(  # noqa: B008
+        None, description="IDS file with validation rules (optional if ids_standard provided)"
+    ),
+    ids_standard: Optional[str] = Query(  # noqa: B008
+        None,
+        description="Built-in IDS standard to use: 'nl-bim' or 'rvb' (optional if ids_file provided)",
+    ),
+):
+    """
+    Validate an IFC file against IDS specifications.
+
+    Accepts an IFC file and validates it against either:
+    - A custom IDS file uploaded via `ids_file`, OR
+    - A built-in Dutch BIM standard specified via `ids_standard`
+
+    At least one of `ids_file` or `ids_standard` must be provided.
+
+    Args:
+        ifc_file: The IFC file to validate (required, max 500MB)
+        ids_file: Custom IDS file with validation rules (optional, max 5MB)
+        ids_standard: Built-in standard - "nl-bim" or "rvb" (optional)
+
+    Returns:
+        ValidationResult with pass/fail counts and detailed specification results
+
+    Raises:
+        400: Missing required files or invalid parameters
+        413: File too large
+        422: Corrupt or invalid file content
+    """
+    # TODO: Implement validation logic in subsequent subtasks
+    raise HTTPException(
+        status_code=501,
+        detail="Validation endpoint not yet implemented",
+    )
+
+
 if __name__ == "__main__":
     import uvicorn
 
