@@ -1,25 +1,25 @@
 {
   "active": true,
-  "spec": "004-ids-validator-module",
+  "spec": "005-result-data-models",
   "state": "building",
   "subtasks": {
-    "completed": 18,
-    "total": 21,
+    "completed": 9,
+    "total": 10,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "Integration & Quality Assurance",
+    "current": "Integration Verification",
     "id": null,
-    "total": 4
+    "total": 1
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 20,
-    "started_at": "2026-01-04T14:30:26.915536"
+    "number": 6,
+    "started_at": "2026-01-05T07:51:20.014224"
   },
-  "last_update": "2026-01-04T18:45:12.341838"
+  "last_update": "2026-01-05T08:31:33.577623"
 }

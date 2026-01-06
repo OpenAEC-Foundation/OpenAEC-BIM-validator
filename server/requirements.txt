@@ -6,6 +6,9 @@ fastapi>=0.115.0
 python-multipart>=0.0.20  # Required for file uploads
 uvicorn>=0.32.0
 
+# Data validation and models
+pydantic>=2.0.0
+
 # IFC/IDS processing
 ifcopenshell>=0.8.4.post1
 ifctester>=0.8.4
