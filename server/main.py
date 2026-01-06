@@ -585,7 +585,7 @@ async def validate_ifc(
     if not ifc_file.filename:
         raise HTTPException(
             status_code=400,
-            detail="IFC filename is required",
+            detail="IFC file upload is required. Please select an IFC file to validate.",
         )
 
     # Validate file extension (.ifc, .ifcxml, or .ifczip)
@@ -607,7 +607,7 @@ async def validate_ifc(
     except Exception as e:
         raise HTTPException(
             status_code=400,
-            detail=f"Error reading IFC file: {str(e)}",
+            detail=f"Failed to read IFC file '{ifc_file.filename}': {str(e)}. Please ensure the file is accessible and try again.",
         ) from None
 
     # Check file size against MAX_FILE_SIZE (500MB)
@@ -626,7 +626,7 @@ async def validate_ifc(
     if ifc_file_size == 0:
         raise HTTPException(
             status_code=400,
-            detail="IFC file is empty",
+            detail=f"IFC file '{ifc_file.filename}' is empty. Please upload a valid IFC file with content.",
         )
 
     # === IDS FILE/STANDARD VALIDATION (Subtask 2.2) ===
@@ -647,7 +647,7 @@ async def validate_ifc(
         if not ids_file.filename:
             raise HTTPException(
                 status_code=400,
-                detail="IDS filename is required",
+                detail="IDS file is missing a filename. Please ensure the IDS file was uploaded correctly.",
             )
 
         # Validate file extension (.ids or .xml)
@@ -669,7 +669,7 @@ async def validate_ifc(
         except Exception as e:
             raise HTTPException(
                 status_code=400,
-                detail=f"Error reading IDS file: {str(e)}",
+                detail=f"Failed to read IDS file '{ids_file.filename}': {str(e)}. Please ensure the file is accessible and try again.",
             ) from None
 
         # Check file size against MAX_IDS_FILE_SIZE (5MB)
@@ -688,7 +688,7 @@ async def validate_ifc(
         if ids_file_size == 0:
             raise HTTPException(
                 status_code=400,
-                detail="IDS file is empty",
+                detail=f"IDS file '{ids_file.filename}' is empty. Please upload a valid IDS file with validation rules.",
             )
 
     # If ids_standard provided, validate it's a known standard
@@ -780,22 +780,23 @@ async def validate_ifc(
             # This should not happen since we just saved the files, but handle defensively
             raise HTTPException(
                 status_code=422,
-                detail=f"File not found during validation: {str(e)}",
+                detail=f"File not found during validation: {str(e)}. The uploaded file may have been corrupted or removed.",
             ) from None
         except Exception as e:
             # Catch any unexpected exceptions during validation setup
             raise HTTPException(
                 status_code=422,
-                detail=f"Unexpected error during validation: {str(e)}",
+                detail=f"Validation error: {str(e)}. The IFC or IDS file may be corrupted or malformed.",
             ) from None
 
         # Check if validation completed successfully
         # Note: report.success means validation RAN without errors, not pass/fail
         # Corrupt IFC or invalid IDS file results in success=False with error
         if not validation_report.success:
+            error_detail = validation_report.error or "Unknown validation error"
             raise HTTPException(
                 status_code=422,
-                detail=f"Validation failed: {validation_report.error}",
+                detail=f"Unable to process files: {error_detail}. Please verify that both the IFC and IDS files are valid and correctly formatted.",
             )
 
         # === CONVERT VALIDATION REPORT TO RESPONSE (Subtask 3.4) ===
