@@ -113,20 +113,55 @@ class TestRootEndpoint:
 
 
 # =============================================================================
-# Health Check Endpoint Tests
+# Health Endpoint Tests (root /health)
+# =============================================================================
+
+
+class TestHealthEndpoint:
+    """Test root health endpoint (/health).
+
+    This tests the simple health endpoint at the root level that returns
+    {"status": "healthy"} for basic health monitoring.
+    """
+
+    def test_health_returns_200(self, client):
+        """Test that /health endpoint returns 200 status."""
+        response = client.get("/health")
+        assert response.status_code == 200
+
+    def test_health_returns_healthy_status(self, client):
+        """Test that /health endpoint returns healthy status."""
+        response = client.get("/health")
+        data = response.json()
+        assert data["status"] == "healthy"
+
+    def test_health_response_format(self, client):
+        """Test that /health endpoint returns correct JSON format."""
+        response = client.get("/health")
+        data = response.json()
+        assert data == {"status": "healthy"}
+
+    def test_health_content_type_is_json(self, client):
+        """Test that /health endpoint returns application/json content type."""
+        response = client.get("/health")
+        assert "application/json" in response.headers.get("content-type", "")
+
+
+# =============================================================================
+# Health Check Endpoint Tests (/api/health)
 # =============================================================================
 
 
 class TestHealthCheckEndpoint:
     """Test health check endpoint (/api/health)."""
 
-    def test_health_returns_200(self, client):
-        """Test that health endpoint returns 200 status."""
+    def test_api_health_returns_200(self, client):
+        """Test that /api/health endpoint returns 200 status."""
         response = client.get("/api/health")
         assert response.status_code == 200
 
-    def test_health_returns_ok_status(self, client):
-        """Test that health endpoint returns ok status."""
+    def test_api_health_returns_ok_status(self, client):
+        """Test that /api/health endpoint returns ok status."""
         response = client.get("/api/health")
         data = response.json()
         assert data["status"] == "ok"
