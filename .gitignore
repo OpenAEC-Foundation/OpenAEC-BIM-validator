@@ -1,5 +1,7 @@
-# Auto Claude
+# Auto Claude data directory
 .auto-claude/
+
+# Auto Claude worktrees
 .worktrees/
 
 # Python
@@ -13,8 +15,8 @@ test/venv/
 .venv/
 
 # Coverage
-htmlcov/
 .coverage
+htmlcov/
 
 # IDE
 .vscode/

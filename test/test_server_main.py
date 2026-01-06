@@ -100,7 +100,7 @@ class TestRootEndpoint:
         data = response.json()
         assert "service" in data
         assert "version" in data
-        assert data["version"] == "0.1.0"
+        assert data["version"] == "1.0.0"
 
     def test_root_returns_endpoints_info(self, client):
         """Test that root endpoint returns available endpoints."""

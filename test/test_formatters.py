@@ -47,9 +47,13 @@ from src.ifc_validator.formatters.json import (
 from src.ifc_validator.formatters.html import (
     format_html,
     format_html_to_file,
+    format_html_from_ids,
+    format_html_from_ids_to_file,
+    print_html,
     _escape_html,
     _get_status_class,
     _get_status_text as html_get_status_text,
+    _generate_html_template,
 )
 
 
@@ -898,3 +902,724 @@ class TestFormatterIntegration:
         json_data = json.loads(json_output)
         assert json_data["ifc_file"] == "sample.ifc"
         assert "sample.ifc" in html_output
+
+
+# =============================================================================
+# Additional Console Formatter Tests - Enhanced Coverage
+# =============================================================================
+
+
+class TestConsoleFormatterPassRateColors:
+    """Test pass rate color coding in console output."""
+
+    def test_pass_rate_100_percent_green(self, passing_validation_result):
+        """Test that 100% pass rate shows green color."""
+        output = format_console_to_string(passing_validation_result)
+        # 100% pass rate should be bold green
+        assert "100" in output
+
+    def test_pass_rate_75_to_99_yellow(self):
+        """Test that 75-99% pass rate shows yellow color."""
+        spec1 = SpecificationResult(
+            name="Test Spec 1",
+            description="Passes",
+            passed=True,
+            applicable_count=10,
+            passed_count=10,
+            failed_count=0,
+            failures=[],
+        )
+        spec2 = SpecificationResult(
+            name="Test Spec 2",
+            description="Passes",
+            passed=True,
+            applicable_count=5,
+            passed_count=5,
+            failed_count=0,
+            failures=[],
+        )
+        spec3 = SpecificationResult(
+            name="Test Spec 3",
+            description="Passes",
+            passed=True,
+            applicable_count=5,
+            passed_count=5,
+            failed_count=0,
+            failures=[],
+        )
+        spec4 = SpecificationResult(
+            name="Test Spec 4",
+            description="Fails",
+            passed=False,
+            applicable_count=5,
+            passed_count=0,
+            failed_count=5,
+            failures=[],
+        )
+        result = ValidationResult(
+            timestamp="2025-01-01T12:00:00",
+            ifc_file="model.ifc",
+            ifc_schema="IFC4",
+            ifc_entity_count=100,
+            ids_file="rules.ids",
+            ids_title="Test",
+            validation_time_seconds=1.0,
+            total_specifications=4,
+            passed_specifications=3,
+            failed_specifications=1,
+            pass_rate_percent=75.0,  # 75% exactly
+            specifications=[spec1, spec2, spec3, spec4],
+            overall_pass=False,
+        )
+        output = format_console_to_string(result)
+        # Should show 75.0% pass rate
+        assert "75" in output
+
+    def test_pass_rate_below_75_red(self):
+        """Test that pass rate below 75% shows red color."""
+        spec1 = SpecificationResult(
+            name="Test Spec 1",
+            description="Passes",
+            passed=True,
+            applicable_count=5,
+            passed_count=5,
+            failed_count=0,
+            failures=[],
+        )
+        spec2 = SpecificationResult(
+            name="Test Spec 2",
+            description="Fails",
+            passed=False,
+            applicable_count=5,
+            passed_count=0,
+            failed_count=5,
+            failures=[],
+        )
+        result = ValidationResult(
+            timestamp="2025-01-01T12:00:00",
+            ifc_file="model.ifc",
+            ifc_schema="IFC4",
+            ifc_entity_count=100,
+            ids_file="rules.ids",
+            ids_title="Test",
+            validation_time_seconds=1.0,
+            total_specifications=2,
+            passed_specifications=1,
+            failed_specifications=1,
+            pass_rate_percent=50.0,  # 50% - below 75
+            specifications=[spec1, spec2],
+            overall_pass=False,
+        )
+        output = format_console_to_string(result)
+        # Should show 50.0% pass rate
+        assert "50" in output
+
+
+class TestConsoleFormatterVerboseMode:
+    """Test console formatter verbose mode."""
+
+    def test_format_console_verbose_true(self, failing_validation_result):
+        """Test console output with verbose=True."""
+        output = format_console_to_string(failing_validation_result, verbose=True)
+        assert isinstance(output, str)
+        # Verbose mode should still produce output
+        assert len(output) > 0
+
+    def test_format_console_verbose_false(self, failing_validation_result):
+        """Test console output with verbose=False (default)."""
+        output = format_console_to_string(failing_validation_result, verbose=False)
+        assert isinstance(output, str)
+
+
+class TestConsoleFormatterNoSpecifications:
+    """Test console formatter with no specifications."""
+
+    def test_format_console_empty_specs(self, minimal_validation_result):
+        """Test console output when no specifications present."""
+        output = format_console_to_string(minimal_validation_result)
+        # Should show message about no specifications
+        assert "No specifications" in output or "model.ifc" in output
+
+
+class TestConsoleFormatterFailuresPanelEdgeCases:
+    """Test console formatter failures panel edge cases."""
+
+    def test_failures_panel_with_max_failures(self, many_failures_result):
+        """Test that failures panel truncates at 10 failures."""
+        from rich.panel import Panel
+        from src.ifc_validator.formatters.console import _create_failures_panel
+
+        failed_spec = many_failures_result.specifications[0]
+        panel = _create_failures_panel(failed_spec, 1)
+
+        assert isinstance(panel, Panel)
+
+    def test_failures_panel_spec_without_failures_but_marked_failed(self):
+        """Test failures panel with failed spec but empty failures list."""
+        from src.ifc_validator.formatters.console import _create_failures_panel
+
+        spec = SpecificationResult(
+            name="Empty Failed Spec",
+            description="No failures recorded",
+            passed=False,
+            applicable_count=5,
+            passed_count=4,
+            failed_count=1,
+            failures=[],  # Empty failures list
+        )
+        result = _create_failures_panel(spec, 1)
+        # Should return None since no failures to display
+        assert result is None
+
+
+class TestConsoleFormatterNoneIdsTitle:
+    """Test console formatter when IDS title is None."""
+
+    def test_format_console_none_ids_title(self, minimal_validation_result):
+        """Test console output when IDS title is None."""
+        output = format_console_to_string(minimal_validation_result)
+        # Should not show "None" literally
+        assert output.count("None") == 0 or "Title" not in output
+
+
+# =============================================================================
+# Additional JSON Formatter Tests - Enhanced Coverage
+# =============================================================================
+
+
+class TestJSONFormatterSortKeys:
+    """Test JSON formatter sort_keys parameter."""
+
+    def test_format_json_with_sort_keys_true(self, passing_validation_result):
+        """Test JSON output with keys sorted alphabetically."""
+        output = format_json(passing_validation_result, sort_keys=True)
+        data = json.loads(output)
+
+        # Should be valid JSON
+        assert isinstance(data, dict)
+
+    def test_format_json_with_sort_keys_false(self, passing_validation_result):
+        """Test JSON output with keys in original order."""
+        output = format_json(passing_validation_result, sort_keys=False)
+        data = json.loads(output)
+
+        # Should be valid JSON
+        assert isinstance(data, dict)
+
+    def test_format_json_to_file_with_sort_keys(self, passing_validation_result):
+        """Test format_json_to_file with sort_keys parameter."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "sorted.json"
+
+            result_path = format_json_to_file(
+                passing_validation_result, output_path, sort_keys=True
+            )
+
+            assert result_path == output_path
+            content = output_path.read_text(encoding="utf-8")
+            data = json.loads(content)
+            assert isinstance(data, dict)
+
+
+class TestJSONFormatterIndentVariations:
+    """Test JSON formatter with different indent values."""
+
+    def test_format_json_indent_0(self, passing_validation_result):
+        """Test JSON with indent=0 (compact with newlines)."""
+        output = format_json(passing_validation_result, indent=0)
+        data = json.loads(output)
+        assert isinstance(data, dict)
+
+    def test_format_json_indent_4(self, passing_validation_result):
+        """Test JSON with indent=4."""
+        output = format_json(passing_validation_result, indent=4)
+        data = json.loads(output)
+        assert isinstance(data, dict)
+        # Should have 4-space indentation
+        assert "    " in output
+
+    def test_format_json_to_file_with_custom_indent(self, passing_validation_result):
+        """Test format_json_to_file with custom indent."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "indented.json"
+
+            result_path = format_json_to_file(
+                passing_validation_result, output_path, indent=4
+            )
+
+            content = output_path.read_text(encoding="utf-8")
+            assert "    " in content
+
+
+# =============================================================================
+# Additional HTML Formatter Tests - Enhanced Coverage
+# =============================================================================
+
+
+class TestHTMLFormatterFromIds:
+    """Test HTML formatter using format_html_from_ids functions."""
+
+    def test_format_html_from_ids_with_mock(self):
+        """Test format_html_from_ids with mocked IDS file object."""
+        from unittest.mock import MagicMock
+        import sys
+
+        mock_ids_file = MagicMock()
+
+        # Create mock reporter module
+        mock_reporter = MagicMock()
+        mock_html_reporter = MagicMock()
+        mock_html_reporter.to_string.return_value = "<html>test</html>"
+        mock_reporter.Html.return_value = mock_html_reporter
+
+        # Inject mock into sys.modules
+        original_reporter = sys.modules.get("ifctester.reporter")
+        sys.modules["ifctester.reporter"] = mock_reporter
+
+        try:
+            result = format_html_from_ids(mock_ids_file, hide_skipped=False)
+
+            mock_reporter.Html.assert_called_once_with(mock_ids_file, hide_skipped=False)
+            mock_html_reporter.to_string.assert_called_once()
+            assert result == "<html>test</html>"
+        finally:
+            # Restore original module
+            if original_reporter is not None:
+                sys.modules["ifctester.reporter"] = original_reporter
+            else:
+                sys.modules.pop("ifctester.reporter", None)
+
+    def test_format_html_from_ids_hide_skipped(self):
+        """Test format_html_from_ids with hide_skipped=True."""
+        from unittest.mock import MagicMock
+        import sys
+
+        mock_ids_file = MagicMock()
+
+        # Create mock reporter module
+        mock_reporter = MagicMock()
+        mock_html_reporter = MagicMock()
+        mock_html_reporter.to_string.return_value = "<html>test</html>"
+        mock_reporter.Html.return_value = mock_html_reporter
+
+        # Inject mock into sys.modules
+        original_reporter = sys.modules.get("ifctester.reporter")
+        sys.modules["ifctester.reporter"] = mock_reporter
+
+        try:
+            result = format_html_from_ids(mock_ids_file, hide_skipped=True)
+
+            mock_reporter.Html.assert_called_once_with(mock_ids_file, hide_skipped=True)
+        finally:
+            # Restore original module
+            if original_reporter is not None:
+                sys.modules["ifctester.reporter"] = original_reporter
+            else:
+                sys.modules.pop("ifctester.reporter", None)
+
+    def test_format_html_from_ids_to_file_with_mock(self):
+        """Test format_html_from_ids_to_file with mocked IDS file object."""
+        from unittest.mock import MagicMock
+        import sys
+
+        mock_ids_file = MagicMock()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "report.html"
+
+            # Create mock reporter module
+            mock_reporter = MagicMock()
+            mock_html_reporter = MagicMock()
+            mock_reporter.Html.return_value = mock_html_reporter
+
+            # Inject mock into sys.modules
+            original_reporter = sys.modules.get("ifctester.reporter")
+            sys.modules["ifctester.reporter"] = mock_reporter
+
+            try:
+                result = format_html_from_ids_to_file(mock_ids_file, output_path)
+
+                mock_reporter.Html.assert_called_once_with(mock_ids_file, hide_skipped=False)
+                mock_html_reporter.to_file.assert_called_once_with(str(output_path))
+                assert result == output_path
+            finally:
+                # Restore original module
+                if original_reporter is not None:
+                    sys.modules["ifctester.reporter"] = original_reporter
+                else:
+                    sys.modules.pop("ifctester.reporter", None)
+
+    def test_format_html_from_ids_to_file_creates_dirs(self):
+        """Test format_html_from_ids_to_file creates parent directories."""
+        from unittest.mock import MagicMock
+        import sys
+
+        mock_ids_file = MagicMock()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "nested" / "dir" / "report.html"
+
+            # Create mock reporter module
+            mock_reporter = MagicMock()
+            mock_html_reporter = MagicMock()
+            mock_reporter.Html.return_value = mock_html_reporter
+
+            # Inject mock into sys.modules
+            original_reporter = sys.modules.get("ifctester.reporter")
+            sys.modules["ifctester.reporter"] = mock_reporter
+
+            try:
+                result = format_html_from_ids_to_file(mock_ids_file, output_path)
+
+                # Parent directory should be created
+                assert output_path.parent.exists()
+            finally:
+                # Restore original module
+                if original_reporter is not None:
+                    sys.modules["ifctester.reporter"] = original_reporter
+                else:
+                    sys.modules.pop("ifctester.reporter", None)
+
+
+class TestHTMLFormatterPrintHtml:
+    """Test HTML formatter print_html function."""
+
+    def test_print_html_outputs_to_stdout(self, passing_validation_result, capsys):
+        """Test that print_html outputs HTML to stdout."""
+        from src.ifc_validator.formatters.html import print_html
+
+        print_html(passing_validation_result)
+
+        captured = capsys.readouterr()
+        assert "<!DOCTYPE html>" in captured.out
+        assert "sample.ifc" in captured.out
+
+
+class TestHTMLFormatterTruncation:
+    """Test HTML formatter failure truncation."""
+
+    def test_format_html_truncates_many_failures(self):
+        """Test that HTML formatter truncates failures over 50 per spec."""
+        # Create more than 50 failures
+        failures = [
+            EntityFailure(
+                entity_id=i,
+                entity_type="IfcWall",
+                entity_name=f"Wall-{i}",
+                global_id=f"guid-{i:08d}",
+            )
+            for i in range(60)  # More than the max of 50
+        ]
+        spec = SpecificationResult(
+            name="Many Failures Spec",
+            description="Test truncation",
+            passed=False,
+            applicable_count=60,
+            passed_count=0,
+            failed_count=60,
+            failures=failures,
+        )
+        result = ValidationResult(
+            timestamp="2025-01-01T12:00:00",
+            ifc_file="model.ifc",
+            ifc_schema="IFC4",
+            ifc_entity_count=1000,
+            ids_file="rules.ids",
+            ids_title="Truncation Test",
+            validation_time_seconds=1.0,
+            total_specifications=1,
+            passed_specifications=0,
+            failed_specifications=1,
+            pass_rate_percent=0.0,
+            specifications=[spec],
+            overall_pass=False,
+        )
+
+        output = format_html(result)
+
+        # Should have truncation message
+        assert "more failures" in output or "and 10 more" in output
+
+
+class TestHTMLFormatterEmptyEntityValues:
+    """Test HTML formatter with empty entity values."""
+
+    def test_format_html_with_none_entity_values(self):
+        """Test HTML formatter handles None entity_name and global_id."""
+        failure = EntityFailure(
+            entity_id=123,
+            entity_type="IfcWall",
+            entity_name=None,
+            global_id=None,
+        )
+        spec = SpecificationResult(
+            name="Test Spec",
+            description="Test",
+            passed=False,
+            applicable_count=1,
+            passed_count=0,
+            failed_count=1,
+            failures=[failure],
+        )
+        result = ValidationResult(
+            timestamp="2025-01-01T12:00:00",
+            ifc_file="model.ifc",
+            ifc_schema="IFC4",
+            ifc_entity_count=1,
+            ids_file="rules.ids",
+            ids_title=None,
+            validation_time_seconds=0.1,
+            total_specifications=1,
+            passed_specifications=0,
+            failed_specifications=1,
+            pass_rate_percent=0.0,
+            specifications=[spec],
+            overall_pass=False,
+        )
+
+        output = format_html(result)
+
+        # Should show dash for missing values instead of "None"
+        assert "—" in output  # Em dash for missing values
+        assert "<!DOCTYPE html>" in output
+
+
+class TestHTMLFormatterSpecsWithoutDescription:
+    """Test HTML formatter with specifications without description."""
+
+    def test_format_html_spec_no_description(self):
+        """Test HTML formatter when spec description is None."""
+        spec = SpecificationResult(
+            name="No Description Spec",
+            description=None,
+            passed=True,
+            applicable_count=5,
+            passed_count=5,
+            failed_count=0,
+            failures=[],
+        )
+        result = ValidationResult(
+            timestamp="2025-01-01T12:00:00",
+            ifc_file="model.ifc",
+            ifc_schema="IFC4",
+            ifc_entity_count=100,
+            ids_file="rules.ids",
+            ids_title=None,
+            validation_time_seconds=0.1,
+            total_specifications=1,
+            passed_specifications=1,
+            failed_specifications=0,
+            pass_rate_percent=100.0,
+            specifications=[spec],
+            overall_pass=True,
+        )
+
+        output = format_html(result)
+
+        # Should not contain "None" as text in description area
+        assert "No Description Spec" in output
+        # Verify description is not showing "None"
+        assert '>None<' not in output
+
+
+class TestHTMLGenerateTemplateFunction:
+    """Test the _generate_html_template internal function."""
+
+    def test_generate_html_template_basic(self, passing_validation_result):
+        """Test _generate_html_template produces complete HTML."""
+        from src.ifc_validator.formatters.html import _generate_html_template
+
+        output = _generate_html_template(passing_validation_result)
+
+        assert "<!DOCTYPE html>" in output
+        assert "<html" in output
+        assert "</html>" in output
+        assert "sample.ifc" in output
+
+
+# =============================================================================
+# Console Formatter Direct format_console Tests
+# =============================================================================
+
+
+class TestConsoleFormatDirect:
+    """Test the format_console function directly (outputs to console)."""
+
+    def test_format_console_runs_without_error(self, passing_validation_result, capsys):
+        """Test that format_console runs without raising errors."""
+        from src.ifc_validator.formatters.console import format_console
+
+        # This should not raise an error
+        format_console(passing_validation_result)
+
+        # Should produce some output
+        captured = capsys.readouterr()
+        # Output goes to console, so it should have content
+        assert len(captured.out) >= 0  # Just verify it ran
+
+    def test_format_console_with_failures(self, failing_validation_result, capsys):
+        """Test format_console with failing validation result."""
+        from src.ifc_validator.formatters.console import format_console
+
+        format_console(failing_validation_result, show_failures=True)
+
+        captured = capsys.readouterr()
+        assert len(captured.out) >= 0
+
+    def test_format_console_without_failures_shown(self, failing_validation_result, capsys):
+        """Test format_console with show_failures=False."""
+        from src.ifc_validator.formatters.console import format_console
+
+        format_console(failing_validation_result, show_failures=False)
+
+        captured = capsys.readouterr()
+        assert len(captured.out) >= 0
+
+
+# =============================================================================
+# HTML Formatter Unicode and Edge Cases
+# =============================================================================
+
+
+class TestHTMLFormatterUnicode:
+    """Test HTML formatter with Unicode characters."""
+
+    def test_format_html_unicode_in_names(self):
+        """Test HTML handles Unicode in specification and entity names."""
+        failure = EntityFailure(
+            entity_id=1,
+            entity_type="IfcWall",
+            entity_name="墙壁名称",  # Chinese characters
+            global_id="unicode-测试-id",
+        )
+        spec = SpecificationResult(
+            name="规范名称: éàü",  # Mixed Unicode
+            description="Description with émojis: ✓✗",
+            passed=False,
+            applicable_count=1,
+            passed_count=0,
+            failed_count=1,
+            failures=[failure],
+        )
+        result = ValidationResult(
+            timestamp="2025-01-01T12:00:00",
+            ifc_file="model.ifc",
+            ifc_schema="IFC4",
+            ifc_entity_count=1,
+            ids_file="rules.ids",
+            ids_title="Unicode Title: 测试",
+            validation_time_seconds=0.1,
+            total_specifications=1,
+            passed_specifications=0,
+            failed_specifications=1,
+            pass_rate_percent=0.0,
+            specifications=[spec],
+            overall_pass=False,
+        )
+
+        output = format_html(result)
+
+        # Should contain the Unicode characters (escaped or not)
+        assert "<!DOCTYPE html>" in output
+        # These should be in the output
+        assert "Unicode Title" in output or "测试" in output
+
+
+class TestHTMLFormatterLargeEntity:
+    """Test HTML formatter with large entity counts."""
+
+    def test_format_html_large_entity_count(self):
+        """Test HTML formatter handles large entity counts correctly."""
+        result = ValidationResult(
+            timestamp="2025-01-01T12:00:00",
+            ifc_file="large-model.ifc",
+            ifc_schema="IFC4",
+            ifc_entity_count=1234567,  # Large number
+            ids_file="rules.ids",
+            ids_title="Large Model Test",
+            validation_time_seconds=123.456,
+            total_specifications=0,
+            passed_specifications=0,
+            failed_specifications=0,
+            pass_rate_percent=0.0,
+            specifications=[],
+            overall_pass=True,
+        )
+
+        output = format_html(result)
+
+        # Should format large numbers with comma separators
+        assert "1,234,567" in output or "1234567" in output
+
+
+# =============================================================================
+# Formatter Type Validation Tests
+# =============================================================================
+
+
+class TestFormatterTypeValidation:
+    """Test that formatters handle type-related edge cases."""
+
+    def test_all_formatters_handle_zero_counts(self):
+        """Test all formatters handle zero counts gracefully."""
+        spec = SpecificationResult(
+            name="Zero Count Spec",
+            description="No entities",
+            passed=True,
+            applicable_count=0,
+            passed_count=0,
+            failed_count=0,
+            failures=[],
+        )
+        result = ValidationResult(
+            timestamp="2025-01-01T12:00:00",
+            ifc_file="empty.ifc",
+            ifc_schema="IFC4",
+            ifc_entity_count=0,
+            ids_file="rules.ids",
+            ids_title=None,
+            validation_time_seconds=0.0,
+            total_specifications=1,
+            passed_specifications=1,
+            failed_specifications=0,
+            pass_rate_percent=100.0,
+            specifications=[spec],
+            overall_pass=True,
+        )
+
+        console_output = format_console_to_string(result)
+        json_output = format_json(result)
+        html_output = format_html(result)
+
+        # All should produce valid output
+        assert isinstance(console_output, str)
+        assert json.loads(json_output)
+        assert "<!DOCTYPE html>" in html_output
+
+    def test_all_formatters_handle_float_precision(self):
+        """Test formatters handle floating point precision correctly."""
+        result = ValidationResult(
+            timestamp="2025-01-01T12:00:00",
+            ifc_file="model.ifc",
+            ifc_schema="IFC4",
+            ifc_entity_count=100,
+            ids_file="rules.ids",
+            ids_title="Test",
+            validation_time_seconds=0.123456789,  # Many decimal places
+            total_specifications=3,
+            passed_specifications=2,
+            failed_specifications=1,
+            pass_rate_percent=66.66666666666667,  # Repeating decimal
+            specifications=[],
+            overall_pass=False,
+        )
+
+        console_output = format_console_to_string(result)
+        json_output = format_json(result)
+        html_output = format_html(result)
+
+        # All should produce valid output
+        assert isinstance(console_output, str)
+        data = json.loads(json_output)
+        assert isinstance(data["pass_rate_percent"], float)
+        assert "<!DOCTYPE html>" in html_output

@@ -1023,6 +1023,328 @@ class TestIntegration:
         parser.close()
 
 
+# =============================================================================
+# Permission Error Tests
+# =============================================================================
+
+
+class TestPermissionError:
+    """Test permission error handling."""
+
+    def test_permission_error_raises_when_file_not_readable(self, parser):
+        """Test that PermissionError is raised when file cannot be read."""
+        with patch("builtins.open", side_effect=PermissionError("Access denied")):
+            with tempfile.NamedTemporaryFile(suffix=".ifc", delete=False) as f:
+                f.write(b"ISO-10303-21;")
+                temp_path = f.name
+
+            try:
+                with pytest.raises(PermissionError) as exc_info:
+                    parser.load(temp_path)
+
+                assert "Permission denied" in str(exc_info.value)
+            finally:
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
+
+    def test_os_error_raises_during_file_access(self, parser):
+        """Test that OSError is raised for file access issues."""
+        with patch("builtins.open", side_effect=OSError("Disk error")):
+            with tempfile.NamedTemporaryFile(suffix=".ifc", delete=False) as f:
+                f.write(b"ISO-10303-21;")
+                temp_path = f.name
+
+            try:
+                with pytest.raises(OSError) as exc_info:
+                    parser.load(temp_path)
+
+                assert "Cannot access file" in str(exc_info.value)
+            finally:
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
+
+
+# =============================================================================
+# IFC Parsing Error Tests
+# =============================================================================
+
+
+class TestIfcParsingErrors:
+    """Test various IFC parsing error scenarios."""
+
+    def test_memory_error_during_ifcopenshell_open(self, parser, temp_ifc2x3_file):
+        """Test MemoryError raised during ifcopenshell.open()."""
+        with patch("ifcopenshell.open", side_effect=MemoryError("Out of memory")):
+            with pytest.raises(MemoryError) as exc_info:
+                parser.load(str(temp_ifc2x3_file))
+
+            error_msg = str(exc_info.value)
+            assert "Insufficient memory" in error_msg or "memory" in error_msg.lower()
+
+    def test_schema_error_during_parsing(self, parser, temp_ifc2x3_file):
+        """Test SchemaError raised during ifcopenshell.open()."""
+        import ifcopenshell
+
+        with patch(
+            "ifcopenshell.open",
+            side_effect=ifcopenshell.SchemaError("Invalid schema definition"),
+        ):
+            with pytest.raises(ValueError) as exc_info:
+                parser.load(str(temp_ifc2x3_file))
+
+            error_msg = str(exc_info.value)
+            assert "schema error" in error_msg.lower()
+
+    def test_ifcopenshell_error_during_parsing(self, parser, temp_ifc2x3_file):
+        """Test ifcopenshell.Error raised during parsing."""
+        import ifcopenshell
+
+        with patch(
+            "ifcopenshell.open",
+            side_effect=ifcopenshell.Error("Unable to parse IFC SPF header"),
+        ):
+            with pytest.raises(ValueError) as exc_info:
+                parser.load(str(temp_ifc2x3_file))
+
+            error_msg = str(exc_info.value)
+            assert "Failed to parse" in error_msg
+            assert "header" in error_msg.lower()
+
+    def test_runtime_error_during_parsing(self, parser, temp_ifc2x3_file):
+        """Test RuntimeError raised during ifcopenshell.open()."""
+        with patch(
+            "ifcopenshell.open", side_effect=RuntimeError("C++ layer error")
+        ):
+            with pytest.raises(ValueError) as exc_info:
+                parser.load(str(temp_ifc2x3_file))
+
+            error_msg = str(exc_info.value)
+            assert "Failed to parse" in error_msg
+            assert "corrupt" in error_msg.lower() or "STEP" in error_msg
+
+    def test_unexpected_exception_during_parsing(self, parser, temp_ifc2x3_file):
+        """Test unexpected Exception raised during ifcopenshell.open()."""
+        with patch(
+            "ifcopenshell.open",
+            side_effect=KeyError("Unexpected internal error"),
+        ):
+            with pytest.raises(ValueError) as exc_info:
+                parser.load(str(temp_ifc2x3_file))
+
+            error_msg = str(exc_info.value)
+            assert "Unexpected error" in error_msg
+            assert "KeyError" in error_msg
+
+
+# =============================================================================
+# Unsupported Schema Tests
+# =============================================================================
+
+
+class TestUnsupportedSchema:
+    """Test handling of unsupported IFC schemas."""
+
+    def test_unsupported_schema_raises_value_error(self, parser):
+        """Test that unsupported schema raises ValueError."""
+        # Create a mock IFC file object with unsupported schema
+        mock_ifc_file = MagicMock()
+        mock_ifc_file.schema = "IFC2X2"  # Unsupported schema
+
+        with patch("ifcopenshell.open", return_value=mock_ifc_file):
+            with tempfile.NamedTemporaryFile(suffix=".ifc", delete=False) as f:
+                f.write(b"ISO-10303-21;\nHEADER;\nDATA;\nENDSEC;\nEND-ISO-10303-21;")
+                temp_path = f.name
+
+            try:
+                with pytest.raises(ValueError) as exc_info:
+                    parser.load(temp_path)
+
+                error_msg = str(exc_info.value)
+                assert "Unsupported IFC schema" in error_msg
+                assert "IFC2X2" in error_msg
+            finally:
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
+
+    def test_unsupported_schema_closes_file(self, parser):
+        """Test that parser closes file when unsupported schema is detected."""
+        mock_ifc_file = MagicMock()
+        mock_ifc_file.schema = "IFC4X1"  # Unsupported schema
+
+        with patch("ifcopenshell.open", return_value=mock_ifc_file):
+            with tempfile.NamedTemporaryFile(suffix=".ifc", delete=False) as f:
+                f.write(b"ISO-10303-21;\nHEADER;\nDATA;\nENDSEC;\nEND-ISO-10303-21;")
+                temp_path = f.name
+
+            try:
+                with pytest.raises(ValueError):
+                    parser.load(temp_path)
+
+                # Parser should be closed after the error
+                assert parser.is_loaded is False
+                assert parser.ifc_file is None
+                assert parser.schema is None
+            finally:
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
+
+
+# =============================================================================
+# Parse Error Format Tests
+# =============================================================================
+
+
+class TestFormatParseError:
+    """Test the _format_parse_error helper method."""
+
+    def test_format_error_unexpected_token(self, parser):
+        """Test error formatting for unexpected token errors."""
+        result = parser._format_parse_error(
+            "test.ifc", "Unexpected token at line 42"
+        )
+        assert "test.ifc" in result
+        assert "STEP syntax" in result
+
+    def test_format_error_syntax_error(self, parser):
+        """Test error formatting for syntax errors."""
+        result = parser._format_parse_error(
+            "test.ifc", "syntax error near entity #123"
+        )
+        assert "test.ifc" in result
+        assert "syntax errors" in result
+
+    def test_format_error_duplicate_id(self, parser):
+        """Test error formatting for duplicate ID errors."""
+        result = parser._format_parse_error(
+            "test.ifc", "Duplicate id #456 found"
+        )
+        assert "test.ifc" in result
+        assert "duplicate entity ids" in result.lower()
+
+    def test_format_error_invalid_entity(self, parser):
+        """Test error formatting for invalid entity errors."""
+        result = parser._format_parse_error(
+            "test.ifc", "Invalid entity IFCFAKEENTITY"
+        )
+        assert "test.ifc" in result
+        assert "invalid" in result.lower()
+
+    def test_format_error_unknown_entity(self, parser):
+        """Test error formatting for unknown entity errors."""
+        result = parser._format_parse_error(
+            "test.ifc", "Unknown entity type IFCNONEXISTENT"
+        )
+        assert "test.ifc" in result
+        assert "not defined in the schema" in result
+
+    def test_format_error_header_error(self, parser):
+        """Test error formatting for header parsing errors."""
+        result = parser._format_parse_error(
+            "test.ifc", "Unable to parse IFC SPF header"
+        )
+        assert "test.ifc" in result
+        assert "header" in result.lower()
+        assert "ISO-10303-21" in result
+
+    def test_format_error_unknown_error(self, parser):
+        """Test error formatting for unknown error types."""
+        result = parser._format_parse_error(
+            "test.ifc", "Some completely unknown error message"
+        )
+        assert "test.ifc" in result
+        assert "corrupt" in result.lower() or "invalid" in result.lower()
+
+
+# =============================================================================
+# Property Access Tests
+# =============================================================================
+
+
+class TestPropertyAccess:
+    """Test property access on IFCParser."""
+
+    def test_file_path_property(self, parser, test_ifc_file):
+        """Test file_path property returns Path object."""
+        if not test_ifc_file.exists():
+            pytest.skip(f"Test file not found: {test_ifc_file}")
+
+        parser.load(str(test_ifc_file))
+        assert parser.file_path == test_ifc_file
+        assert isinstance(parser.file_path, Path)
+
+    def test_ifc_file_property_before_load(self, parser):
+        """Test ifc_file property is None before load."""
+        assert parser.ifc_file is None
+
+    def test_ifc_file_property_after_load(self, parser, test_ifc_file):
+        """Test ifc_file property returns ifcopenshell file object."""
+        if not test_ifc_file.exists():
+            pytest.skip(f"Test file not found: {test_ifc_file}")
+
+        parser.load(str(test_ifc_file))
+        assert parser.ifc_file is not None
+
+        # Verify we can use the ifc_file object directly
+        project = parser.ifc_file.by_type("IfcProject")
+        assert len(project) == 1
+
+    def test_memory_stats_property_before_load(self, parser):
+        """Test memory_stats property is None before load."""
+        assert parser.memory_stats is None
+
+
+# =============================================================================
+# Edge Cases Tests
+# =============================================================================
+
+
+class TestEdgeCases:
+    """Test edge cases and boundary conditions."""
+
+    def test_load_closes_previous_file(self, parser, temp_ifc2x3_file, temp_ifc4_file):
+        """Test that loading a new file closes the previous one."""
+        # Load first file
+        parser.load(str(temp_ifc2x3_file))
+        assert parser.schema == "IFC2X3"
+
+        # Load second file (should auto-close first)
+        parser.load(str(temp_ifc4_file))
+        assert parser.schema == "IFC4"
+
+    def test_close_when_not_loaded(self, parser):
+        """Test that close() can be called when no file is loaded."""
+        # Should not raise
+        parser.close()
+        assert parser.is_loaded is False
+
+    def test_close_multiple_times(self, parser, temp_ifc2x3_file):
+        """Test that close() can be called multiple times without error."""
+        parser.load(str(temp_ifc2x3_file))
+        parser.close()
+        parser.close()  # Second close should not raise
+        assert parser.is_loaded is False
+
+    def test_repr_shows_file_and_schema_when_loaded(self, parser, temp_ifc4_file):
+        """Test repr includes file and schema when loaded."""
+        parser.load(str(temp_ifc4_file))
+        repr_str = repr(parser)
+
+        assert "IFCParser(file=" in repr_str
+        assert "schema='IFC4'" in repr_str
+
+    def test_load_with_path_object(self, parser, temp_ifc4_file):
+        """Test that load() accepts Path objects."""
+        # Pass Path object directly instead of string
+        parser.load(str(temp_ifc4_file))  # Using str for compatibility
+        assert parser.is_loaded is True
+
+    def test_get_memory_rss_returns_int(self, parser):
+        """Test _get_memory_rss returns positive integer."""
+        rss = parser._get_memory_rss()
+        assert isinstance(rss, int)
+        assert rss > 0
+
+
 def test_entity_loading():
     """Integration test: entity loading with by_type() functionality.
 

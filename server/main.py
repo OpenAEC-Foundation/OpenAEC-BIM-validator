@@ -1,33 +1,59 @@
 """
-FastAPI Server for Server-Side IFC Rendering POC
+FastAPI backend for IFC file validation web interface.
 
 This server provides endpoints for:
-- IFC file uploads
+- Health monitoring and observability
+- IFC file uploads and validation
 - Server-side IFC processing (converts IFC to optimized geometry)
-- Serving processed geometry to browser clients
 
 Run with: uvicorn server.main:app --reload --port 8000
 Or from server directory: uvicorn main:app --reload --port 8000
 """
 
-import os
+import json
+import logging
 import tempfile
 import time
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
 
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
-from server.ifc_processor import IFCProcessor, GLTF_AVAILABLE
+from server.ifc_processor import GLTF_AVAILABLE, IFCProcessor
+
+
+class JSONFormatter(logging.Formatter):
+    """Custom formatter that outputs log records as JSON for structured logging."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        """Format the log record as a JSON string."""
+        log_data = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "level": record.levelname,
+            "message": record.getMessage(),
+            "module": record.module,
+            "function": record.funcName,
+            "line": record.lineno,
+        }
+        return json.dumps(log_data)
+
+
+# Configure structured JSON logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler()
+handler.setFormatter(JSONFormatter())
+logger.handlers = [handler]
+logger.propagate = False
 
 # Create FastAPI app with metadata for auto-docs
 app = FastAPI(
-    title="IFC Server-Side Rendering POC",
-    description="Server-side IFC processing API for Phase 0 research validation",
-    version="0.1.0",
+    title="IFC Validation API",
+    description="API for IFC file upload and validation",
+    version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -61,12 +87,13 @@ ifc_processor = IFCProcessor(output_dir=PROCESSED_DIR)
 
 @app.get("/")
 async def root():
-    """Health check endpoint"""
+    """Root endpoint with API information."""
     return {
         "status": "healthy",
-        "service": "IFC Server-Side Rendering POC",
-        "version": "0.1.0",
+        "service": "IFC Validation API",
+        "version": "1.0.0",
         "endpoints": {
+            "health": "/health",
             "upload": "/api/upload",
             "status": "/api/status/{file_id}",
             "docs": "/docs",
@@ -74,9 +101,15 @@ async def root():
     }
 
 
-@app.get("/api/health")
+@app.get("/health")
 async def health_check():
-    """API health check"""
+    """Health check endpoint for monitoring."""
+    return {"status": "healthy"}
+
+
+@app.get("/api/health")
+async def detailed_health_check():
+    """Detailed API health check with system information."""
     return {
         "status": "ok",
         "upload_dir": str(UPLOAD_DIR),
@@ -89,7 +122,7 @@ async def health_check():
 
 @app.post("/api/upload")
 async def upload_ifc(
-    ifc_file: UploadFile = File(..., description="IFC file to process"),
+    ifc_file: UploadFile = File(..., description="IFC file to process"),  # noqa: B008
 ):
     """
     Upload an IFC file for server-side processing.
@@ -122,7 +155,9 @@ async def upload_ifc(
         content = await ifc_file.read()
         file_size = len(content)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error reading file: {str(e)}")
+        raise HTTPException(
+            status_code=400, detail=f"Error reading file: {str(e)}"
+        ) from None
 
     # Check file size
     if file_size > MAX_FILE_SIZE:
@@ -142,7 +177,9 @@ async def upload_ifc(
         with open(file_path, "wb") as f:
             f.write(content)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error saving file: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error saving file: {str(e)}"
+        ) from None
 
     upload_time = time.time() - start_time
 
@@ -229,7 +266,7 @@ async def delete_file(file_id: str):
         except Exception as e:
             raise HTTPException(
                 status_code=500, detail=f"Error deleting file: {str(e)}"
-            )
+            ) from None
 
     # Remove from tracking
     del uploaded_files[file_id]
