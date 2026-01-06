@@ -17,12 +17,15 @@ import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
 from server.ifc_processor import GLTF_AVAILABLE, IFCProcessor
+from server.ids_validator import IDSValidator
+from ifc_validator.standards.resolver import get_bundled_ids, is_shortcut
 
 
 class JSONFormatter(logging.Formatter):
@@ -73,6 +76,9 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 
 # Maximum file size (500MB for large file testing)
 MAX_FILE_SIZE = 500 * 1024 * 1024  # 500MB in bytes
+
+# Maximum IDS file size (5MB)
+MAX_IDS_FILE_SIZE = 5 * 1024 * 1024  # 5MB in bytes
 
 # Track uploaded files for cleanup and status
 uploaded_files: dict[str, dict] = {}
