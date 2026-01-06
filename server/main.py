@@ -17,12 +17,23 @@ import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
 from server.ifc_processor import GLTF_AVAILABLE, IFCProcessor
+from server.ids_validator import IDSValidator, ValidationReport
+from server.models.validation_results import (
+    ElementResult,
+    RequirementResult,
+    SeverityLevel,
+    SpecificationResult,
+    ValidationResult,
+    ValidationStatus,
+)
+from ifc_validator.standards.resolver import get_bundled_ids
 
 
 class JSONFormatter(logging.Formatter):
@@ -73,6 +84,9 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 
 # Maximum file size (500MB for large file testing)
 MAX_FILE_SIZE = 500 * 1024 * 1024  # 500MB in bytes
+
+# Maximum IDS file size (5MB)
+MAX_IDS_FILE_SIZE = 5 * 1024 * 1024  # 5MB in bytes
 
 # Track uploaded files for cleanup and status
 uploaded_files: dict[str, dict] = {}
@@ -446,6 +460,372 @@ async def get_capabilities():
         "recommended_format": "gltf" if GLTF_AVAILABLE else "json-mesh",
         "processor": ifc_processor.get_capabilities(),
     }
+
+
+def convert_report_to_result(
+    report: ValidationReport,
+    ifc_filename: str,
+    ids_filename: str,
+) -> ValidationResult:
+    """
+    Convert a ValidationReport dataclass to a ValidationResult Pydantic model.
+
+    This function maps the internal validation report structure (dataclass) to
+    the API response model (Pydantic). Key mappings:
+    - ValidationReport.success (ran) -> ValidationResult.success (all passed)
+    - SpecificationResult dataclass -> SpecificationResult Pydantic (nested)
+    - EntityFailure -> ElementResult for failed element details
+
+    Args:
+        report: The ValidationReport dataclass from IDSValidator
+        ifc_filename: Original IFC filename for response
+        ids_filename: Original IDS filename (or standard name) for response
+
+    Returns:
+        ValidationResult Pydantic model ready for JSON serialization
+    """
+    # Convert each specification from dataclass to Pydantic model
+    spec_results: list[SpecificationResult] = []
+    total_elements_validated = 0
+
+    for spec in report.specifications:
+        # Track total elements validated across all specifications
+        total_elements_validated += spec.applicable_count
+
+        # Convert EntityFailure dataclass items to ElementResult Pydantic models
+        element_results: list[ElementResult] = []
+        for failure in spec.failures:
+            element_results.append(
+                ElementResult(
+                    global_id=failure.global_id,
+                    element_type=failure.entity_type,
+                    element_name=failure.entity_name,
+                    status=ValidationStatus.FAIL,
+                    messages=[],  # No specific messages available from ifctester
+                )
+            )
+
+        # Create a single requirement result that contains all element results
+        # Note: ifctester doesn't expose requirement-level granularity,
+        # so we wrap all elements in a single "requirement" per specification
+        requirement_result = RequirementResult(
+            requirement_description=spec.description or spec.name,
+            status=ValidationStatus.PASS if spec.passed else ValidationStatus.FAIL,
+            total_elements=spec.applicable_count,
+            failed_elements=spec.failed_count,
+            elements=element_results,
+        )
+
+        # Map specification status to ValidationStatus enum
+        spec_status = ValidationStatus.PASS if spec.passed else ValidationStatus.FAIL
+
+        # Create Pydantic SpecificationResult
+        # Note: severity defaults to ERROR as ifctester doesn't expose this
+        spec_result = SpecificationResult(
+            specification_name=spec.name,
+            severity=SeverityLevel.ERROR,
+            status=spec_status,
+            total_requirements=1,  # Each spec treated as one requirement
+            failed_requirements=0 if spec.passed else 1,
+            requirements=[requirement_result],
+        )
+        spec_results.append(spec_result)
+
+    # Calculate success: all specifications must have passed
+    all_passed = report.failed_specifications == 0
+
+    return ValidationResult(
+        success=all_passed,
+        total_specifications=report.total_specifications,
+        failed_specifications=report.failed_specifications,
+        total_elements_validated=total_elements_validated,
+        validation_timestamp=report.timestamp,
+        specifications=spec_results,
+        ifc_file_name=ifc_filename,
+        ids_file_name=ids_filename,
+    )
+
+
+@app.post("/api/v1/validate")
+async def validate_ifc(
+    ifc_file: UploadFile = File(..., description="IFC file to validate"),  # noqa: B008
+    ids_file: Optional[UploadFile] = File(  # noqa: B008
+        None, description="IDS file with validation rules (optional if ids_standard provided)"
+    ),
+    ids_standard: Optional[str] = Query(  # noqa: B008
+        None,
+        description="Built-in IDS standard to use: 'nl-bim' or 'rvb' (optional if ids_file provided)",
+    ),
+):
+    """
+    Validate an IFC file against IDS specifications.
+
+    Accepts an IFC file and validates it against either:
+    - A custom IDS file uploaded via `ids_file`, OR
+    - A built-in Dutch BIM standard specified via `ids_standard`
+
+    At least one of `ids_file` or `ids_standard` must be provided.
+
+    Args:
+        ifc_file: The IFC file to validate (required, max 500MB)
+        ids_file: Custom IDS file with validation rules (optional, max 5MB)
+        ids_standard: Built-in standard - "nl-bim" or "rvb" (optional)
+
+    Returns:
+        ValidationResult with pass/fail counts and detailed specification results
+
+    Raises:
+        400: Missing required files or invalid parameters
+        413: File too large
+        422: Corrupt or invalid file content
+    """
+    # === IFC FILE VALIDATION (Subtask 2.1) ===
+
+    # Check filename exists
+    if not ifc_file.filename:
+        raise HTTPException(
+            status_code=400,
+            detail="IFC file upload is required. Please select an IFC file to validate.",
+        )
+
+    # Validate file extension (.ifc, .ifcxml, or .ifczip)
+    ifc_filename_lower = ifc_file.filename.lower()
+    valid_ifc_extensions = (".ifc", ".ifcxml", ".ifczip")
+    if not ifc_filename_lower.endswith(valid_ifc_extensions):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Invalid IFC file type. Expected .ifc, .ifcxml, or .ifczip file, "
+                f"got: {ifc_file.filename}"
+            ),
+        )
+
+    # Read file content
+    try:
+        ifc_content = await ifc_file.read()
+        ifc_file_size = len(ifc_content)
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to read IFC file '{ifc_file.filename}': {str(e)}. Please ensure the file is accessible and try again.",
+        ) from None
+
+    # Check file size against MAX_FILE_SIZE (500MB)
+    if ifc_file_size > MAX_FILE_SIZE:
+        max_size_mb = MAX_FILE_SIZE / 1024 / 1024
+        actual_size_mb = ifc_file_size / 1024 / 1024
+        raise HTTPException(
+            status_code=413,
+            detail=(
+                f"IFC file too large. Maximum size is {max_size_mb:.0f}MB, "
+                f"got {actual_size_mb:.1f}MB"
+            ),
+        )
+
+    # Check file is not empty
+    if ifc_file_size == 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"IFC file '{ifc_file.filename}' is empty. Please upload a valid IFC file with content.",
+        )
+
+    # === IDS FILE/STANDARD VALIDATION (Subtask 2.2) ===
+
+    # Either ids_file OR ids_standard must be provided
+    if ids_file is None and ids_standard is None:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Either ids_file or ids_standard must be provided. "
+                "Upload an IDS file or specify a standard: 'nl-bim' or 'rvb'"
+            ),
+        )
+
+    # If ids_file provided, validate extension and size
+    if ids_file is not None:
+        # Check filename exists
+        if not ids_file.filename:
+            raise HTTPException(
+                status_code=400,
+                detail="IDS file is missing a filename. Please ensure the IDS file was uploaded correctly.",
+            )
+
+        # Validate file extension (.ids or .xml)
+        ids_filename_lower = ids_file.filename.lower()
+        valid_ids_extensions = (".ids", ".xml")
+        if not ids_filename_lower.endswith(valid_ids_extensions):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Invalid IDS file type. Expected .ids or .xml file, "
+                    f"got: {ids_file.filename}"
+                ),
+            )
+
+        # Read file content to check size
+        try:
+            ids_content = await ids_file.read()
+            ids_file_size = len(ids_content)
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Failed to read IDS file '{ids_file.filename}': {str(e)}. Please ensure the file is accessible and try again.",
+            ) from None
+
+        # Check file size against MAX_IDS_FILE_SIZE (5MB)
+        if ids_file_size > MAX_IDS_FILE_SIZE:
+            max_size_mb = MAX_IDS_FILE_SIZE / 1024 / 1024
+            actual_size_mb = ids_file_size / 1024 / 1024
+            raise HTTPException(
+                status_code=413,
+                detail=(
+                    f"IDS file too large. Maximum size is {max_size_mb:.0f}MB, "
+                    f"got {actual_size_mb:.1f}MB"
+                ),
+            )
+
+        # Check file is not empty
+        if ids_file_size == 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"IDS file '{ids_file.filename}' is empty. Please upload a valid IDS file with validation rules.",
+            )
+
+    # If ids_standard provided, validate it's a known standard
+    if ids_standard is not None:
+        valid_standards = ("nl-bim", "rvb")
+        if ids_standard.lower() not in valid_standards:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Invalid IDS standard: '{ids_standard}'. "
+                    f"Valid options are: {', '.join(valid_standards)}"
+                ),
+            )
+
+    # === SAVE UPLOADED FILES TO TEMP DIRECTORY (Subtask 3.1) ===
+
+    # Track temp file paths for cleanup
+    temp_files: list[Path] = []
+
+    # Generate unique ID for this validation request
+    validation_id = str(uuid.uuid4())
+
+    # Save IFC file to temp directory
+    safe_ifc_filename = f"{validation_id}_{ifc_file.filename.replace(' ', '_')}"
+    ifc_temp_path = UPLOAD_DIR / safe_ifc_filename
+    try:
+        with open(ifc_temp_path, "wb") as f:
+            f.write(ifc_content)
+        temp_files.append(ifc_temp_path)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error saving IFC file to temp directory: {str(e)}",
+        ) from None
+
+    # Save IDS file to temp directory (if provided)
+    ids_temp_path: Optional[Path] = None
+    if ids_file is not None:
+        safe_ids_filename = f"{validation_id}_{ids_file.filename.replace(' ', '_')}"
+        ids_temp_path = UPLOAD_DIR / safe_ids_filename
+        try:
+            with open(ids_temp_path, "wb") as f:
+                f.write(ids_content)
+            temp_files.append(ids_temp_path)
+        except Exception as e:
+            # Clean up IFC file if IDS save fails
+            for temp_file in temp_files:
+                try:
+                    temp_file.unlink()
+                except Exception:
+                    pass
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error saving IDS file to temp directory: {str(e)}",
+            ) from None
+
+    # === RESOLVE IDS PATH, RUN VALIDATION, AND CLEANUP (Subtasks 3.2, 3.3, 4.1) ===
+    # Wrap in try/finally to ensure temp files are always cleaned up
+    try:
+        # Determine the IDS file path to use for validation
+        # Priority: ids_file (uploaded custom) > ids_standard (bundled)
+        if ids_temp_path is not None:
+            # Use the uploaded custom IDS file
+            ids_path_for_validation = ids_temp_path
+        else:
+            # Use bundled IDS based on ids_standard
+            # ids_standard is guaranteed to be valid at this point (validated in 2.2)
+            try:
+                ids_path_for_validation = get_bundled_ids(ids_standard.lower())
+            except ValueError as e:
+                raise HTTPException(
+                    status_code=400,
+                    detail=str(e),
+                ) from None
+            except FileNotFoundError as e:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to load bundled IDS standard: {str(e)}",
+                ) from None
+
+        # === RUN VALIDATION (Subtask 3.3) ===
+        # Use IDSValidator to validate the IFC file against the IDS specification
+        # Handle exceptions for corrupt/invalid files
+
+        validator = IDSValidator()
+        try:
+            validation_report = validator.validate(ifc_temp_path, ids_path_for_validation)
+        except FileNotFoundError as e:
+            # This should not happen since we just saved the files, but handle defensively
+            raise HTTPException(
+                status_code=422,
+                detail=f"File not found during validation: {str(e)}. The uploaded file may have been corrupted or removed.",
+            ) from None
+        except Exception as e:
+            # Catch any unexpected exceptions during validation setup
+            raise HTTPException(
+                status_code=422,
+                detail=f"Validation error: {str(e)}. The IFC or IDS file may be corrupted or malformed.",
+            ) from None
+
+        # Check if validation completed successfully
+        # Note: report.success means validation RAN without errors, not pass/fail
+        # Corrupt IFC or invalid IDS file results in success=False with error
+        if not validation_report.success:
+            error_detail = validation_report.error or "Unknown validation error"
+            raise HTTPException(
+                status_code=422,
+                detail=f"Unable to process files: {error_detail}. Please verify that both the IFC and IDS files are valid and correctly formatted.",
+            )
+
+        # === CONVERT VALIDATION REPORT TO RESPONSE (Subtask 3.4) ===
+        # Determine the IDS filename for the response
+        # Use original filename if uploaded, otherwise use standard name
+        ids_response_filename = (
+            ids_file.filename if ids_file is not None else f"{ids_standard}-standard.ids"
+        )
+
+        # Convert dataclass ValidationReport to Pydantic ValidationResult
+        validation_result = convert_report_to_result(
+            report=validation_report,
+            ifc_filename=ifc_file.filename,
+            ids_filename=ids_response_filename,
+        )
+
+        # Return the ValidationResult as JSON response
+        return validation_result
+
+    finally:
+        # === CLEANUP TEMP FILES (Subtask 4.1) ===
+        # Always delete temp files regardless of success or failure
+        for temp_file in temp_files:
+            try:
+                if temp_file.exists():
+                    temp_file.unlink()
+            except Exception:
+                # Log cleanup failure but don't raise - cleanup is best-effort
+                logger.warning(f"Failed to delete temp file: {temp_file}")
 
 
 if __name__ == "__main__":
