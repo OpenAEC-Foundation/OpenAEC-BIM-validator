@@ -611,10 +611,53 @@ async def validate_ifc(
                 ),
             )
 
-    # TODO: Implement file saving, validation, and response in subsequent subtasks
+    # === SAVE UPLOADED FILES TO TEMP DIRECTORY (Subtask 3.1) ===
+
+    # Track temp file paths for cleanup
+    temp_files: list[Path] = []
+
+    # Generate unique ID for this validation request
+    validation_id = str(uuid.uuid4())
+
+    # Save IFC file to temp directory
+    safe_ifc_filename = f"{validation_id}_{ifc_file.filename.replace(' ', '_')}"
+    ifc_temp_path = UPLOAD_DIR / safe_ifc_filename
+    try:
+        with open(ifc_temp_path, "wb") as f:
+            f.write(ifc_content)
+        temp_files.append(ifc_temp_path)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error saving IFC file to temp directory: {str(e)}",
+        ) from None
+
+    # Save IDS file to temp directory (if provided)
+    ids_temp_path: Optional[Path] = None
+    if ids_file is not None:
+        safe_ids_filename = f"{validation_id}_{ids_file.filename.replace(' ', '_')}"
+        ids_temp_path = UPLOAD_DIR / safe_ids_filename
+        try:
+            with open(ids_temp_path, "wb") as f:
+                f.write(ids_content)
+            temp_files.append(ids_temp_path)
+        except Exception as e:
+            # Clean up IFC file if IDS save fails
+            for temp_file in temp_files:
+                try:
+                    temp_file.unlink()
+                except Exception:
+                    pass
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error saving IDS file to temp directory: {str(e)}",
+            ) from None
+
+    # TODO: Implement IDS path resolution, validation, and response in subsequent subtasks
+    # Temp files are tracked in temp_files list for cleanup in Phase 4
     raise HTTPException(
         status_code=501,
-        detail="Validation endpoint not yet fully implemented - Input validation passed",
+        detail="Validation endpoint not yet fully implemented - Files saved to temp directory",
     )
 
 
