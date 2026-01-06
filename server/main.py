@@ -24,8 +24,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
 from server.ifc_processor import GLTF_AVAILABLE, IFCProcessor
-from server.ids_validator import IDSValidator
-from ifc_validator.standards.resolver import get_bundled_ids, is_shortcut
+from server.ids_validator import IDSValidator, ValidationReport
+from server.models.validation_results import (
+    ElementResult,
+    RequirementResult,
+    SeverityLevel,
+    SpecificationResult,
+    ValidationResult,
+    ValidationStatus,
+)
+from ifc_validator.standards.resolver import get_bundled_ids
 
 
 class JSONFormatter(logging.Formatter):
@@ -454,6 +462,90 @@ async def get_capabilities():
     }
 
 
+def convert_report_to_result(
+    report: ValidationReport,
+    ifc_filename: str,
+    ids_filename: str,
+) -> ValidationResult:
+    """
+    Convert a ValidationReport dataclass to a ValidationResult Pydantic model.
+
+    This function maps the internal validation report structure (dataclass) to
+    the API response model (Pydantic). Key mappings:
+    - ValidationReport.success (ran) -> ValidationResult.success (all passed)
+    - SpecificationResult dataclass -> SpecificationResult Pydantic (nested)
+    - EntityFailure -> ElementResult for failed element details
+
+    Args:
+        report: The ValidationReport dataclass from IDSValidator
+        ifc_filename: Original IFC filename for response
+        ids_filename: Original IDS filename (or standard name) for response
+
+    Returns:
+        ValidationResult Pydantic model ready for JSON serialization
+    """
+    # Convert each specification from dataclass to Pydantic model
+    spec_results: list[SpecificationResult] = []
+    total_elements_validated = 0
+
+    for spec in report.specifications:
+        # Track total elements validated across all specifications
+        total_elements_validated += spec.applicable_count
+
+        # Convert EntityFailure dataclass items to ElementResult Pydantic models
+        element_results: list[ElementResult] = []
+        for failure in spec.failures:
+            element_results.append(
+                ElementResult(
+                    global_id=failure.global_id,
+                    element_type=failure.entity_type,
+                    element_name=failure.entity_name,
+                    status=ValidationStatus.FAIL,
+                    messages=[],  # No specific messages available from ifctester
+                )
+            )
+
+        # Create a single requirement result that contains all element results
+        # Note: ifctester doesn't expose requirement-level granularity,
+        # so we wrap all elements in a single "requirement" per specification
+        requirement_result = RequirementResult(
+            requirement_description=spec.description or spec.name,
+            status=ValidationStatus.PASS if spec.passed else ValidationStatus.FAIL,
+            total_elements=spec.applicable_count,
+            failed_elements=spec.failed_count,
+            elements=element_results,
+        )
+
+        # Map specification status to ValidationStatus enum
+        spec_status = ValidationStatus.PASS if spec.passed else ValidationStatus.FAIL
+
+        # Create Pydantic SpecificationResult
+        # Note: severity defaults to ERROR as ifctester doesn't expose this
+        spec_result = SpecificationResult(
+            specification_name=spec.name,
+            severity=SeverityLevel.ERROR,
+            status=spec_status,
+            total_requirements=1,  # Each spec treated as one requirement
+            failed_requirements=0 if spec.passed else 1,
+            requirements=[requirement_result],
+        )
+        spec_results.append(spec_result)
+
+    # Calculate success: all specifications must have passed
+    all_passed = report.failed_specifications == 0
+
+    return ValidationResult(
+        success=all_passed,
+        total_specifications=report.total_specifications,
+        failed_specifications=report.failed_specifications,
+        total_elements_validated=total_elements_validated,
+        validation_timestamp=report.timestamp,
+        specifications=spec_results,
+        ifc_file_name=ifc_filename,
+        ids_file_name=ids_filename,
+    )
+
+
 @app.post("/api/v1/validate")
 async def validate_ifc(
     ifc_file: UploadFile = File(..., description="IFC file to validate"),  # noqa: B008
@@ -696,20 +788,32 @@ async def validate_ifc(
         ) from None
 
     # Check if validation completed successfully
-    # Note: report.success means validation RAN without errors, not that all specs passed
-    # A corrupt IFC or invalid IDS file will result in success=False with error message
+    # Note: report.success means validation RAN without errors, not pass/fail
+    # Corrupt IFC or invalid IDS file results in success=False with error
     if not validation_report.success:
         raise HTTPException(
             status_code=422,
             detail=f"Validation failed: {validation_report.error}",
         )
 
-    # TODO: Convert validation_report to ValidationResult response (Subtask 3.4)
-    # TODO: Cleanup temp files (Subtask 4.1)
-    raise HTTPException(
-        status_code=501,
-        detail="Validation endpoint not yet fully implemented - validation ran successfully",
+    # === CONVERT VALIDATION REPORT TO RESPONSE (Subtask 3.4) ===
+    # Determine the IDS filename for the response
+    # Use original filename if uploaded, otherwise use standard name
+    ids_response_filename = (
+        ids_file.filename if ids_file is not None else f"{ids_standard}-standard.ids"
     )
+
+    # Convert dataclass ValidationReport to Pydantic ValidationResult
+    validation_result = convert_report_to_result(
+        report=validation_report,
+        ifc_filename=ifc_file.filename,
+        ids_filename=ids_response_filename,
+    )
+
+    # TODO: Cleanup temp files (Subtask 4.1)
+
+    # Return the ValidationResult as JSON response
+    return validation_result
 
 
 if __name__ == "__main__":
