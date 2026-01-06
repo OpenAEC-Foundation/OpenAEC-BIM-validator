@@ -487,10 +487,60 @@ async def validate_ifc(
         413: File too large
         422: Corrupt or invalid file content
     """
-    # TODO: Implement validation logic in subsequent subtasks
+    # === IFC FILE VALIDATION (Subtask 2.1) ===
+
+    # Check filename exists
+    if not ifc_file.filename:
+        raise HTTPException(
+            status_code=400,
+            detail="IFC filename is required",
+        )
+
+    # Validate file extension (.ifc, .ifcxml, or .ifczip)
+    ifc_filename_lower = ifc_file.filename.lower()
+    valid_ifc_extensions = (".ifc", ".ifcxml", ".ifczip")
+    if not ifc_filename_lower.endswith(valid_ifc_extensions):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Invalid IFC file type. Expected .ifc, .ifcxml, or .ifczip file, "
+                f"got: {ifc_file.filename}"
+            ),
+        )
+
+    # Read file content
+    try:
+        ifc_content = await ifc_file.read()
+        ifc_file_size = len(ifc_content)
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Error reading IFC file: {str(e)}",
+        ) from None
+
+    # Check file size against MAX_FILE_SIZE (500MB)
+    if ifc_file_size > MAX_FILE_SIZE:
+        max_size_mb = MAX_FILE_SIZE / 1024 / 1024
+        actual_size_mb = ifc_file_size / 1024 / 1024
+        raise HTTPException(
+            status_code=413,
+            detail=(
+                f"IFC file too large. Maximum size is {max_size_mb:.0f}MB, "
+                f"got {actual_size_mb:.1f}MB"
+            ),
+        )
+
+    # Check file is not empty
+    if ifc_file_size == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="IFC file is empty",
+        )
+
+    # TODO: Implement IDS validation and remaining logic in subsequent subtasks
     raise HTTPException(
         status_code=501,
-        detail="Validation endpoint not yet implemented",
+        detail="Validation endpoint not yet fully implemented - IFC validation passed",
     )
 
 
