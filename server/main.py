@@ -537,10 +537,84 @@ async def validate_ifc(
             detail="IFC file is empty",
         )
 
-    # TODO: Implement IDS validation and remaining logic in subsequent subtasks
+    # === IDS FILE/STANDARD VALIDATION (Subtask 2.2) ===
+
+    # Either ids_file OR ids_standard must be provided
+    if ids_file is None and ids_standard is None:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Either ids_file or ids_standard must be provided. "
+                "Upload an IDS file or specify a standard: 'nl-bim' or 'rvb'"
+            ),
+        )
+
+    # If ids_file provided, validate extension and size
+    if ids_file is not None:
+        # Check filename exists
+        if not ids_file.filename:
+            raise HTTPException(
+                status_code=400,
+                detail="IDS filename is required",
+            )
+
+        # Validate file extension (.ids or .xml)
+        ids_filename_lower = ids_file.filename.lower()
+        valid_ids_extensions = (".ids", ".xml")
+        if not ids_filename_lower.endswith(valid_ids_extensions):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Invalid IDS file type. Expected .ids or .xml file, "
+                    f"got: {ids_file.filename}"
+                ),
+            )
+
+        # Read file content to check size
+        try:
+            ids_content = await ids_file.read()
+            ids_file_size = len(ids_content)
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Error reading IDS file: {str(e)}",
+            ) from None
+
+        # Check file size against MAX_IDS_FILE_SIZE (5MB)
+        if ids_file_size > MAX_IDS_FILE_SIZE:
+            max_size_mb = MAX_IDS_FILE_SIZE / 1024 / 1024
+            actual_size_mb = ids_file_size / 1024 / 1024
+            raise HTTPException(
+                status_code=413,
+                detail=(
+                    f"IDS file too large. Maximum size is {max_size_mb:.0f}MB, "
+                    f"got {actual_size_mb:.1f}MB"
+                ),
+            )
+
+        # Check file is not empty
+        if ids_file_size == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="IDS file is empty",
+            )
+
+    # If ids_standard provided, validate it's a known standard
+    if ids_standard is not None:
+        valid_standards = ("nl-bim", "rvb")
+        if ids_standard.lower() not in valid_standards:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Invalid IDS standard: '{ids_standard}'. "
+                    f"Valid options are: {', '.join(valid_standards)}"
+                ),
+            )
+
+    # TODO: Implement file saving, validation, and response in subsequent subtasks
     raise HTTPException(
         status_code=501,
-        detail="Validation endpoint not yet fully implemented - IFC validation passed",
+        detail="Validation endpoint not yet fully implemented - Input validation passed",
     )
 
 
