@@ -745,75 +745,86 @@ async def validate_ifc(
                 detail=f"Error saving IDS file to temp directory: {str(e)}",
             ) from None
 
-    # === RESOLVE IDS PATH (Subtask 3.2) ===
-    # Determine the IDS file path to use for validation
-    # Priority: ids_file (uploaded custom) > ids_standard (bundled)
-    if ids_temp_path is not None:
-        # Use the uploaded custom IDS file
-        ids_path_for_validation = ids_temp_path
-    else:
-        # Use bundled IDS based on ids_standard
-        # ids_standard is guaranteed to be valid at this point (validated in 2.2)
-        try:
-            ids_path_for_validation = get_bundled_ids(ids_standard.lower())
-        except ValueError as e:
-            raise HTTPException(
-                status_code=400,
-                detail=str(e),
-            ) from None
-        except FileNotFoundError as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to load bundled IDS standard: {str(e)}",
-            ) from None
-
-    # === RUN VALIDATION (Subtask 3.3) ===
-    # Use IDSValidator to validate the IFC file against the IDS specification
-    # Handle exceptions for corrupt/invalid files
-
-    validator = IDSValidator()
+    # === RESOLVE IDS PATH, RUN VALIDATION, AND CLEANUP (Subtasks 3.2, 3.3, 4.1) ===
+    # Wrap in try/finally to ensure temp files are always cleaned up
     try:
-        validation_report = validator.validate(ifc_temp_path, ids_path_for_validation)
-    except FileNotFoundError as e:
-        # This should not happen since we just saved the files, but handle defensively
-        raise HTTPException(
-            status_code=422,
-            detail=f"File not found during validation: {str(e)}",
-        ) from None
-    except Exception as e:
-        # Catch any unexpected exceptions during validation setup
-        raise HTTPException(
-            status_code=422,
-            detail=f"Unexpected error during validation: {str(e)}",
-        ) from None
+        # Determine the IDS file path to use for validation
+        # Priority: ids_file (uploaded custom) > ids_standard (bundled)
+        if ids_temp_path is not None:
+            # Use the uploaded custom IDS file
+            ids_path_for_validation = ids_temp_path
+        else:
+            # Use bundled IDS based on ids_standard
+            # ids_standard is guaranteed to be valid at this point (validated in 2.2)
+            try:
+                ids_path_for_validation = get_bundled_ids(ids_standard.lower())
+            except ValueError as e:
+                raise HTTPException(
+                    status_code=400,
+                    detail=str(e),
+                ) from None
+            except FileNotFoundError as e:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to load bundled IDS standard: {str(e)}",
+                ) from None
 
-    # Check if validation completed successfully
-    # Note: report.success means validation RAN without errors, not pass/fail
-    # Corrupt IFC or invalid IDS file results in success=False with error
-    if not validation_report.success:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Validation failed: {validation_report.error}",
+        # === RUN VALIDATION (Subtask 3.3) ===
+        # Use IDSValidator to validate the IFC file against the IDS specification
+        # Handle exceptions for corrupt/invalid files
+
+        validator = IDSValidator()
+        try:
+            validation_report = validator.validate(ifc_temp_path, ids_path_for_validation)
+        except FileNotFoundError as e:
+            # This should not happen since we just saved the files, but handle defensively
+            raise HTTPException(
+                status_code=422,
+                detail=f"File not found during validation: {str(e)}",
+            ) from None
+        except Exception as e:
+            # Catch any unexpected exceptions during validation setup
+            raise HTTPException(
+                status_code=422,
+                detail=f"Unexpected error during validation: {str(e)}",
+            ) from None
+
+        # Check if validation completed successfully
+        # Note: report.success means validation RAN without errors, not pass/fail
+        # Corrupt IFC or invalid IDS file results in success=False with error
+        if not validation_report.success:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Validation failed: {validation_report.error}",
+            )
+
+        # === CONVERT VALIDATION REPORT TO RESPONSE (Subtask 3.4) ===
+        # Determine the IDS filename for the response
+        # Use original filename if uploaded, otherwise use standard name
+        ids_response_filename = (
+            ids_file.filename if ids_file is not None else f"{ids_standard}-standard.ids"
         )
 
-    # === CONVERT VALIDATION REPORT TO RESPONSE (Subtask 3.4) ===
-    # Determine the IDS filename for the response
-    # Use original filename if uploaded, otherwise use standard name
-    ids_response_filename = (
-        ids_file.filename if ids_file is not None else f"{ids_standard}-standard.ids"
-    )
+        # Convert dataclass ValidationReport to Pydantic ValidationResult
+        validation_result = convert_report_to_result(
+            report=validation_report,
+            ifc_filename=ifc_file.filename,
+            ids_filename=ids_response_filename,
+        )
 
-    # Convert dataclass ValidationReport to Pydantic ValidationResult
-    validation_result = convert_report_to_result(
-        report=validation_report,
-        ifc_filename=ifc_file.filename,
-        ids_filename=ids_response_filename,
-    )
+        # Return the ValidationResult as JSON response
+        return validation_result
 
-    # TODO: Cleanup temp files (Subtask 4.1)
-
-    # Return the ValidationResult as JSON response
-    return validation_result
+    finally:
+        # === CLEANUP TEMP FILES (Subtask 4.1) ===
+        # Always delete temp files regardless of success or failure
+        for temp_file in temp_files:
+            try:
+                if temp_file.exists():
+                    temp_file.unlink()
+            except Exception:
+                # Log cleanup failure but don't raise - cleanup is best-effort
+                logger.warning(f"Failed to delete temp file: {temp_file}")
 
 
 if __name__ == "__main__":
