@@ -653,11 +653,34 @@ async def validate_ifc(
                 detail=f"Error saving IDS file to temp directory: {str(e)}",
             ) from None
 
-    # TODO: Implement IDS path resolution, validation, and response in subsequent subtasks
+    # === RESOLVE IDS PATH (Subtask 3.2) ===
+    # Determine the IDS file path to use for validation
+    # Priority: ids_file (uploaded custom) > ids_standard (bundled)
+    if ids_temp_path is not None:
+        # Use the uploaded custom IDS file
+        ids_path_for_validation = ids_temp_path
+    else:
+        # Use bundled IDS based on ids_standard
+        # ids_standard is guaranteed to be valid at this point (validated in 2.2)
+        try:
+            ids_path_for_validation = get_bundled_ids(ids_standard.lower())
+        except ValueError as e:
+            raise HTTPException(
+                status_code=400,
+                detail=str(e),
+            ) from None
+        except FileNotFoundError as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to load bundled IDS standard: {str(e)}",
+            ) from None
+
+    # TODO: Implement validation execution and response in subsequent subtasks
     # Temp files are tracked in temp_files list for cleanup in Phase 4
+    # ids_path_for_validation contains the path to use with IDSValidator
     raise HTTPException(
         status_code=501,
-        detail="Validation endpoint not yet fully implemented - Files saved to temp directory",
+        detail="Validation endpoint not yet fully implemented - IDS path resolved",
     )
 
 
