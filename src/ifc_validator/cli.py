@@ -9,6 +9,10 @@ Usage:
     ifc-validate path/to/model.ifc --ids path/to/rules.ids --output json
     ifc-validate path/to/model.ifc --ids path/to/rules.ids --output html
 
+Dutch BIM Standards Shortcuts:
+    ifc-validate path/to/model.ifc --ids nl-bim    # NL_BIM Basis ILS v2
+    ifc-validate path/to/model.ifc --ids rvb       # RVB BIM Norm v1.1
+
 CRITICAL: This module uses typer.Exit(code=X) for exit codes, never sys.exit().
 """
 
@@ -61,7 +65,7 @@ def validate(
         ...,
         "--ids",
         "-i",
-        help="Path to the IDS rules file (.ids) - REQUIRED",
+        help="Path to IDS rules file (.ids) or shortcut (nl-bim, rvb) - REQUIRED",
         metavar="IDS_FILE",
     ),
     output: OutputFormat = typer.Option(
@@ -93,6 +97,11 @@ def validate(
     and outputs the results in the requested format.
 
     \b
+    Dutch BIM Standards Shortcuts:
+        nl-bim - NL_BIM Basis ILS v2 (Dutch baseline BIM standard)
+        rvb    - RVB BIM Norm v1.1 (Dutch Government Real Estate norm)
+
+    \b
     Exit codes:
         0 - All specifications passed validation
         1 - One or more specifications failed validation, or an error occurred
@@ -100,6 +109,8 @@ def validate(
     \b
     Examples:
         ifc-validate model.ifc --ids rules.ids
+        ifc-validate model.ifc --ids nl-bim
+        ifc-validate model.ifc --ids rvb
         ifc-validate model.ifc --ids rules.ids --output json
         ifc-validate model.ifc --ids rules.ids --output html
     """
@@ -108,13 +119,53 @@ def validate(
         format_html_to_file,
         print_json,
     )
+    from ifc_validator.standards import (
+        get_bundled_ids,
+        is_shortcut,
+        list_available_standards,
+    )
     from ifc_validator.validator import (
         validate as run_validation,
     )
 
     try:
+        # Resolve IDS shortcut to bundled file path if applicable
+        # Shortcuts (nl-bim, rvb) are resolved to bundled IDS files
+        # File paths are passed through unchanged for backward compatibility
+        if is_shortcut(ids):
+            ids_path = str(get_bundled_ids(ids))
+        else:
+            # Check if this looks like an invalid shortcut attempt
+            # A value looks like a shortcut if it:
+            # - Doesn't contain path separators (/ or \)
+            # - Doesn't end with .ids extension
+            # - Is a short string (< 30 chars)
+            # - And doesn't exist as a file
+            looks_like_shortcut = (
+                '/' not in ids
+                and '\\' not in ids
+                and not ids.lower().endswith('.ids')
+                and len(ids) < 30
+            )
+            ids_path_candidate = Path(ids)
+
+            if looks_like_shortcut and not ids_path_candidate.exists():
+                # User likely meant to use a shortcut but typed it wrong
+                valid_shortcuts = ', '.join(list_available_standards())
+                err_console.print(
+                    f"[red]Error:[/red] Unknown shortcut '[yellow]{ids}[/yellow]'. "
+                    f"Valid shortcuts are: [cyan]{valid_shortcuts}[/cyan]"
+                )
+                err_console.print(
+                    "\n[dim]Tip: Use a shortcut for Dutch BIM standards, or provide "
+                    "a path to an IDS file (.ids)[/dim]"
+                )
+                raise typer.Exit(code=1)
+
+            ids_path = ids
+
         # Run validation (handles file validation, memory checks, and parsing)
-        result = run_validation(ifc_file, ids)
+        result = run_validation(ifc_file, ids_path)
 
         # Output results based on format
         if output == OutputFormat.console:
