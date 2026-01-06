@@ -675,12 +675,40 @@ async def validate_ifc(
                 detail=f"Failed to load bundled IDS standard: {str(e)}",
             ) from None
 
-    # TODO: Implement validation execution and response in subsequent subtasks
-    # Temp files are tracked in temp_files list for cleanup in Phase 4
-    # ids_path_for_validation contains the path to use with IDSValidator
+    # === RUN VALIDATION (Subtask 3.3) ===
+    # Use IDSValidator to validate the IFC file against the IDS specification
+    # Handle exceptions for corrupt/invalid files
+
+    validator = IDSValidator()
+    try:
+        validation_report = validator.validate(ifc_temp_path, ids_path_for_validation)
+    except FileNotFoundError as e:
+        # This should not happen since we just saved the files, but handle defensively
+        raise HTTPException(
+            status_code=422,
+            detail=f"File not found during validation: {str(e)}",
+        ) from None
+    except Exception as e:
+        # Catch any unexpected exceptions during validation setup
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unexpected error during validation: {str(e)}",
+        ) from None
+
+    # Check if validation completed successfully
+    # Note: report.success means validation RAN without errors, not that all specs passed
+    # A corrupt IFC or invalid IDS file will result in success=False with error message
+    if not validation_report.success:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Validation failed: {validation_report.error}",
+        )
+
+    # TODO: Convert validation_report to ValidationResult response (Subtask 3.4)
+    # TODO: Cleanup temp files (Subtask 4.1)
     raise HTTPException(
         status_code=501,
-        detail="Validation endpoint not yet fully implemented - IDS path resolved",
+        detail="Validation endpoint not yet fully implemented - validation ran successfully",
     )
 
 
