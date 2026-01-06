@@ -466,3 +466,231 @@ class TestQAAcceptanceCriteria:
 
         assert response.status_code == 413
         assert "too large" in response.json()["detail"].lower()
+
+
+# =============================================================================
+# QA Integration Tests (per spec.md requirements)
+# =============================================================================
+
+
+class TestQAIntegrationCriteria:
+    """Integration tests matching exact QA acceptance criteria from spec.md.
+
+    These tests use real fixture files and verify the complete validation flow:
+    - test_full_validation_flow: Upload real IFC + IDS, verify results structure
+    - test_validation_result_schema: Response matches ValidationResult model
+    """
+
+    def test_full_validation_flow(self, client, sample_ifc_path, sample_ids_path):
+        """Upload real IFC + IDS, verify results structure.
+
+        This integration test:
+        1. Uploads real IFC and IDS fixture files
+        2. Verifies the validation runs successfully
+        3. Validates the complete response structure
+        4. Checks all nested objects have required fields
+        """
+        with open(sample_ifc_path, "rb") as ifc_f, open(sample_ids_path, "rb") as ids_f:
+            files = {
+                "ifc_file": (sample_ifc_path.name, ifc_f, "application/octet-stream"),
+                "ids_file": (sample_ids_path.name, ids_f, "application/octet-stream"),
+            }
+            response = client.post("/api/v1/validate", files=files)
+
+        # Validation should complete successfully
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        data = response.json()
+
+        # Verify top-level ValidationResult fields
+        assert "success" in data, "Missing 'success' field"
+        assert isinstance(data["success"], bool), "'success' should be boolean"
+        assert "total_specifications" in data, "Missing 'total_specifications' field"
+        assert isinstance(data["total_specifications"], int), "'total_specifications' should be int"
+        assert "failed_specifications" in data, "Missing 'failed_specifications' field"
+        assert isinstance(data["failed_specifications"], int), "'failed_specifications' should be int"
+        assert "total_elements_validated" in data, "Missing 'total_elements_validated' field"
+        assert isinstance(data["total_elements_validated"], int), "'total_elements_validated' should be int"
+        assert "validation_timestamp" in data, "Missing 'validation_timestamp' field"
+        assert isinstance(data["validation_timestamp"], str), "'validation_timestamp' should be string"
+        assert "specifications" in data, "Missing 'specifications' field"
+        assert isinstance(data["specifications"], list), "'specifications' should be list"
+        assert "ifc_file_name" in data, "Missing 'ifc_file_name' field"
+        assert "ids_file_name" in data, "Missing 'ids_file_name' field"
+
+        # Verify the file names match the uploaded files
+        assert data["ifc_file_name"] == sample_ifc_path.name
+        assert data["ids_file_name"] == sample_ids_path.name
+
+        # Verify specifications are present (sample.ids has at least one spec)
+        assert data["total_specifications"] >= 1, "Expected at least 1 specification"
+        assert len(data["specifications"]) == data["total_specifications"]
+
+        # Verify specification structure
+        for spec in data["specifications"]:
+            assert "specification_name" in spec, "Spec missing 'specification_name'"
+            assert "severity" in spec, "Spec missing 'severity'"
+            assert spec["severity"] in ["error", "warning", "info"], f"Invalid severity: {spec['severity']}"
+            assert "status" in spec, "Spec missing 'status'"
+            assert spec["status"] in ["pass", "fail", "not_applicable"], f"Invalid status: {spec['status']}"
+            assert "total_requirements" in spec, "Spec missing 'total_requirements'"
+            assert "failed_requirements" in spec, "Spec missing 'failed_requirements'"
+            assert "requirements" in spec, "Spec missing 'requirements'"
+            assert isinstance(spec["requirements"], list), "'requirements' should be list"
+
+            # Verify requirement structure
+            for req in spec["requirements"]:
+                assert "requirement_description" in req, "Requirement missing 'requirement_description'"
+                assert "status" in req, "Requirement missing 'status'"
+                assert req["status"] in ["pass", "fail", "not_applicable"], f"Invalid req status: {req['status']}"
+                assert "total_elements" in req, "Requirement missing 'total_elements'"
+                assert "failed_elements" in req, "Requirement missing 'failed_elements'"
+                assert "elements" in req, "Requirement missing 'elements'"
+                assert isinstance(req["elements"], list), "'elements' should be list"
+
+                # Verify element structure (if any elements present)
+                for elem in req["elements"]:
+                    assert "element_type" in elem, "Element missing 'element_type'"
+                    assert "status" in elem, "Element missing 'status'"
+                    assert elem["status"] in ["pass", "fail", "not_applicable"], f"Invalid elem status: {elem['status']}"
+                    # global_id and element_name are optional
+                    assert "messages" in elem, "Element missing 'messages'"
+                    assert isinstance(elem["messages"], list), "'messages' should be list"
+
+    def test_validation_result_schema(self, client, sample_ifc_path, sample_ids_path):
+        """Response matches ValidationResult model.
+
+        This integration test validates that the response can be parsed
+        and matches the Pydantic ValidationResult model exactly, including
+        all nested types and constraints.
+        """
+        # Import the Pydantic models for validation
+        from server.models.validation_results import (
+            ValidationResult,
+            SpecificationResult,
+            RequirementResult,
+            ElementResult,
+            ValidationStatus,
+            SeverityLevel,
+        )
+
+        with open(sample_ifc_path, "rb") as ifc_f, open(sample_ids_path, "rb") as ids_f:
+            files = {
+                "ifc_file": (sample_ifc_path.name, ifc_f, "application/octet-stream"),
+                "ids_file": (sample_ids_path.name, ids_f, "application/octet-stream"),
+            }
+            response = client.post("/api/v1/validate", files=files)
+
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        data = response.json()
+
+        # Parse the response using Pydantic model - will raise if schema doesn't match
+        validation_result = ValidationResult(**data)
+
+        # Verify the Pydantic model parsed correctly
+        assert isinstance(validation_result.success, bool)
+        assert isinstance(validation_result.total_specifications, int)
+        assert isinstance(validation_result.failed_specifications, int)
+        assert isinstance(validation_result.total_elements_validated, int)
+        assert isinstance(validation_result.validation_timestamp, str)
+        assert isinstance(validation_result.specifications, list)
+
+        # Verify consistency between model fields
+        assert validation_result.total_specifications == len(validation_result.specifications)
+        assert validation_result.failed_specifications <= validation_result.total_specifications
+
+        # If success is True, failed_specifications should be 0
+        if validation_result.success:
+            assert validation_result.failed_specifications == 0, \
+                "success=True but failed_specifications > 0"
+
+        # Verify nested SpecificationResult objects
+        for spec in validation_result.specifications:
+            assert isinstance(spec, SpecificationResult)
+            assert isinstance(spec.severity, SeverityLevel)
+            assert isinstance(spec.status, ValidationStatus)
+            assert spec.failed_requirements <= spec.total_requirements
+
+            # Verify nested RequirementResult objects
+            for req in spec.requirements:
+                assert isinstance(req, RequirementResult)
+                assert isinstance(req.status, ValidationStatus)
+                assert req.failed_elements <= req.total_elements
+
+                # Verify nested ElementResult objects
+                for elem in req.elements:
+                    assert isinstance(elem, ElementResult)
+                    assert isinstance(elem.status, ValidationStatus)
+                    assert isinstance(elem.messages, list)
+
+    def test_full_validation_flow_with_failing_elements(
+        self, client, sample_fail_ifc_path, sample_ids_path
+    ):
+        """Upload real IFC with failing elements, verify failure details.
+
+        This integration test:
+        1. Uploads an IFC file that should fail validation
+        2. Verifies the validation identifies failures
+        3. Checks that failed elements are properly reported with GlobalIds
+        """
+        with open(sample_fail_ifc_path, "rb") as ifc_f, open(sample_ids_path, "rb") as ids_f:
+            files = {
+                "ifc_file": (sample_fail_ifc_path.name, ifc_f, "application/octet-stream"),
+                "ids_file": (sample_ids_path.name, ids_f, "application/octet-stream"),
+            }
+            response = client.post("/api/v1/validate", files=files)
+
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        data = response.json()
+
+        # The sample-fail.ifc should have validation failures
+        assert data["failed_specifications"] > 0 or data["success"] is False, \
+            "sample-fail.ifc should produce validation failures"
+
+        # Find a failed specification
+        failed_specs = [s for s in data["specifications"] if s["status"] == "fail"]
+        assert len(failed_specs) > 0, "Expected at least one failed specification"
+
+        # Verify failed spec contains failed requirements
+        for spec in failed_specs:
+            assert spec["failed_requirements"] > 0, "Failed spec should have failed requirements"
+
+            # Find failed requirements and verify they contain element details
+            failed_reqs = [r for r in spec["requirements"] if r["status"] == "fail"]
+            for req in failed_reqs:
+                assert req["failed_elements"] > 0, "Failed requirement should have failed elements"
+
+                # Verify failed elements have required fields
+                failed_elems = [e for e in req["elements"] if e["status"] == "fail"]
+                for elem in failed_elems:
+                    assert "element_type" in elem
+                    assert "status" in elem
+                    # global_id should be present for IFC elements
+                    assert "global_id" in elem
+
+    def test_validation_result_schema_with_nl_bim(self, client, sample_ifc_path):
+        """Verify response schema when using built-in nl-bim standard.
+
+        This integration test validates that responses using the built-in
+        nl-bim standard also match the ValidationResult model schema.
+        """
+        from server.models.validation_results import ValidationResult
+
+        with open(sample_ifc_path, "rb") as ifc_f:
+            files = {
+                "ifc_file": (sample_ifc_path.name, ifc_f, "application/octet-stream"),
+            }
+            response = client.post("/api/v1/validate?ids_standard=nl-bim", files=files)
+
+        # Should complete (200) or have validation processing error (422)
+        assert response.status_code in [200, 422], f"Unexpected status: {response.status_code}"
+
+        if response.status_code == 200:
+            data = response.json()
+            # Parse the response using Pydantic model
+            validation_result = ValidationResult(**data)
+            assert isinstance(validation_result.success, bool)
+            assert validation_result.ids_file_name is not None
+            # Should indicate it's using the bundled IDS
+            assert "NL_BIM" in validation_result.ids_file_name or \
+                   "nl-bim" in validation_result.ids_file_name.lower() or \
+                   validation_result.ids_file_name.endswith(".ids")
