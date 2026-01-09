@@ -1,7 +1,18 @@
 import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 export default defineConfig({
+    // React plugin for JSX/TSX support
+    plugins: [react()],
+
+    // Path resolution for @ alias
+    resolve: {
+        alias: {
+            '@': resolve(__dirname, 'src'),
+        },
+    },
+
     // Base public path for GitHub Pages or other deployments
     base: './',
 
@@ -13,6 +24,14 @@ export default defineConfig({
         headers: {
             'Cross-Origin-Opener-Policy': 'same-origin',
             'Cross-Origin-Embedder-Policy': 'require-corp',
+        },
+        // Proxy API requests to backend
+        proxy: {
+            '/api': {
+                target: 'http://localhost:8000',
+                changeOrigin: true,
+                secure: false,
+            },
         },
     },
 
@@ -41,6 +60,8 @@ export default defineConfig({
             '@thatopen/fragments',
             'three',
             'web-ifc',
+            'react',
+            'react-dom',
         ],
         // Required for web-ifc WASM loading
         esbuildOptions: {
