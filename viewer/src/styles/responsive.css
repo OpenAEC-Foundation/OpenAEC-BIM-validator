@@ -1,0 +1,493 @@
+/**
+ * Responsive Styles
+ * Media queries for mobile-friendly layout
+ */
+
+/* ======================================
+   CSS Custom Properties for Responsive
+   ====================================== */
+
+:root {
+  /* Container widths */
+  --container-max-width: 1200px;
+  --container-padding: var(--spacing-lg);
+
+  /* Touch target minimum size (WCAG 2.5.5) */
+  --touch-target-min: 44px;
+
+  /* Breakpoint reference (for documentation) */
+  /* Mobile: < 480px */
+  /* Mobile Large: 480px - 767px */
+  /* Tablet: 768px - 1023px */
+  /* Desktop: >= 1024px */
+}
+
+/* ======================================
+   Container & Layout
+   ====================================== */
+
+.container {
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding: 0 var(--container-padding);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ======================================
+   Tablet Styles (< 1024px)
+   ====================================== */
+
+@media screen and (max-width: 1023px) {
+  :root {
+    --container-padding: var(--spacing-md);
+  }
+}
+
+/* ======================================
+   Mobile Styles (< 768px)
+   ====================================== */
+
+@media screen and (max-width: 767px) {
+  :root {
+    /* Reduce spacing on mobile */
+    --container-padding: var(--spacing-md);
+  }
+
+  /* Typography adjustments */
+  body {
+    font-size: var(--font-size-sm);
+  }
+
+  h1, .text-3xl {
+    font-size: var(--font-size-xl);
+  }
+
+  h2, .text-2xl {
+    font-size: var(--font-size-lg);
+  }
+
+  /* App Header */
+  .app-header {
+    padding: var(--spacing-sm) var(--spacing-md);
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .app-header h1 {
+    font-size: var(--font-size-lg);
+    text-align: center;
+  }
+
+  /* Main Content */
+  .app-main {
+    padding: var(--spacing-md);
+  }
+
+  /* File Upload Zone */
+  .file-upload-zone {
+    padding: var(--spacing-lg) var(--spacing-md);
+    min-height: 120px;
+  }
+
+  .file-upload-zone .upload-icon {
+    font-size: var(--font-size-2xl);
+  }
+
+  .file-upload-zone .upload-text {
+    font-size: var(--font-size-sm);
+  }
+
+  /* IDS Selector */
+  .ids-selector {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .ids-selector .radio-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+
+  .ids-selector label {
+    width: 100%;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+  }
+
+  /* Buttons - Touch-friendly sizes */
+  button,
+  .btn,
+  [role="button"] {
+    min-height: var(--touch-target-min);
+    min-width: var(--touch-target-min);
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Results Summary */
+  .results-summary {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .results-summary .summary-card {
+    padding: var(--spacing-md);
+  }
+
+  .summary-stats {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .summary-stat {
+    flex: 1 1 100%;
+    padding: var(--spacing-sm);
+    text-align: center;
+  }
+
+  /* Specification List */
+  .specification-list {
+    gap: var(--spacing-sm);
+  }
+
+  .specification-item {
+    padding: var(--spacing-sm);
+  }
+
+  .specification-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+
+  .specification-badge {
+    align-self: flex-start;
+  }
+
+  /* Failed Elements Table */
+  .failed-elements {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .failed-elements table {
+    min-width: 500px;
+  }
+
+  .failed-elements th,
+  .failed-elements td {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-xs);
+  }
+
+  /* Element cards for mobile (alternative to table) */
+  .element-card {
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .element-card .global-id {
+    font-size: var(--font-size-xs);
+    word-break: break-all;
+  }
+
+  /* Error Display */
+  .error-display {
+    padding: var(--spacing-md);
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .error-display .error-actions {
+    width: 100%;
+  }
+
+  .error-display .btn {
+    width: 100%;
+  }
+
+  /* Progress Indicator */
+  .validation-progress {
+    padding: var(--spacing-md);
+  }
+
+  .validation-progress .progress-message {
+    font-size: var(--font-size-sm);
+  }
+}
+
+/* ======================================
+   Small Mobile Styles (< 480px)
+   ====================================== */
+
+@media screen and (max-width: 479px) {
+  :root {
+    --container-padding: var(--spacing-sm);
+  }
+
+  /* Further reduce typography */
+  body {
+    font-size: var(--font-size-sm);
+  }
+
+  h1, .text-3xl {
+    font-size: var(--font-size-lg);
+  }
+
+  /* Stack all form elements vertically */
+  .form-row {
+    flex-direction: column;
+  }
+
+  /* Full-width inputs */
+  input,
+  select,
+  textarea {
+    width: 100%;
+  }
+
+  /* Compact cards */
+  .card {
+    padding: var(--spacing-sm);
+  }
+
+  /* Hide non-essential text on very small screens */
+  .hide-xs {
+    display: none;
+  }
+
+  /* Truncate long text */
+  .truncate-xs {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+  }
+}
+
+/* ======================================
+   Touch Device Optimizations
+   ====================================== */
+
+@media (hover: none) and (pointer: coarse) {
+  /* Increase touch targets */
+  button,
+  .btn,
+  [role="button"],
+  a,
+  input[type="radio"],
+  input[type="checkbox"] {
+    min-height: var(--touch-target-min);
+  }
+
+  /* Add spacing between interactive elements */
+  .radio-group label,
+  .checkbox-group label {
+    padding: var(--spacing-sm) 0;
+    margin: var(--spacing-xs) 0;
+  }
+
+  /* Remove hover states that don't work well on touch */
+  .btn:hover,
+  .card:hover {
+    transform: none;
+  }
+
+  /* Visible active states for touch feedback */
+  .btn:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+
+  /* Increase tap area for expandable items */
+  .specification-header {
+    min-height: var(--touch-target-min);
+    padding: var(--spacing-sm);
+  }
+
+  /* Larger close/dismiss buttons */
+  .btn-close,
+  .btn-dismiss {
+    min-width: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+  }
+}
+
+/* ======================================
+   Landscape Mobile Orientation
+   ====================================== */
+
+@media screen and (max-width: 767px) and (orientation: landscape) {
+  /* Reduce vertical spacing in landscape */
+  .app-header {
+    padding: var(--spacing-xs) var(--spacing-md);
+  }
+
+  .file-upload-zone {
+    min-height: 100px;
+    padding: var(--spacing-md);
+  }
+
+  /* Side-by-side layout where possible */
+  .summary-stats {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .summary-stat {
+    flex: 1 1 calc(33.33% - var(--spacing-sm));
+    min-width: 80px;
+  }
+}
+
+/* ======================================
+   High Contrast / Reduced Motion
+   ====================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .spinner {
+    animation: none;
+  }
+}
+
+@media (prefers-contrast: high) {
+  :root {
+    --color-border: #000000;
+    --color-text-secondary: #333333;
+  }
+
+  .btn,
+  .card,
+  .file-upload-zone {
+    border-width: 2px;
+  }
+}
+
+/* ======================================
+   Print Styles
+   ====================================== */
+
+@media print {
+  /* Hide interactive elements */
+  .file-upload-zone,
+  .ids-selector,
+  .btn-primary,
+  .validation-progress,
+  .error-display .error-actions {
+    display: none !important;
+  }
+
+  /* Full-width layout */
+  .container {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  /* Expand all collapsed sections */
+  .specification-item {
+    break-inside: avoid;
+  }
+
+  .specification-content {
+    display: block !important;
+    height: auto !important;
+  }
+
+  /* Remove shadows and backgrounds */
+  .card,
+  .summary-card {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+
+  /* Ensure colors print correctly */
+  .badge-pass {
+    background-color: transparent !important;
+    color: #000 !important;
+    border: 2px solid #44B6A8 !important;
+  }
+
+  .badge-fail {
+    background-color: transparent !important;
+    color: #000 !important;
+    border: 2px solid #DB4C40 !important;
+  }
+}
+
+/* ======================================
+   Utility Classes
+   ====================================== */
+
+/* Hide on specific breakpoints */
+@media screen and (max-width: 767px) {
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
+@media screen and (min-width: 768px) {
+  .hide-desktop {
+    display: none !important;
+  }
+}
+
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+  .hide-tablet {
+    display: none !important;
+  }
+}
+
+/* Show only on specific breakpoints */
+.show-mobile {
+  display: none !important;
+}
+
+@media screen and (max-width: 767px) {
+  .show-mobile {
+    display: block !important;
+  }
+}
+
+/* Flex utilities for responsive layouts */
+.flex-column-mobile {
+  display: flex;
+}
+
+@media screen and (max-width: 767px) {
+  .flex-column-mobile {
+    flex-direction: column;
+  }
+}
+
+/* Spacing utilities for responsive */
+@media screen and (max-width: 767px) {
+  .gap-sm-mobile {
+    gap: var(--spacing-sm);
+  }
+
+  .p-sm-mobile {
+    padding: var(--spacing-sm);
+  }
+
+  .mt-sm-mobile {
+    margin-top: var(--spacing-sm);
+  }
+}
