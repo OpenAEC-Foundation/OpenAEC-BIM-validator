@@ -525,11 +525,12 @@ class TestValidateEndpointEmptyFiles:
             f"Expected 422 for missing IFC file, got {response.status_code}"
         )
 
-    def test_validate_missing_ids_file_returns_422(self, client, sample_ifc_content):
-        """Test that missing IDS file returns 422.
+    def test_validate_missing_ids_file_returns_400(self, client, sample_ifc_content):
+        """Test that missing IDS file (without standard) returns 400.
 
         Acceptance Criteria:
-        - Missing required file returns 422 (validation error)
+        - Missing IDS file without standard parameter returns 400
+        - (Note: IDS is optional if 'standard' query param is provided)
         """
         files = {
             "ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream"),
@@ -537,8 +538,8 @@ class TestValidateEndpointEmptyFiles:
 
         response = client.post("/api/v1/validate", files=files)
 
-        assert response.status_code == 422, (
-            f"Expected 422 for missing IDS file, got {response.status_code}"
+        assert response.status_code == 400, (
+            f"Expected 400 for missing IDS file, got {response.status_code}"
         )
 
     def test_validate_no_files_returns_422(self, client):

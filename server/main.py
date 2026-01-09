@@ -626,7 +626,10 @@ async def validate_ifc_ids(
     """
     # Validate IFC file
     if not ifc_file.filename or not ifc_file.filename.lower().endswith('.ifc'):
-        raise HTTPException(status_code=400, detail="Valid IFC file required")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file type: {ifc_file.filename or 'unknown'}. Expected .ifc file"
+        )
 
     # Create job directory
     job_id = str(uuid.uuid4())
@@ -652,7 +655,10 @@ async def validate_ifc_ids(
         if ids_file:
             # Use uploaded IDS file
             if not ids_file.filename or not ids_file.filename.lower().endswith('.ids'):
-                raise HTTPException(status_code=400, detail="Valid IDS file required")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid file type: {ids_file.filename or 'unknown'}. Expected .ids file"
+                )
 
             ids_content = await ids_file.read()
             if not ids_content:
@@ -678,6 +684,13 @@ async def validate_ifc_ids(
                 detail="Either provide IDS file or specify a standard"
             )
 
+        # Check if we can accept more concurrent jobs
+        if not job_manager.can_accept_job():
+            raise HTTPException(
+                status_code=503,
+                detail="Server at capacity. Too many concurrent validation jobs. Please try again later."
+            )
+
         # Create job and schedule background task
         job_manager.create_job(
             job_id=job_id,
@@ -696,7 +709,8 @@ async def validate_ifc_ids(
             status_code=202,
             content={
                 "job_id": job_id,
-                "status": "queued",
+                "status": "pending",
+                "message": "Validation job queued",
                 "status_url": f"/api/v1/jobs/{job_id}",
             }
         )
@@ -725,8 +739,12 @@ async def get_job_status(job_id: str) -> JobStatusResponse:
     Returns:
         Job status with results if completed
     """
-    job_status = job_manager.get_job_status(job_id)
-    if not job_status:
+    # Cleanup expired jobs opportunistically
+    job_manager.cleanup_expired()
+    
+    # Get job info
+    job = job_manager.get_job(job_id)
+    if not job:
         raise HTTPException(status_code=404, detail=f"Job not found: {job_id}")
 
-    return job_status
+    return JobStatusResponse.from_job_info(job)

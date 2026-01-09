@@ -220,16 +220,27 @@ class JobManager:
         self._ttl_seconds = ttl_seconds
         self._max_concurrent_jobs = max_concurrent_jobs
 
-    def create_job(self) -> JobInfo:
+    def create_job(
+        self,
+        job_id: Optional[str] = None,
+        ifc_filename: Optional[str] = None,
+        ids_filename: Optional[str] = None,
+    ) -> JobInfo:
         """Create a new job with pending status.
 
-        Generates a new UUID4 job_id and initializes the job
-        with pending status and current timestamp.
+        Generates a new UUID4 job_id (or uses provided one) and initializes
+        the job with pending status and current timestamp.
+
+        Args:
+            job_id: Optional job ID (generates UUID4 if not provided)
+            ifc_filename: Optional IFC filename for metadata
+            ids_filename: Optional IDS filename for metadata
 
         Returns:
             The created JobInfo instance
         """
-        job_id = str(uuid.uuid4())
+        if job_id is None:
+            job_id = str(uuid.uuid4())
         job = JobInfo(
             job_id=job_id,
             status=JobStatus.PENDING,
