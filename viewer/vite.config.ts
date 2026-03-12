@@ -19,12 +19,6 @@ export default defineConfig({
     // Development server configuration
     server: {
         port: 8080,
-        open: true,
-        // Allow loading large IFC files
-        headers: {
-            'Cross-Origin-Opener-Policy': 'same-origin',
-            'Cross-Origin-Embedder-Policy': 'require-corp',
-        },
         // Proxy API requests to backend
         proxy: {
             '/api': {
@@ -41,13 +35,10 @@ export default defineConfig({
         sourcemap: true,
         // Increase chunk size warning limit for IFC-related bundles
         chunkSizeWarningLimit: 2000,
-        // Multi-page build configuration
+        // Single-page app (AppShell handles routing)
         rollupOptions: {
             input: {
                 main: resolve(__dirname, 'index.html'),
-                demo: resolve(__dirname, 'thatopen-demo.html'),
-                clientRender: resolve(__dirname, 'client-render.html'),
-                serverRender: resolve(__dirname, 'server-render.html'),
             },
         },
     },
@@ -55,18 +46,21 @@ export default defineConfig({
     // Optimize dependencies
     optimizeDeps: {
         include: [
+            'three',
+            '@thatopen/components > three',
+            '@thatopen/fragments > three',
             '@thatopen/components',
             '@thatopen/components-front',
             '@thatopen/fragments',
-            'three',
             'web-ifc',
+            'camera-controls',
             'react',
             'react-dom',
         ],
-        // Required for web-ifc WASM loading
         esbuildOptions: {
             target: 'esnext',
         },
+        force: true,
     },
 
     // Handle WASM files for web-ifc

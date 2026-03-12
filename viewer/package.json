@@ -13,13 +13,16 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@thatopen/components": "^2.4.0",
-    "@thatopen/components-front": "^2.4.0",
-    "@thatopen/fragments": "^3.0.0",
+    "@thatopen/components": "^3.3.3",
+    "@thatopen/components-front": "^3.3.3",
+    "@thatopen/fragments": "^3.3.6",
+    "camera-controls": "^3.1.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "three": "^0.160.0",
-    "web-ifc": "^0.0.57"
+    "react-resizable-panels": "^4.7.2",
+    "three": "^0.183.2",
+    "web-ifc": "^0.0.77",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.0",
@@ -28,6 +31,7 @@
     "@testing-library/user-event": "^14.5.2",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "@types/three": "^0.183.1",
     "@vitejs/plugin-react": "^4.3.1",
     "jsdom": "^25.0.1",
     "typescript": "^5.4.5",

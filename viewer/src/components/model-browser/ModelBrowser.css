@@ -1,0 +1,99 @@
+/**
+ * ModelBrowser styles.
+ */
+
+.model-browser {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.model-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition-fast);
+}
+
+.model-item:hover {
+  background-color: var(--color-hover);
+}
+
+.model-item__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.model-item__name {
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.model-item__size {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+}
+
+/* Load state indicators */
+.model-item__state {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.model-item__state--pending {
+  background-color: var(--color-text-secondary);
+}
+
+.model-item__state--loading {
+  background-color: var(--friendly-yellow);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.model-item__state--loaded {
+  background-color: var(--verdigris);
+}
+
+.model-item__state--error {
+  background-color: var(--flaming-peach);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Visibility toggle */
+.model-item__visibility {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xs);
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.model-item__visibility:hover {
+  background-color: var(--color-hover);
+  color: var(--color-text);
+}
+
+.model-item__visibility--hidden {
+  opacity: 0.4;
+}

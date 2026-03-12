@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from fastapi import BackgroundTasks, FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
@@ -35,6 +35,7 @@ from server.models.validation_results import (
     ValidationResult,
     ValidationStatus,
 )
+from server.project_manager import ProjectManager
 from ifc_validator.standards.resolver import get_bundled_ids
 
 
@@ -105,6 +106,9 @@ job_manager = JobManager()
 
 # Initialize IDS validator for validation tasks
 ids_validator = IDSValidator()
+
+# Initialize project manager for v2 API
+project_manager = ProjectManager()
 
 # Temp directory for validation job files
 VALIDATION_DIR = Path(tempfile.gettempdir()) / "ids_validation_jobs"
@@ -476,6 +480,54 @@ async def get_capabilities():
     }
 
 
+def transform_report_for_frontend(report: ValidationReport) -> dict:
+    """Transform a ValidationReport to the format expected by the React frontend."""
+    total_elements = sum(s.applicable_count for s in report.specifications)
+
+    specs = []
+    for spec in report.specifications:
+        # Build element results from failures
+        failed_elements = [
+            {
+                "global_id": f.global_id,
+                "element_type": f.entity_type,
+                "element_name": f.entity_name,
+                "status": "fail",
+                "messages": [],
+            }
+            for f in spec.failures
+        ]
+
+        # Create a single requirement per specification
+        requirement = {
+            "requirement_description": spec.description or spec.name,
+            "status": "pass" if spec.passed else "fail",
+            "total_elements": spec.applicable_count,
+            "failed_elements": spec.failed_count,
+            "elements": failed_elements,
+        }
+
+        specs.append({
+            "specification_name": spec.name,
+            "status": "pass" if spec.passed else "fail",
+            "severity": "error",
+            "total_requirements": 1,
+            "failed_requirements": 0 if spec.passed else 1,
+            "requirements": [requirement],
+        })
+
+    return {
+        "success": report.failed_specifications == 0,
+        "ifc_file_name": report.ifc_file,
+        "ids_file_name": report.ids_file,
+        "total_specifications": report.total_specifications,
+        "failed_specifications": report.failed_specifications,
+        "total_elements_validated": total_elements,
+        "validation_timestamp": report.timestamp,
+        "specifications": specs,
+    }
+
+
 def run_validation_task(job_id: str, ifc_path: Path, ids_path: Path) -> None:
     """
     Background task to run IDS validation.
@@ -510,8 +562,8 @@ def run_validation_task(job_id: str, ifc_path: Path, ids_path: Path) -> None:
             job_manager.fail_job(job_id, report.error or "Unknown validation error")
             return
 
-        # Validation completed successfully - convert to dict for storage
-        result = report_to_dict(report)
+        # Validation completed successfully - transform to frontend format
+        result = transform_report_for_frontend(report)
 
         # Complete job with result
         job_manager.complete_job(job_id, result)
@@ -613,7 +665,7 @@ def convert_report_to_result(
 async def validate_ifc_ids(
     ifc_file: UploadFile = File(..., description="IFC file to validate"),  # noqa: B008
     ids_file: Optional[UploadFile] = File(None, description="IDS file for validation"),  # noqa: B008
-    standard: Optional[str] = Query(None, description="IDS standard name (e.g., 'IFC4.3', 'common')"),
+    ids_standard: Optional[str] = Form(None, description="IDS standard name (e.g., 'nl-bim', 'rvb')"),
     background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
     """
@@ -671,12 +723,12 @@ async def validate_ifc_ids(
             with open(ids_path, "wb") as f:
                 f.write(ids_content)
 
-        elif standard:
+        elif ids_standard:
             # Use bundled standard IDS
-            ids_path = get_bundled_ids(standard)
+            ids_path = get_bundled_ids(ids_standard)
             if not ids_path:
-                raise HTTPException(status_code=400, detail=f"Unknown standard: {standard}")
-            ids_filename = f"{standard}.ids"
+                raise HTTPException(status_code=400, detail=f"Unknown standard: {ids_standard}")
+            ids_filename = f"{ids_standard}.ids"
 
         else:
             raise HTTPException(
@@ -748,3 +800,148 @@ async def get_job_status(job_id: str) -> JobStatusResponse:
         raise HTTPException(status_code=404, detail=f"Job not found: {job_id}")
 
     return JobStatusResponse.from_job_info(job)
+
+
+# ==========================================================================
+# V2 API — Project-based endpoints for multi-model BIM platform
+# ==========================================================================
+
+
+@app.post("/api/v2/projects")
+async def create_project(
+    name: str = Form("Nieuw project", description="Project name"),
+):
+    """Create a new project."""
+    project = project_manager.create_project(name)
+    return JSONResponse(
+        status_code=201,
+        content=project.to_dict(),
+    )
+
+
+@app.post("/api/v2/projects/{project_id}/models")
+async def upload_model(
+    project_id: str,
+    ifc_file: UploadFile = File(..., description="IFC or IFCx file"),  # noqa: B008
+):
+    """Upload an IFC model to a project.
+
+    The model is saved to disk, opened with IfcOpenShell, and the
+    spatial tree is extracted automatically.
+    """
+    project = project_manager.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail=f"Project not found: {project_id}")
+
+    # Validate file
+    if not ifc_file.filename:
+        raise HTTPException(status_code=400, detail="Filename is required")
+
+    ext = ifc_file.filename.lower()
+    if not (ext.endswith(".ifc") or ext.endswith(".ifcx")):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file type: {ifc_file.filename}. Expected .ifc or .ifcx",
+        )
+
+    # Read content
+    content = await ifc_file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="File is empty")
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail="File too large")
+
+    # Save to disk
+    model_dir = UPLOAD_DIR / "projects" / project_id
+    model_dir.mkdir(parents=True, exist_ok=True)
+    safe_name = f"{uuid.uuid4().hex[:8]}_{ifc_file.filename.replace(' ', '_')}"
+    file_path = model_dir / safe_name
+
+    with open(file_path, "wb") as f:
+        f.write(content)
+
+    # Register model in project manager
+    try:
+        model_record = project_manager.add_model(
+            project_id=project_id,
+            file_name=ifc_file.filename,
+            file_path=file_path,
+            file_size=len(content),
+        )
+    except ValueError as e:
+        # Clean up file on error
+        file_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return JSONResponse(
+        status_code=201,
+        content={
+            "id": model_record.id,
+            "fileName": model_record.file_name,
+            "fileSize": model_record.file_size,
+            "format": model_record.format,
+            "hasSpatialTree": model_record.spatial_tree is not None,
+        },
+    )
+
+
+@app.get("/api/v2/projects/{project_id}/models")
+async def list_models(project_id: str):
+    """List all models in a project."""
+    project = project_manager.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail=f"Project not found: {project_id}")
+
+    return {
+        "projectId": project_id,
+        "models": [
+            {
+                "id": m.id,
+                "fileName": m.file_name,
+                "fileSize": m.file_size,
+                "format": m.format,
+                "loadedAt": m.loaded_at,
+                "hasSpatialTree": m.spatial_tree is not None,
+            }
+            for m in project.models
+        ],
+    }
+
+
+@app.delete("/api/v2/projects/{project_id}/models/{model_id}")
+async def remove_model(project_id: str, model_id: str):
+    """Remove a model from a project."""
+    removed = project_manager.remove_model(project_id, model_id)
+    if not removed:
+        raise HTTPException(status_code=404, detail="Model not found")
+    return {"success": True, "message": f"Model {model_id} removed"}
+
+
+@app.get("/api/v2/models/{model_id}/spatial-tree")
+async def get_spatial_tree(model_id: str):
+    """Get the spatial hierarchy tree for a model.
+
+    Returns IfcProject -> IfcSite -> IfcBuilding -> IfcBuildingStorey hierarchy.
+    """
+    tree = project_manager.get_spatial_tree(model_id)
+    if tree is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Spatial tree not available for model: {model_id}",
+        )
+    return tree
+
+
+@app.get("/api/v2/models/{model_id}/elements/{global_id}/properties")
+async def get_element_properties(model_id: str, global_id: str):
+    """Get all properties for an IFC element.
+
+    Returns property sets, type properties, and material information.
+    """
+    props = project_manager.get_element_properties(model_id, global_id)
+    if props is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Element not found: {global_id} in model {model_id}",
+        )
+    return props

@@ -1,0 +1,111 @@
+/**
+ * PropertiesPanel styles.
+ */
+
+.properties-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* Element header */
+.properties-panel__header {
+  padding: var(--spacing-sm);
+  background-color: var(--color-hover);
+  border-radius: var(--radius-sm);
+}
+
+.properties-panel__type {
+  display: inline-block;
+  padding: 1px var(--spacing-xs);
+  background-color: var(--color-primary);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--spacing-xs);
+}
+
+.properties-panel__name {
+  margin: var(--spacing-xs) 0 2px;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.properties-panel__id {
+  display: block;
+  font-size: 10px;
+  font-family: monospace;
+  color: var(--color-text-secondary);
+  word-break: break-all;
+}
+
+/* Sections */
+.properties-panel__section {
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--spacing-sm);
+}
+
+.properties-panel__section:last-child {
+  border-bottom: none;
+}
+
+.properties-panel__section-title {
+  margin: 0 0 var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Material */
+.properties-panel__material {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+  padding: var(--spacing-xs);
+  background-color: var(--color-surface);
+  border-radius: var(--radius-sm);
+}
+
+/* Property table */
+.properties-panel__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-xs);
+}
+
+.properties-panel__table tr {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.properties-panel__table tr:last-child {
+  border-bottom: none;
+}
+
+.properties-panel__key {
+  padding: 3px var(--spacing-xs) 3px 0;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  vertical-align: top;
+  width: 45%;
+}
+
+.properties-panel__value {
+  padding: 3px 0;
+  color: var(--color-text);
+  font-weight: 500;
+  word-break: break-word;
+}
+
+/* Placeholder */
+.properties-panel__placeholder {
+  margin: var(--spacing-md) 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  text-align: center;
+}

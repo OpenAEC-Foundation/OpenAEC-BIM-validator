@@ -1,0 +1,177 @@
+/**
+ * AppShell layout styles.
+ *
+ * Full-viewport 3-panel layout with toolbar at top.
+ */
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: var(--color-background);
+}
+
+.app-shell__panels {
+  flex: 1;
+  overflow: hidden;
+  height: 0; /* forces flex child to respect flex: 1 and not overflow */
+}
+
+/* react-resizable-panels Group and Panel wrappers need full height */
+.app-shell__panels > div {
+  height: 100%;
+}
+
+.app-shell__panels [data-panel] {
+  height: 100%;
+}
+
+/* Resize handles between panels */
+.resize-handle {
+  background-color: var(--color-border);
+  transition: background-color var(--transition-fast);
+}
+
+.resize-handle:hover,
+.resize-handle[data-resize-handle-active] {
+  background-color: var(--color-primary);
+}
+
+.resize-handle--horizontal {
+  width: 4px;
+  cursor: col-resize;
+}
+
+.resize-handle--vertical {
+  height: 4px;
+  cursor: row-resize;
+}
+
+/* Panel base styles */
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--color-surface);
+}
+
+.panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  flex-shrink: 0;
+}
+
+.panel__header h2 {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.panel__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-sm);
+}
+
+/* Tab bar for right panel */
+.tab-bar {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  flex-shrink: 0;
+}
+
+.tab-bar__tab {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  background: none;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all var(--transition-fast);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.tab-bar__tab:hover {
+  color: var(--color-text);
+  background-color: var(--color-hover);
+}
+
+.tab-bar__tab--active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+/* Viewer canvas container */
+.viewer-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: #1a1a2e;
+  overflow: hidden;
+}
+
+.viewer-container__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.viewer-container__status {
+  position: absolute;
+  bottom: var(--spacing-sm);
+  left: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  font-size: var(--font-size-xs);
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Empty state overlay inside viewer */
+.viewer-container .empty-state {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: var(--spacing-xl);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.empty-state__icon {
+  font-size: 2rem;
+  margin-bottom: var(--spacing-md);
+  opacity: 0.5;
+}
+
+.empty-state__text {
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
