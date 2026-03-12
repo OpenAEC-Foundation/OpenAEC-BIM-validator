@@ -74,10 +74,10 @@ export function PropertiesPanel() {
   const [error, setError] = useState<string | null>(null);
   const fetchIdRef = useRef(0);
 
-  /** Find the backend model ID (from v2 upload flow) */
+  /** Find the backend model ID (only available when uploaded via v2 API) */
   const backendModelId = project?.models.find(
     (m) => m.loadState === "loaded"
-  )?.id ?? null;
+  )?.backendModelId ?? null;
 
   useEffect(() => {
     setProperties(null);

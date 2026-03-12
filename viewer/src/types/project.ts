@@ -51,6 +51,8 @@ export interface ModelInfo {
   spatialTree?: SpatialNode;
   /** Internal engine model ID for fragment management */
   engineModelId?: string;
+  /** Backend model ID (only set when uploaded via v2 project API) */
+  backendModelId?: string;
 }
 
 /** A project containing one or more models */
