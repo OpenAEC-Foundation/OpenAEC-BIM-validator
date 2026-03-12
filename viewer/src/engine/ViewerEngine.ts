@@ -22,6 +22,9 @@ const CAMERA_FIT_PADDING = 1.5;
 /** Default scene background color */
 const DEFAULT_BACKGROUND = "#1a1a2e";
 
+/** Default highlight opacity */
+const HIGHLIGHT_OPACITY = 0.6;
+
 /** Callbacks for engine events */
 export interface ViewerEngineCallbacks {
   /** Progress messages during init/load */
@@ -268,29 +271,75 @@ export class ViewerEngine {
 
   /**
    * Highlight elements by their GlobalIds.
+   *
+   * Converts GUIDs to a ModelIdMap and applies a colored overlay
+   * via FragmentsManager.highlight().
    */
-  highlightByGlobalIds(
-    _globalIds: string[],
-    _color: string = "#ff0000"
-  ): void {
-    // TODO: Implement in Fase 2
+  async highlightByGlobalIds(
+    globalIds: string[],
+    color: string = "#ff0000"
+  ): Promise<void> {
+    if (!this.fragments || globalIds.length === 0) return;
+
+    const modelIdMap = await this.fragments.guidsToModelIdMap(globalIds);
+    if (Object.keys(modelIdMap).length === 0) return;
+
+    const style: FRAGS.MaterialDefinition = {
+      color: new THREE.Color(color),
+      renderedFaces: FRAGS.RenderedFaces.ONE,
+      opacity: HIGHLIGHT_OPACITY,
+      transparent: true,
+    };
+
+    await this.fragments.highlight(style, modelIdMap);
   }
 
   /**
-   * Clear all highlights.
+   * Clear all highlights (both programmatic and selection-based).
    */
-  clearHighlights(): void {
+  async clearHighlights(): Promise<void> {
+    if (this.fragments) {
+      await this.fragments.resetHighlight();
+    }
     if (this.highlighter) {
-      this.highlighter.clear("select");
+      await this.highlighter.clear();
     }
   }
 
   /**
    * Zoom camera to fit an element by GlobalId.
+   *
+   * Uses BoundingBoxer to compute the element's bounding box,
+   * then fits the camera. Falls back to fitToAllModels() if
+   * the element cannot be found.
    */
-  zoomToElement(_globalId: string): void {
-    // TODO: Implement in Fase 2 with BoundingBoxer
-    this.fitToAllModels();
+  async zoomToElement(globalId: string): Promise<void> {
+    if (!this.components || !this.fragments) {
+      this.fitToAllModels();
+      return;
+    }
+
+    try {
+      const modelIdMap = await this.fragments.guidsToModelIdMap([globalId]);
+      if (Object.keys(modelIdMap).length === 0) {
+        this.fitToAllModels();
+        return;
+      }
+
+      const boxer = this.components.get(OBC.BoundingBoxer);
+      boxer.dispose();
+      await boxer.addFromModelIdMap(modelIdMap);
+      const box = boxer.get();
+
+      if (box.isEmpty()) {
+        this.fitToAllModels();
+        return;
+      }
+
+      this.fitCameraToBox(box);
+    } catch {
+      this.fitToAllModels();
+    }
   }
 
   /**
@@ -384,8 +433,9 @@ export class ViewerEngine {
       const selectEvents = hl.events.select;
       if (selectEvents) {
         selectEvents.onHighlight.add(
-          (data: Record<string, unknown>) => {
-            const globalId = this.extractGlobalIdFromSelection(data);
+          async (data: OBC.ModelIdMap) => {
+            const globalId =
+              await this.extractGlobalIdFromSelection(data);
             this.callbacks.onElementSelected?.(globalId);
           }
         );
@@ -401,11 +451,23 @@ export class ViewerEngine {
     }
   }
 
-  private extractGlobalIdFromSelection(
-    _data: Record<string, unknown>
-  ): string | null {
-    // TODO: Implement GlobalId extraction from fragment selection data
-    return null;
+  /**
+   * Extract the first GlobalId from a Highlighter selection event.
+   *
+   * The onHighlight event provides a ModelIdMap (Record<string, Set<number>>).
+   * We convert it to GUIDs via FragmentsManager.modelIdMapToGuids().
+   */
+  private async extractGlobalIdFromSelection(
+    data: OBC.ModelIdMap
+  ): Promise<string | null> {
+    if (!this.fragments) return null;
+
+    try {
+      const guids = await this.fragments.modelIdMapToGuids(data);
+      return guids.length > 0 ? (guids[0] ?? null) : null;
+    } catch {
+      return null;
+    }
   }
 
   private checkWebGLSupport(): boolean {

@@ -36,9 +36,11 @@ export function ValidationPanel() {
   const retryValidation = useStore((s) => s.retryValidation);
   const dismissValidationError = useStore((s) => s.dismissValidationError);
 
-  // Highlight actions
+  // Highlight + selection actions
+  const selectElement = useStore((s) => s.selectElement);
   const setHighlightGroup = useStore((s) => s.setHighlightGroup);
   const clearHighlights = useStore((s) => s.clearHighlights);
+  const setActiveRightTab = useStore((s) => s.setActiveRightTab);
 
   /** Get the first loaded IFC file from the project */
   const loadedModel = useMemo(() => {
@@ -109,6 +111,24 @@ export function ValidationPanel() {
   const handleClearHighlights = useCallback(() => {
     clearHighlights();
   }, [clearHighlights]);
+
+  /** Click on an element in the results → select, highlight, zoom, switch tab */
+  const handleElementSelect = useCallback(
+    (globalId: string) => {
+      selectElement(globalId);
+      setHighlightGroup({
+        id: "element-selection",
+        color: "#44B6A8",
+        globalIds: [globalId],
+      });
+      setActiveRightTab("properties");
+
+      window.dispatchEvent(
+        new CustomEvent("zoom-to-element", { detail: { globalId } })
+      );
+    },
+    [selectElement, setHighlightGroup, setActiveRightTab]
+  );
 
   const inputsDisabled = phase === "submitting" || phase === "polling";
   const canSubmit =
@@ -234,6 +254,7 @@ export function ValidationPanel() {
               <SpecificationList
                 specifications={validationResult.specifications}
                 autoExpandFailed
+                onElementSelect={handleElementSelect}
               />
             </div>
           )}

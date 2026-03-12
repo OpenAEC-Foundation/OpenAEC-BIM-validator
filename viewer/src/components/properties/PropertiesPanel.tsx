@@ -4,14 +4,15 @@
  * Displays property sets, type properties, and material info
  * for the element selected in the 3D viewer.
  *
- * In demo mode, shows realistic fake property data.
- * Full property fetching from the backend is implemented in Fase 2.
+ * Fetches properties from the backend API when a backend model ID
+ * is available. Falls back to demo data in demo mode.
  */
 
-import { useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import { useStore } from "../../store";
 import { isDemoMode } from "../../demo/useDemoMode";
+import { getElementProperties } from "../../api/projectApi";
 import type { ElementProperties } from "../../types/project";
 
 import "./PropertiesPanel.css";
@@ -66,14 +67,53 @@ const DEMO_PROPERTIES: ElementProperties = {
 
 export function PropertiesPanel() {
   const selectedElementId = useStore((s) => s.selectedElementId);
+  const project = useStore((s) => s.project);
 
-  /** Get properties — demo data or real API data */
-  const properties: ElementProperties | null = useMemo(() => {
-    if (!selectedElementId) return null;
-    if (isDemoMode()) return DEMO_PROPERTIES;
-    // TODO: Fase 2 — fetch from backend API
-    return null;
-  }, [selectedElementId]);
+  const [properties, setProperties] = useState<ElementProperties | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fetchIdRef = useRef(0);
+
+  /** Find the backend model ID (from v2 upload flow) */
+  const backendModelId = project?.models.find(
+    (m) => m.loadState === "loaded"
+  )?.id ?? null;
+
+  useEffect(() => {
+    setProperties(null);
+    setError(null);
+    setLoading(false);
+
+    if (!selectedElementId) return;
+
+    // Demo mode: use static data
+    if (isDemoMode()) {
+      setProperties(DEMO_PROPERTIES);
+      return;
+    }
+
+    // No backend model → can't fetch properties
+    if (!backendModelId) {
+      setError("Properties niet beschikbaar (model niet via project-API geladen)");
+      return;
+    }
+
+    const currentFetchId = ++fetchIdRef.current;
+    setLoading(true);
+
+    getElementProperties(backendModelId, selectedElementId)
+      .then((data) => {
+        if (fetchIdRef.current !== currentFetchId) return;
+        setProperties(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (fetchIdRef.current !== currentFetchId) return;
+        const msg = err instanceof Error ? err.message : "Ophalen mislukt";
+        setError(msg);
+        setLoading(false);
+      });
+  }, [selectedElementId, backendModelId]);
 
   if (!selectedElementId) {
     return (
@@ -81,6 +121,32 @@ export function PropertiesPanel() {
         <p className="empty-state__text">
           Klik op een element in de 3D viewer om properties te bekijken
         </p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="properties-panel">
+        <div className="properties-panel__header">
+          <span className="properties-panel__type">Element</span>
+          <span className="properties-panel__id">{selectedElementId}</span>
+        </div>
+        <p className="properties-panel__placeholder">
+          Properties laden...
+        </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="properties-panel">
+        <div className="properties-panel__header">
+          <span className="properties-panel__type">Element</span>
+          <span className="properties-panel__id">{selectedElementId}</span>
+        </div>
+        <p className="properties-panel__placeholder">{error}</p>
       </div>
     );
   }
@@ -93,7 +159,7 @@ export function PropertiesPanel() {
           <span className="properties-panel__id">{selectedElementId}</span>
         </div>
         <p className="properties-panel__placeholder">
-          Properties laden...
+          Geen properties gevonden
         </p>
       </div>
     );

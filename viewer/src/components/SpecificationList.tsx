@@ -18,6 +18,8 @@ export interface SpecificationListProps {
   specifications: SpecificationResult[];
   /** Whether to initially expand failed specifications */
   autoExpandFailed?: boolean;
+  /** Callback when a user clicks an element row (GlobalId) */
+  onElementSelect?: (globalId: string) => void;
 }
 
 /** Props for a single specification item */
@@ -26,6 +28,8 @@ interface SpecificationItemProps {
   specification: SpecificationResult;
   /** Whether this item is initially expanded */
   initiallyExpanded?: boolean;
+  /** Callback when an element is clicked */
+  onElementSelect?: (globalId: string) => void;
 }
 
 /** Props for a single requirement item */
@@ -34,6 +38,8 @@ interface RequirementItemProps {
   requirement: RequirementResult;
   /** Index for unique key generation */
   index: number;
+  /** Callback when an element is clicked */
+  onElementSelect?: (globalId: string) => void;
 }
 
 /** Maximum elements to show before "Show more" */
@@ -86,14 +92,34 @@ function formatGlobalId(globalId: string | null): string {
   return globalId;
 }
 
+/** Props for a single element item */
+interface ElementItemProps {
+  element: ElementResult;
+  onSelect?: (globalId: string) => void;
+}
+
 /**
- * ElementItem component for displaying a single element
+ * ElementItem component for displaying a single element.
+ * Clickable when onSelect is provided and the element has a GlobalId.
  */
-function ElementItem({ element }: { element: ElementResult }) {
+function ElementItem({ element, onSelect }: ElementItemProps) {
   const isPassed = element.status === 'pass';
+  const isClickable = !!onSelect && !!element.global_id;
+
+  const handleClick = () => {
+    if (isClickable && element.global_id) {
+      onSelect(element.global_id);
+    }
+  };
 
   return (
-    <div className={`element-item ${isPassed ? 'element-item--pass' : 'element-item--fail'}`}>
+    <div
+      className={`element-item ${isPassed ? 'element-item--pass' : 'element-item--fail'}${isClickable ? ' element-item--clickable' : ''}`}
+      onClick={handleClick}
+      role={isClickable ? "button" : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      onKeyDown={isClickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(); } : undefined}
+    >
       <div className="element-header">
         <span className="element-status-icon" aria-hidden="true">
           {isPassed ? '✓' : '✗'}
@@ -121,7 +147,7 @@ function ElementItem({ element }: { element: ElementResult }) {
 /**
  * RequirementItem component for displaying a single requirement
  */
-function RequirementItem({ requirement, index }: RequirementItemProps) {
+function RequirementItem({ requirement, index, onElementSelect }: RequirementItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAllElements, setShowAllElements] = useState(false);
 
@@ -191,7 +217,11 @@ function RequirementItem({ requirement, index }: RequirementItemProps) {
           {elementsToShow.length > 0 && (
             <div className="elements-list">
               {elementsToShow.map((element, idx) => (
-                <ElementItem key={element.global_id || `element-${idx}`} element={element} />
+                <ElementItem
+                  key={element.global_id || `element-${idx}`}
+                  element={element}
+                  onSelect={onElementSelect}
+                />
               ))}
 
               {!showAllElements && remainingCount > 0 && (
@@ -214,7 +244,7 @@ function RequirementItem({ requirement, index }: RequirementItemProps) {
 /**
  * SpecificationItem component for displaying a single specification
  */
-function SpecificationItem({ specification, initiallyExpanded = false }: SpecificationItemProps) {
+function SpecificationItem({ specification, initiallyExpanded = false, onElementSelect }: SpecificationItemProps) {
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
 
   const isPassed = specification.status === 'pass';
@@ -276,6 +306,7 @@ function SpecificationItem({ specification, initiallyExpanded = false }: Specifi
                 key={`${specification.specification_name}-req-${idx}`}
                 requirement={requirement}
                 index={idx}
+                onElementSelect={onElementSelect}
               />
             ))}
           </div>
@@ -288,7 +319,7 @@ function SpecificationItem({ specification, initiallyExpanded = false }: Specifi
 /**
  * SpecificationList component displaying all validation specifications
  */
-export function SpecificationList({ specifications, autoExpandFailed = true }: SpecificationListProps) {
+export function SpecificationList({ specifications, autoExpandFailed = true, onElementSelect }: SpecificationListProps) {
   if (specifications.length === 0) {
     return (
       <div className="specification-list specification-list--empty">
@@ -312,6 +343,7 @@ export function SpecificationList({ specifications, autoExpandFailed = true }: S
           key={spec.specification_name}
           specification={spec}
           initiallyExpanded={autoExpandFailed && spec.status === 'fail'}
+          onElementSelect={onElementSelect}
         />
       ))}
       <style>{specificationListStyles}</style>
@@ -647,6 +679,22 @@ const specificationListStyles = `
 
   .element-item--fail .element-message {
     color: var(--color-error);
+  }
+
+  .element-item--clickable {
+    cursor: pointer;
+    transition: background-color var(--transition-fast),
+                border-left-color var(--transition-fast);
+  }
+
+  .element-item--clickable:hover {
+    background-color: var(--color-hover);
+    border-left-color: var(--color-primary);
+  }
+
+  .element-item--clickable:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
   }
 
   .show-more-btn {
