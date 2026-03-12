@@ -20,11 +20,15 @@ __version__ = "0.1.0"
 # CLI app - entry point for ifc-validate command
 from ifc_validator.cli import app
 
-# Validation functions and result dataclasses
-from ifc_validator.validator import (
+# Result models (Pydantic BaseModel)
+from ifc_validator.models import (
     EntityFailure,
     SpecificationResult,
     ValidationResult,
+)
+
+# Validation engine
+from ifc_validator.engine import (
     check_memory_available,
     get_memory_info,
     load_ifc_model,

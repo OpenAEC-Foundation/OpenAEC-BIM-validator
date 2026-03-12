@@ -18,11 +18,10 @@ Usage:
 """
 
 import json
-from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from ifc_validator.validator import ValidationResult
+from ifc_validator.models import ValidationResult
 
 
 def _result_to_dict(result: ValidationResult) -> dict[str, Any]:
@@ -37,7 +36,7 @@ def _result_to_dict(result: ValidationResult) -> dict[str, Any]:
     Returns:
         Dictionary representation ready for JSON serialization
     """
-    return asdict(result)
+    return result.model_dump()
 
 
 def format_json(

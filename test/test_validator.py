@@ -15,7 +15,8 @@ Usage:
 import os
 import sys
 import tempfile
-from dataclasses import asdict
+
+
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -323,8 +324,8 @@ class TestCombinedValidation:
         if not sample_ifc_path.exists():
             pytest.skip(f"Sample IFC file not found: {sample_ifc_path}")
 
-        with patch("src.ifc_validator.validator.check_memory_available", return_value=False):
-            with patch("src.ifc_validator.validator.get_memory_info", return_value={
+        with patch("ifc_validator.engine.file_utils.check_memory_available", return_value=False):
+            with patch("ifc_validator.engine.file_utils.get_memory_info", return_value={
                 "file_size_mb": 100,
                 "required_memory_mb": 1000,
                 "available_memory_mb": 500,
@@ -409,7 +410,12 @@ class TestResultDataclasses:
 
     def test_specification_result_with_failures(self):
         """Test SpecificationResult with failure details."""
-        failure = EntityFailure(123, "IfcWall", "Bad Wall", "abc123")
+        failure = EntityFailure(
+            entity_id=123,
+            entity_type="IfcWall",
+            entity_name="Bad Wall",
+            global_id="abc123",
+        )
         spec_result = SpecificationResult(
             name="Naming Convention",
             description=None,
@@ -481,7 +487,12 @@ class TestResultDataclasses:
 
     def test_validation_result_json_serializable(self):
         """Test ValidationResult can be serialized to dict for JSON."""
-        failure = EntityFailure(123, "IfcWall", "Bad Wall", "abc123")
+        failure = EntityFailure(
+            entity_id=123,
+            entity_type="IfcWall",
+            entity_name="Bad Wall",
+            global_id="abc123",
+        )
         spec = SpecificationResult(
             name="Test",
             description="Test spec",
@@ -508,7 +519,7 @@ class TestResultDataclasses:
         )
 
         # Convert to dict for JSON serialization
-        data = asdict(result)
+        data = result.model_dump()
         assert isinstance(data, dict)
         assert data["overall_pass"] is False
         assert len(data["specifications"]) == 1
@@ -689,7 +700,7 @@ class TestFailedEntitiesNotElements:
 
     def test_validator_code_uses_failed_entities(self):
         """Verify validator.py uses failed_entities, not failed_elements."""
-        validator_file = Path(__file__).parent.parent / "src" / "ifc_validator" / "validator.py"
+        validator_file = Path(__file__).parent.parent / "src" / "ifc_validator" / "engine" / "validator.py"
 
         if not validator_file.exists():
             pytest.skip(f"Validator file not found: {validator_file}")

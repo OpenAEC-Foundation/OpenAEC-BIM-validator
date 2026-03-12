@@ -540,7 +540,7 @@ class TestMemoryConstraint:
             pytest.skip(f"Test file not found: {test_ifc_file}")
 
         # Mock psutil to simulate low available memory
-        with patch("src.ifc_parser.psutil.virtual_memory") as mock_mem:
+        with patch("ifc_validator.engine.parser.psutil.virtual_memory") as mock_mem:
             mock_mem.return_value = MagicMock(available=100)  # Only 100 bytes
 
             with pytest.raises(MemoryError) as exc_info:
@@ -566,7 +566,7 @@ class TestMemoryConstraint:
         if not test_ifc_file.exists():
             pytest.skip(f"Test file not found: {test_ifc_file}")
 
-        with patch("src.ifc_parser.psutil.virtual_memory") as mock_mem:
+        with patch("ifc_validator.engine.parser.psutil.virtual_memory") as mock_mem:
             mock_mem.return_value = MagicMock(available=100)
 
             with pytest.raises(MemoryError) as exc_info:
@@ -580,7 +580,7 @@ class TestMemoryConstraint:
         if not test_ifc_file.exists():
             pytest.skip(f"Test file not found: {test_ifc_file}")
 
-        with patch("src.ifc_parser.psutil.virtual_memory") as mock_mem:
+        with patch("ifc_validator.engine.parser.psutil.virtual_memory") as mock_mem:
             mock_mem.return_value = MagicMock(available=100)
 
             with pytest.raises(MemoryError) as exc_info:
@@ -603,7 +603,7 @@ class TestMemoryConstraint:
         if not test_ifc_file.exists():
             pytest.skip(f"Test file not found: {test_ifc_file}")
 
-        with patch("src.ifc_parser.psutil.virtual_memory") as mock_mem:
+        with patch("ifc_validator.engine.parser.psutil.virtual_memory") as mock_mem:
             mock_mem.return_value = MagicMock(available=100)
 
             # load() should trigger memory check and raise MemoryError
@@ -625,7 +625,7 @@ class TestMemoryConstraint:
             pytest.skip(f"Test file not found: {test_ifc_file}")
 
         # Mock psutil to simulate plenty of available memory
-        with patch("src.ifc_parser.psutil.virtual_memory") as mock_mem:
+        with patch("ifc_validator.engine.parser.psutil.virtual_memory") as mock_mem:
             mock_mem.return_value = MagicMock(available=100 * 1024**3)  # 100 GB
 
             # Should not raise - plenty of memory
@@ -640,7 +640,7 @@ class TestMemoryConstraint:
         # Set available to exactly what's needed (file_size * multiplier)
         required = file_size * parser.MEMORY_MULTIPLIER
 
-        with patch("src.ifc_parser.psutil.virtual_memory") as mock_mem:
+        with patch("ifc_validator.engine.parser.psutil.virtual_memory") as mock_mem:
             # Just barely enough memory - should pass
             mock_mem.return_value = MagicMock(available=required + 1)
             parser._check_memory_constraint(str(test_ifc_file))
@@ -653,7 +653,7 @@ class TestMemoryConstraint:
         file_size = test_ifc_file.stat().st_size
         required = file_size * parser.MEMORY_MULTIPLIER
 
-        with patch("src.ifc_parser.psutil.virtual_memory") as mock_mem:
+        with patch("ifc_validator.engine.parser.psutil.virtual_memory") as mock_mem:
             # Just under required memory - should fail
             mock_mem.return_value = MagicMock(available=required - 1)
             with pytest.raises(MemoryError):
@@ -664,7 +664,7 @@ class TestMemoryConstraint:
         if not test_ifc_file.exists():
             pytest.skip(f"Test file not found: {test_ifc_file}")
 
-        with patch("src.ifc_parser.psutil.virtual_memory") as mock_mem:
+        with patch("ifc_validator.engine.parser.psutil.virtual_memory") as mock_mem:
             mock_mem.return_value = MagicMock(available=100)
 
             with pytest.raises(MemoryError) as exc_info:
@@ -695,7 +695,7 @@ def test_memory_constraint():
     # Test 3: Mock low memory scenario
     test_ifc_file = Path(__file__).parent / "2786_CLT_model.ifc"
     if test_ifc_file.exists():
-        with patch("src.ifc_parser.psutil.virtual_memory") as mock_mem:
+        with patch("ifc_validator.engine.parser.psutil.virtual_memory") as mock_mem:
             # Simulate only 100 bytes available
             mock_mem.return_value = MagicMock(available=100)
 

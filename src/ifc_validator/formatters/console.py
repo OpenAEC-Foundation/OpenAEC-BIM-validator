@@ -19,7 +19,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from ifc_validator.validator import ValidationResult, SpecificationResult
+from ifc_validator.models import SpecificationResult, ValidationResult
 
 
 # Console instance for output

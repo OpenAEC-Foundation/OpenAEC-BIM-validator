@@ -15,7 +15,7 @@ Usage:
     html_content = format_html_from_ids(ids_file)
 
     # Fallback: Using ValidationResult
-    from ifc_validator.validator import ValidationResult
+    from ifc_validator.models import ValidationResult
     result: ValidationResult = validate(ifc_path, ids_path)
     html_content = format_html(result)
 """
@@ -23,7 +23,7 @@ Usage:
 from pathlib import Path
 from typing import Optional, Union
 
-from ifc_validator.validator import ValidationResult
+from ifc_validator.models import ValidationResult
 
 
 def format_html_from_ids(
