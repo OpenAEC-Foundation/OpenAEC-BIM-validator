@@ -1,0 +1,23 @@
+services:
+  app:
+    build: .
+    container_name: bim-validator
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      - CORS_ORIGINS=*
+    volumes:
+      # Persist uploaded files across restarts
+      - bim-uploads:/tmp/ifc_uploads
+      - bim-processed:/tmp/ifc_processed
+      - bim-jobs:/tmp/ids_validation_jobs
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+
+volumes:
+  bim-uploads:
+  bim-processed:
+  bim-jobs:

@@ -12,6 +12,7 @@ Or from server directory: uvicorn main:app --reload --port 8000
 
 import json
 import logging
+import os
 import shutil
 import tempfile
 import time
@@ -23,6 +24,7 @@ from typing import Optional
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from server.ids_validator import IDSValidator, ValidationReport, report_to_dict
 from server.ifc_processor import GLTF_AVAILABLE, IFCProcessor
@@ -73,17 +75,22 @@ app = FastAPI(
 )
 
 # Configure CORS for browser access
+# In production, set CORS_ORIGINS env var (comma-separated)
+_default_origins = [
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "http://localhost:5173",
+    "http://localhost:8081",
+    "http://127.0.0.1:8081",
+    "http://localhost:8082",
+    "http://127.0.0.1:8082",
+]
+_cors_env = os.environ.get("CORS_ORIGINS", "")
+cors_origins = [o.strip() for o in _cors_env.split(",") if o.strip()] if _cors_env else _default_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:8080",
-        "http://127.0.0.1:8080",
-        "http://localhost:5173",
-        "http://localhost:8081",
-        "http://127.0.0.1:8081",
-        "http://localhost:8082",
-        "http://127.0.0.1:8082",
-    ],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -953,3 +960,22 @@ async def get_element_properties(model_id: str, global_id: str):
             detail=f"Element not found: {global_id} in model {model_id}",
         )
     return props
+
+
+# ==========================================================================
+# Static file serving — serve built frontend in production
+# ==========================================================================
+
+# Mount frontend static files if the build exists
+_frontend_dist = Path(__file__).resolve().parent.parent / "viewer" / "dist"
+if _frontend_dist.is_dir():
+    # Serve index.html for SPA routes (catch-all must be last)
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        """Serve the React SPA. API routes are matched first by FastAPI."""
+        file_path = _frontend_dist / full_path
+        if full_path and file_path.is_file():
+            return FileResponse(file_path)
+        return FileResponse(_frontend_dist / "index.html")
+
+    logger.info("Serving frontend from %s", _frontend_dist)
