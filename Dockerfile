@@ -8,6 +8,7 @@ WORKDIR /app/viewer
 COPY viewer/package.json viewer/package-lock.json* ./
 RUN npm install
 COPY viewer/ ./
+ENV NODE_OPTIONS="--max-old-space-size=3072"
 RUN npm run build
 
 # --- Stage 2: Production image ---
