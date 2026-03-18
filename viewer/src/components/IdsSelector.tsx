@@ -179,9 +179,9 @@ export function IdsSelector({
 
       if (disabled || selectedOption !== 'custom') return;
 
-      const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        processFile(files[0]);
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        processFile(file);
       }
     },
     [disabled, selectedOption, processFile]
@@ -192,9 +192,9 @@ export function IdsSelector({
    */
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = e.target.files;
-      if (files && files.length > 0) {
-        processFile(files[0]);
+      const file = e.target.files?.[0];
+      if (file) {
+        processFile(file);
       }
     },
     [processFile]
