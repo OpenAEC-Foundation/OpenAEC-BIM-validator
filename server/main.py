@@ -132,7 +132,10 @@ VALIDATION_DIR.mkdir(exist_ok=True)
 
 @app.get("/")
 async def root():
-    """Root endpoint with API information."""
+    """Serve frontend SPA at root, or API info if no frontend build exists."""
+    index = Path(__file__).resolve().parent.parent / "viewer" / "dist" / "index.html"
+    if index.is_file():
+        return FileResponse(index)
     return {
         "status": "healthy",
         "service": "IFC Validation API",
