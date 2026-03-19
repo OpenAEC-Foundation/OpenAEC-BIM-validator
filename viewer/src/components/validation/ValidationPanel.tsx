@@ -40,8 +40,6 @@ export function ValidationPanel() {
   const selectElement = useStore((s) => s.selectElement);
   const setHighlightGroup = useStore((s) => s.setHighlightGroup);
   const clearHighlights = useStore((s) => s.clearHighlights);
-  const setActiveRightTab = useStore((s) => s.setActiveRightTab);
-
   /** Get the first loaded IFC file from the project */
   const loadedModel = useMemo(() => {
     return project?.models.find((m) => m.loadState === "loaded");
@@ -121,13 +119,12 @@ export function ValidationPanel() {
         color: "#44B6A8",
         globalIds: [globalId],
       });
-      setActiveRightTab("properties");
 
       window.dispatchEvent(
         new CustomEvent("zoom-to-element", { detail: { globalId } })
       );
     },
-    [selectElement, setHighlightGroup, setActiveRightTab]
+    [selectElement, setHighlightGroup]
   );
 
   const inputsDisabled = phase === "submitting" || phase === "polling";
@@ -152,17 +149,15 @@ export function ValidationPanel() {
 
   return (
     <div className="validation-panel">
-      {/* IDS Selection */}
+      {/* IDS Selection + Submit in one block */}
       <div className="validation-panel__section">
-        <h3 className="validation-panel__heading">IDS Standaard</h3>
         <IdsSelector
           onSelectionChange={handleIdsChange}
           disabled={inputsDisabled}
         />
       </div>
 
-      {/* Submit button */}
-      <div className="validation-panel__section validation-panel__actions">
+      <div className="validation-panel__actions">
         <button
           type="button"
           className="validation-panel__btn validation-panel__btn--primary"
@@ -172,7 +167,6 @@ export function ValidationPanel() {
         >
           {phase === "submitting" ? "Bezig..." : "Valideer"}
         </button>
-
         {phase === "completed" && (
           <button
             type="button"

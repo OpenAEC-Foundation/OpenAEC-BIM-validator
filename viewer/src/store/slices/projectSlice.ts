@@ -15,6 +15,7 @@ import type {
   Project,
   SpatialNode,
 } from "../../types/project";
+import { removeModelBytes, removeCachedFile } from "../../engine/modelCache";
 
 /** Maximum number of models per project */
 const MAX_MODELS_PER_PROJECT = 10;
@@ -105,6 +106,13 @@ export const createProjectSlice: StateCreator<ProjectSlice> = (set, get) => ({
   removeModel: (modelId: ModelId) => {
     const { project } = get();
     if (!project) return;
+
+    const model = project.models.find((m) => m.id === modelId);
+    if (model) {
+      // Clean up cached bytes (fire-and-forget)
+      removeModelBytes(model.fileName).catch(() => {});
+      removeCachedFile(model.fileName);
+    }
 
     set({
       project: {

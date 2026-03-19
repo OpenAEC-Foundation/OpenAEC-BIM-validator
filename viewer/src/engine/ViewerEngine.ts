@@ -12,6 +12,9 @@ import * as OBCF from "@thatopen/components-front";
 import * as FRAGS from "@thatopen/fragments";
 import * as THREE from "three";
 
+import { PropertyExtractor } from "./PropertyExtractor";
+import type { IfcElementProperties } from "./PropertyExtractor";
+
 const WORKER_URL =
   "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
 const WASM_PATH = "https://unpkg.com/web-ifc@0.0.77/";
@@ -83,6 +86,12 @@ export class ViewerEngine {
 
   /** Bounding boxes from fragment metadata, keyed by modelId. */
   private modelBoxes = new Map<string, THREE.Box3>();
+
+  /** Raw IFC bytes per model, keyed by modelId. For client-side property extraction. */
+  private modelBytes = new Map<string, Uint8Array>();
+
+  /** Property extractors per model, keyed by modelId. Lazy initialized. */
+  private propertyExtractors = new Map<string, PropertyExtractor>();
 
   constructor(
     container: HTMLElement,
@@ -220,6 +229,9 @@ export class ViewerEngine {
       if (this._disposed) throw new Error("Engine disposed");
 
       const data = new Uint8Array(buffer);
+
+      // Store raw bytes for client-side property extraction
+      this.modelBytes.set(modelId, data);
 
       this.progress("Converting IFC to fragments...");
       const fragmentBytes = await this.importer.process({
@@ -380,6 +392,30 @@ export class ViewerEngine {
   }
 
   /**
+   * Get all properties for an element by GlobalId.
+   *
+   * Uses client-side web-ifc extraction — no backend needed.
+   * Lazy-initializes PropertyExtractor on first call per model.
+   */
+  async getElementProperties(
+    globalId: string
+  ): Promise<IfcElementProperties | null> {
+    // Try each model until we find the element
+    for (const [modelId, bytes] of this.modelBytes) {
+      let extractor = this.propertyExtractors.get(modelId);
+      if (!extractor) {
+        extractor = new PropertyExtractor(bytes);
+        this.propertyExtractors.set(modelId, extractor);
+      }
+
+      const props = await extractor.getProperties(globalId);
+      if (props) return props;
+    }
+
+    return null;
+  }
+
+  /**
    * Dispose all engine resources.
    */
   dispose(): void {
@@ -387,6 +423,12 @@ export class ViewerEngine {
     this._isInitialized = false;
     this.modelObjects.clear();
     this.modelBoxes.clear();
+    this.modelBytes.clear();
+
+    for (const extractor of this.propertyExtractors.values()) {
+      extractor.dispose();
+    }
+    this.propertyExtractors.clear();
 
     if (this.components) {
       this.components.dispose();

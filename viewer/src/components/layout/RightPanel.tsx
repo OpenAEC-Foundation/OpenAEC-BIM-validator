@@ -1,17 +1,15 @@
 /**
- * RightPanel — tabbed panel for properties, validation, clashes, BCF.
+ * RightPanel — tabbed panel for validation, clashes, BCF.
  *
- * Shows different content based on the active tab.
+ * Properties panel is now in the left panel.
  */
 
 import { useStore } from "../../store";
 import type { RightPanelTab } from "../../types/project";
-import { PropertiesPanel } from "../properties/PropertiesPanel";
 import { ValidationPanel } from "../validation/ValidationPanel";
 
 /** Tab configuration */
 const TABS: { id: RightPanelTab; label: string }[] = [
-  { id: "properties", label: "Properties" },
   { id: "validation", label: "Validatie" },
   { id: "clashes", label: "Clashes" },
   { id: "bcf", label: "BCF" },
@@ -41,7 +39,6 @@ export function RightPanel() {
 
       {/* Tab content */}
       <div className="panel__content">
-        {activeTab === "properties" && <PropertiesPanel />}
         {activeTab === "validation" && <ValidationPanel />}
 
         {activeTab === "clashes" && (

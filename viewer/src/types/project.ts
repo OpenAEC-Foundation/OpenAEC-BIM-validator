@@ -95,7 +95,6 @@ export interface ElementProperties {
 
 /** Right panel tab options */
 export type RightPanelTab =
-  | "properties"
   | "validation"
   | "clashes"
   | "bcf";

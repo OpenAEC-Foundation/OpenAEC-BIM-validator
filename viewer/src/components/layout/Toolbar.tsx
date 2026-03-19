@@ -11,22 +11,19 @@
 import { useRef, useCallback, useEffect } from "react";
 
 import { useStore } from "../../store";
+import {
+  getCachedFile,
+  setCachedFile,
+  saveModelBytes,
+} from "../../engine/modelCache";
 
 import "./Toolbar.css";
 
 /** Maximum IFC file size (500 MB) */
 const MAX_FILE_SIZE = 500 * 1024 * 1024;
 
-/**
- * Cache of uploaded File objects, keyed by fileName.
- * Needed because Zustand shouldn't store File objects (not serializable).
- */
-const fileCache = new Map<string, File>();
-
-/** Get a cached file by name */
-export function getCachedFile(fileName: string): File | undefined {
-  return fileCache.get(fileName);
-}
+/** Re-export for backward compat */
+export { getCachedFile };
 
 export function Toolbar() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -70,7 +67,12 @@ export function Toolbar() {
         }
 
         // Cache file object for later use (validation, etc.)
-        fileCache.set(file.name, file);
+        setCachedFile(file.name, file);
+
+        // Persist bytes to IndexedDB for reload after refresh
+        file.arrayBuffer().then((bytes) => {
+          saveModelBytes(file.name, bytes).catch(console.error);
+        });
 
         addModel(file);
 
@@ -94,7 +96,7 @@ export function Toolbar() {
     if (!loadedModel) return;
 
     // Get cached file
-    const file = fileCache.get(loadedModel.fileName);
+    const file = getCachedFile(loadedModel.fileName);
     if (!file) return;
 
     // Open validation tab
@@ -110,7 +112,7 @@ export function Toolbar() {
       const detail = (
         e as CustomEvent<{ modelId: string; fileName: string }>
       ).detail;
-      const file = fileCache.get(detail.fileName);
+      const file = getCachedFile(detail.fileName);
       if (!file) return;
 
       const { submitValidation: submit } = useStore.getState();

@@ -5,6 +5,7 @@
  * - Model file loading when files are added via the toolbar
  * - Store→Engine bridge for highlight synchronization
  * - Zoom-to-element events from the validation panel
+ * - Property requests from the PropertiesPanel
  */
 
 import { useRef, useEffect } from "react";
@@ -12,6 +13,7 @@ import { useRef, useEffect } from "react";
 import { useViewer } from "../../engine/useViewer";
 import { useStore } from "../../store";
 import type { HighlightGroup } from "../../store";
+import { getModelBytes, setCachedFile } from "../../engine/modelCache";
 
 export function CenterPanel() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -113,6 +115,115 @@ export function CenterPanel() {
       window.removeEventListener("zoom-to-element", handleZoomToElement);
     };
   }, []);
+
+  // Property request handler: PropertiesPanel dispatches this event,
+  // CenterPanel (which owns the engine) resolves it and responds.
+  useEffect(() => {
+    const handlePropertyRequest = async (e: Event) => {
+      const { globalId, requestId } = (
+        e as CustomEvent<{ globalId: string; requestId: string }>
+      ).detail;
+      const currentEngine = engineRef.current;
+
+      if (!currentEngine || !isReadyRef.current || !globalId) {
+        window.dispatchEvent(
+          new CustomEvent("property-response", {
+            detail: { requestId, properties: null, error: "Engine niet gereed" },
+          })
+        );
+        return;
+      }
+
+      try {
+        const properties =
+          await currentEngine.getElementProperties(globalId);
+        window.dispatchEvent(
+          new CustomEvent("property-response", {
+            detail: { requestId, properties, error: null },
+          })
+        );
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Ophalen mislukt";
+        window.dispatchEvent(
+          new CustomEvent("property-response", {
+            detail: { requestId, properties: null, error: msg },
+          })
+        );
+      }
+    };
+
+    window.addEventListener("property-request", handlePropertyRequest);
+    return () => {
+      window.removeEventListener("property-request", handlePropertyRequest);
+    };
+  }, []);
+
+  // Reload persisted models from IndexedDB when engine becomes ready.
+  // On page refresh, the Zustand persist middleware restores the project
+  // with all models in "pending" state. This effect picks them up and
+  // reloads the IFC bytes from IndexedDB into the engine.
+  useEffect(() => {
+    if (!isReady || !engine) return;
+
+    let cancelled = false;
+
+    const pendingModels =
+      useStore.getState().project?.models.filter(
+        (m) => m.loadState === "pending"
+      ) ?? [];
+
+    if (pendingModels.length === 0) return;
+
+    const reloadFromCache = async () => {
+      for (const model of pendingModels) {
+        if (cancelled) return;
+
+        try {
+          const bytes = await getModelBytes(model.fileName);
+          if (cancelled) return;
+
+          if (!bytes) {
+            // No cached bytes — model can't be restored
+            useStore.getState().removeModel(model.id);
+            continue;
+          }
+
+          useStore.getState().updateModelLoadState(model.id, "loading");
+
+          const file = new File([bytes], model.fileName, {
+            type: "application/octet-stream",
+          });
+
+          // Restore in-memory file cache (needed for validation)
+          setCachedFile(model.fileName, file);
+
+          if (cancelled) {
+            useStore.getState().updateModelLoadState(model.id, "pending");
+            return;
+          }
+
+          const result = await engine.loadModel(file);
+          if (cancelled) {
+            useStore.getState().updateModelLoadState(model.id, "pending");
+            return;
+          }
+
+          useStore.getState().setEngineModelId(model.id, result.modelId);
+          useStore.getState().updateModelLoadState(model.id, "loaded");
+        } catch (err) {
+          if (cancelled) return;
+          const msg = err instanceof Error ? err.message : "Herladen mislukt";
+          useStore.getState().updateModelLoadState(model.id, "error", msg);
+        }
+      }
+    };
+
+    reloadFromCache();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isReady, engine]);
 
   return (
     <div className="viewer-container">

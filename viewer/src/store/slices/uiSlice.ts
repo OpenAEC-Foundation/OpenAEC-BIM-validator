@@ -36,7 +36,7 @@ export interface UiSlice {
 export const createUiSlice: StateCreator<UiSlice> = (set) => ({
   leftPanelCollapsed: false,
   rightPanelCollapsed: false,
-  activeRightTab: "properties",
+  activeRightTab: "validation",
   statusMessage: null,
 
   toggleLeftPanel: () => {

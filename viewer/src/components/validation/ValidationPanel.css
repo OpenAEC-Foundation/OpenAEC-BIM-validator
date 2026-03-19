@@ -1,14 +1,17 @@
 /**
- * ValidationPanel styles — compact layout for right panel.
+ * ValidationPanel styles — ultra-compact for narrow right panel.
  *
- * Adapts the validation components to the narrow panel context.
+ * Aggressively overrides child component styles (ResultsSummary,
+ * SpecificationList, IdsSelector, etc.) which were designed for
+ * full-page layout. Uses .validation-panel parent for specificity.
  */
 
 .validation-panel {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   height: 100%;
+  font-size: 11px;
 }
 
 .validation-panel__section {
@@ -16,8 +19,8 @@
 }
 
 .validation-panel__heading {
-  margin: 0 0 var(--spacing-xs);
-  font-size: var(--font-size-xs);
+  margin: 0 0 2px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--color-text);
   text-transform: uppercase;
@@ -32,10 +35,10 @@
 
 /* Buttons */
 .validation-panel__btn {
-  padding: var(--spacing-xs) var(--spacing-sm);
+  padding: 3px var(--spacing-sm);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  font-size: var(--font-size-xs);
+  font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -48,9 +51,9 @@
 
 .validation-panel__btn--primary {
   flex: 1;
-  background-color: var(--color-primary, #44b6a8);
+  background-color: var(--color-primary);
   color: #ffffff;
-  border-color: var(--color-primary, #44b6a8);
+  border-color: var(--color-primary);
 }
 
 .validation-panel__btn--primary:hover:not(:disabled) {
@@ -81,32 +84,30 @@
 .validation-panel__highlight-bar {
   display: flex;
   gap: var(--spacing-xs);
-  margin: var(--spacing-sm) 0;
+  margin: var(--spacing-xs) 0;
 }
 
 /* Submitting spinner */
 .validation-panel__submitting {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm);
-  font-size: var(--font-size-xs);
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs);
+  font-size: 11px;
   color: var(--color-text-secondary);
 }
 
 .validation-panel__spinner {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border: 2px solid var(--color-border);
-  border-top-color: var(--color-primary, #44b6a8);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: vp-spin 0.8s linear infinite;
 }
 
 @keyframes vp-spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 /* Results section — scrollable */
@@ -118,52 +119,413 @@
 
 /* Specs section */
 .validation-panel__specs {
-  margin-top: var(--spacing-sm);
+  margin-top: var(--spacing-xs);
 }
 
-/* --- Compact overrides for existing components inside panel --- */
+/* ============================================================
+   COMPACT OVERRIDES for child components (inline styles)
+   ============================================================ */
 
-/* IdsSelector: force column layout and smaller sizing */
+/* --- IdsSelector --- */
 .validation-panel .ids-selector {
   gap: var(--spacing-xs);
 }
 
+.validation-panel .ids-selector-label {
+  display: none; /* heading "IDS Standaard" already shown by panel */
+}
+
+.validation-panel .ids-options {
+  flex-direction: column !important;
+  gap: 3px;
+}
+
 .validation-panel .ids-option {
-  padding: var(--spacing-xs);
-}
-
-.validation-panel .ids-option__label {
-  font-size: var(--font-size-xs);
-}
-
-.validation-panel .ids-option__description {
-  font-size: 10px;
-}
-
-/* ResultsSummary: compact layout */
-.validation-panel .results-summary {
-  padding: var(--spacing-sm);
-}
-
-.validation-panel .results-stats {
+  padding: 4px 6px;
+  border-width: 1px;
+  border-radius: var(--radius-sm);
   gap: var(--spacing-xs);
 }
 
-.validation-panel .stat-card {
-  padding: var(--spacing-xs);
+.validation-panel .ids-option-indicator {
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
+  border-width: 1.5px;
+  margin-top: 1px;
 }
 
-/* SpecificationList: tighter spacing */
-.validation-panel .specification-item {
+.validation-panel .ids-option-radio:checked + .ids-option-indicator::after {
+  width: 6px;
+  height: 6px;
+}
+
+.validation-panel .ids-option-content {
+  gap: 0;
+}
+
+.validation-panel .ids-option-label {
+  font-size: 11px;
+}
+
+.validation-panel .ids-option-description {
+  font-size: 9px;
+  line-height: 1.2;
+}
+
+/* Custom upload zone */
+.validation-panel .ids-custom-upload {
+  margin-top: 2px;
+  padding-left: var(--spacing-sm);
+  border-left-width: 2px;
+}
+
+.validation-panel .ids-upload-zone {
+  padding: var(--spacing-sm);
+  min-height: 40px;
+  border-width: 1px;
+  border-radius: var(--radius-sm);
+}
+
+.validation-panel .ids-upload-icon {
+  font-size: var(--font-size-sm);
+}
+
+.validation-panel .ids-upload-text {
+  font-size: 10px;
+}
+
+.validation-panel .ids-upload-hint {
+  font-size: 9px;
+}
+
+.validation-panel .ids-file-name {
+  font-size: 10px;
+}
+
+.validation-panel .ids-file-size {
+  font-size: 9px;
+}
+
+.validation-panel .ids-file-clear-btn {
+  width: 20px;
+  height: 20px;
+}
+
+.validation-panel .ids-upload-error {
+  padding: 3px var(--spacing-xs);
+  font-size: 10px;
+}
+
+/* --- ResultsSummary --- */
+.validation-panel .results-summary {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  border-left-width: 3px;
+}
+
+.validation-panel .summary-header {
+  margin-bottom: var(--spacing-xs);
+  gap: var(--spacing-xs);
+}
+
+.validation-panel .summary-icon {
+  font-size: var(--font-size-sm);
+}
+
+.validation-panel .summary-heading {
+  font-size: 12px;
+}
+
+.validation-panel .download-btn {
+  padding: 2px var(--spacing-xs);
+  font-size: 10px;
+  border-radius: var(--radius-sm);
+}
+
+.validation-panel .download-icon {
+  font-size: 10px;
+}
+
+.validation-panel .summary-stats {
+  gap: var(--spacing-xs);
   margin-bottom: var(--spacing-xs);
 }
 
-/* ValidationProgress: compact */
-.validation-panel .validation-progress {
-  padding: var(--spacing-sm);
+.validation-panel .stat-card {
+  padding: 3px var(--spacing-xs);
+  min-width: 0;
+  border-radius: var(--radius-sm);
 }
 
-/* ErrorDisplay: compact in panel */
+.validation-panel .stat-value {
+  font-size: var(--font-size-sm);
+}
+
+.validation-panel .stat-label {
+  font-size: 9px;
+}
+
+.validation-panel .summary-details {
+  gap: 2px;
+  padding-top: var(--spacing-xs);
+}
+
+.validation-panel .detail-row {
+  gap: var(--spacing-xs);
+  font-size: 10px;
+}
+
+.validation-panel .detail-label {
+  min-width: 80px;
+  font-size: 10px;
+}
+
+.validation-panel .detail-value {
+  font-size: 10px;
+}
+
+/* --- SpecificationList --- */
+.validation-panel .specification-list {
+  gap: 3px;
+}
+
+.validation-panel .specification-item {
+  border-radius: var(--radius-sm);
+  border-left-width: 3px;
+}
+
+.validation-panel .specification-header {
+  padding: 4px 6px;
+  font-size: 11px;
+  gap: 4px;
+}
+
+.validation-panel .specification-expand-icon {
+  font-size: 9px;
+  min-width: 8px;
+}
+
+.validation-panel .specification-status-badge {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  font-size: 9px;
+}
+
+.validation-panel .specification-severity {
+  font-size: 10px;
+}
+
+.validation-panel .specification-name {
+  font-size: 11px;
+}
+
+.validation-panel .specification-failed-badge {
+  padding: 1px 4px;
+  font-size: 9px;
+}
+
+.validation-panel .specification-content {
+  padding: 0 6px var(--spacing-xs);
+}
+
+.validation-panel .specification-stats,
+.validation-panel .requirement-stats {
+  gap: var(--spacing-sm);
+  padding: 2px 0;
+  font-size: 10px;
+}
+
+.validation-panel .requirements-list {
+  gap: 2px;
+  margin-top: 2px;
+  padding-left: var(--spacing-sm);
+  border-left-width: 1px;
+}
+
+.validation-panel .requirement-item {
+  border-radius: var(--radius-sm);
+  border-left-width: 2px;
+}
+
+.validation-panel .requirement-header {
+  padding: 3px 6px;
+  font-size: 10px;
+  gap: 3px;
+}
+
+.validation-panel .requirement-expand-icon {
+  font-size: 8px;
+  min-width: 8px;
+}
+
+.validation-panel .requirement-status-badge {
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
+  font-size: 8px;
+}
+
+.validation-panel .requirement-description {
+  font-size: 10px;
+}
+
+.validation-panel .requirement-failed-count {
+  padding: 1px 3px;
+  font-size: 8px;
+}
+
+.validation-panel .requirement-content {
+  padding: 2px 6px;
+}
+
+/* Elements */
+.validation-panel .elements-list {
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.validation-panel .element-item {
+  padding: 3px 6px;
+  border-left-width: 2px;
+}
+
+.validation-panel .element-header {
+  font-size: 10px;
+  gap: 3px;
+}
+
+.validation-panel .element-status-icon {
+  font-size: 9px;
+}
+
+.validation-panel .element-name {
+  font-size: 10px;
+}
+
+.validation-panel .element-global-id {
+  font-size: 8px;
+}
+
+.validation-panel .element-messages {
+  margin: 2px 0 0;
+  padding-left: var(--spacing-sm);
+}
+
+.validation-panel .element-message {
+  font-size: 9px;
+  line-height: 1.3;
+}
+
+.validation-panel .show-more-btn {
+  padding: 3px;
+  font-size: 10px;
+}
+
+/* --- ValidationProgress --- */
+.validation-panel .validation-progress {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  gap: var(--spacing-xs);
+  align-items: center;
+}
+
+.validation-panel .progress-indicator {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+}
+
+.validation-panel .progress-spinner {
+  width: 20px;
+  height: 20px;
+}
+
+.validation-panel .spinner-ring {
+  border-width: 2px;
+}
+
+.validation-panel .progress-icon {
+  font-size: var(--font-size-sm);
+}
+
+.validation-panel .status-label {
+  font-size: 11px;
+}
+
+.validation-panel .elapsed-time {
+  font-size: 9px;
+  padding: 1px 4px;
+}
+
+.validation-panel .progress-message {
+  font-size: 10px;
+  padding: 2px var(--spacing-xs);
+  border-left-width: 2px;
+}
+
+.validation-panel .progress-hint {
+  font-size: 9px;
+}
+
+.validation-panel .progress-cancel-btn {
+  padding: 2px var(--spacing-sm);
+  font-size: 10px;
+}
+
+/* --- ErrorDisplay --- */
 .validation-panel .error-display {
-  padding: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  border-left-width: 3px;
+  gap: var(--spacing-xs);
+}
+
+.validation-panel .error-icon-container {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  border-width: 1px;
+}
+
+.validation-panel .error-icon {
+  font-size: var(--font-size-sm);
+}
+
+.validation-panel .error-content {
+  gap: 2px;
+}
+
+.validation-panel .error-message {
+  font-size: 10px;
+}
+
+.validation-panel .error-actions {
+  margin-top: 2px;
+  gap: var(--spacing-xs);
+}
+
+.validation-panel .error-retry-btn {
+  padding: 2px var(--spacing-sm);
+  font-size: 10px;
+  min-height: unset;
+  border-radius: var(--radius-sm);
+}
+
+.validation-panel .error-dismiss-btn {
+  padding: 2px var(--spacing-sm);
+  font-size: 10px;
+  min-height: unset;
+  border-radius: var(--radius-sm);
+}
+
+.validation-panel .error-details-summary {
+  font-size: 9px;
+}
+
+.validation-panel .error-details-content {
+  padding: var(--spacing-xs);
+  font-size: 9px;
+  max-height: 80px;
 }

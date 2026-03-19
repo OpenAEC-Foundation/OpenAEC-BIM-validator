@@ -11,8 +11,8 @@
 .model-item {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-xs) var(--spacing-sm);
+  gap: var(--spacing-xs);
+  padding: 2px var(--spacing-xs);
   border-radius: var(--radius-sm);
   transition: background-color var(--transition-fast);
 }
@@ -29,7 +29,7 @@
 }
 
 .model-item__name {
-  font-size: var(--font-size-xs);
+  font-size: 11px;
   font-weight: 500;
   color: var(--color-text);
   white-space: nowrap;

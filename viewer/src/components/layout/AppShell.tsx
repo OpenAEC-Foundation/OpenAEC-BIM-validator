@@ -23,8 +23,8 @@ import { RightPanel } from "./RightPanel";
 import "./AppShell.css";
 
 /** Default panel sizes (percentages) */
-const LEFT_PANEL_DEFAULT = "20%";
-const LEFT_PANEL_MIN = "10%";
+const LEFT_PANEL_DEFAULT = "25%";
+const LEFT_PANEL_MIN = "15%";
 const RIGHT_PANEL_DEFAULT = "25%";
 const RIGHT_PANEL_MIN = "15%";
 const CENTER_PANEL_MIN = "30%";
