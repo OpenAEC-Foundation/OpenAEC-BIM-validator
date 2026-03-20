@@ -1,0 +1,27 @@
+{
+  "title": "Settings",
+  "resetToDefaults": "Reset to Defaults",
+  "resetConfirm": "Are you sure you want to reset all settings to their default values?",
+  "tabs": {
+    "general": "General",
+    "appearance": "Appearance",
+    "about": "About"
+  },
+  "general": {
+    "application": "Application",
+    "language": "Language"
+  },
+  "appearance": {
+    "theme": "Theme",
+    "themeDescription": "Choose a color theme for the application.",
+    "dark": "Dark",
+    "light": "Light"
+  },
+  "about": {
+    "appName": "OpenAEC BIM Validator",
+    "version": "Version",
+    "framework": "Framework",
+    "license": "License",
+    "description": "Browser-based IFC validation with IDS specifications and 3D viewing."
+  }
+}

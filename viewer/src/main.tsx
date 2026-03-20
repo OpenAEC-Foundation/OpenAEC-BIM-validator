@@ -12,8 +12,12 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 
 // Styles
+import './themes.css';
 import './styles/brand.css';
 import './styles/responsive.css';
+
+// i18n
+import './i18n/config';
 
 // Get the root element
 const rootElement = document.getElementById('root');

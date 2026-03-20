@@ -1,0 +1,21 @@
+{
+  "file": "Bestand",
+  "open": "Openen",
+  "exportBcf": "Export BCF",
+  "preferences": "Instellingen",
+  "feedback": "Feedback",
+  "about": "Over",
+  "logout": "Uitloggen",
+  "aboutPanel": {
+    "title": "Over",
+    "appName": "OpenAEC BIM Validator",
+    "version": "Versie",
+    "tagline": "Browser-based IFC validatie met IDS specificaties",
+    "description": "Open source BIM validatietool voor het controleren van IFC modellen tegen Information Delivery Specifications (IDS). Met 3D viewer, validatierapportage en BCF export.",
+    "companyName": "OpenAEC",
+    "companyDescription": "Open source engineering tools voor de gebouwde omgeving.",
+    "website": "Website",
+    "github": "GitHub",
+    "copyright": "\u00a9 2026 3BM Bouwkunde Cooperatie. Gelicentieerd onder MIT."
+  }
+}

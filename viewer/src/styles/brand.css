@@ -1,39 +1,41 @@
 /**
- * 3BM Brand Colors
- * CSS Custom Properties for the IFC Validator
+ * 3BM Brand Colors — Backward-Compatible Aliases
+ *
+ * Maps legacy --color-* tokens to the new --theme-* tokens from themes.css.
+ * Existing components that still reference --color-* will continue to work.
  */
 
 :root {
-  /* 3BM Brand Colors */
+  /* 3BM Brand Colors (reference only — UI uses --theme-* tokens) */
   --magic-violet: #350E35;
   --verdigris: #44B6A8;
   --friendly-yellow: #EFBD75;
   --warm-magenta: #A01C48;
   --flaming-peach: #DB4C40;
 
-  /* Semantic Color Variables */
-  --color-primary: var(--verdigris);
-  --color-success: var(--verdigris);
-  --color-error: var(--flaming-peach);
-  --color-warning: var(--friendly-yellow);
-  --color-text: var(--magic-violet);
+  /* Semantic aliases → theme tokens */
+  --color-primary: var(--theme-accent, #D97706);
+  --color-success: var(--domain-pass, #16A34A);
+  --color-error: var(--domain-fail, #DC2626);
+  --color-warning: var(--domain-warning, #F59E0B);
+  --color-text: var(--theme-text, #333);
 
-  /* Extended Palette */
-  --color-background: #ffffff;
-  --color-surface: #f8f9fa;
-  --color-border: #e0e0e0;
-  --color-text-secondary: #666666;
+  /* Extended palette → theme tokens */
+  --color-background: var(--theme-bg, #ffffff);
+  --color-surface: var(--theme-surface, #f8f9fa);
+  --color-border: var(--theme-border, #e0e0e0);
+  --color-text-secondary: var(--theme-text-secondary, #666);
   --color-text-light: #ffffff;
 
-  /* State Colors */
-  --color-hover: rgba(68, 182, 168, 0.1);
-  --color-active: rgba(68, 182, 168, 0.2);
+  /* State aliases */
+  --color-hover: var(--theme-hover, rgba(0,0,0,0.05));
+  --color-active: var(--theme-accent, #D97706);
   --color-disabled: #cccccc;
 
-  /* Validation Status Colors */
-  --color-pass: var(--verdigris);
-  --color-fail: var(--flaming-peach);
-  --color-pending: var(--friendly-yellow);
+  /* Validation Status → domain tokens */
+  --color-pass: var(--domain-pass, #16A34A);
+  --color-fail: var(--domain-fail, #DC2626);
+  --color-pending: var(--domain-warning, #F59E0B);
 
   /* Typography */
   --font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -74,8 +76,8 @@
 /* Base Styles */
 body {
   font-family: var(--font-family);
-  color: var(--color-text);
-  background-color: var(--color-background);
+  color: var(--theme-text, var(--color-text));
+  background-color: var(--theme-bg, var(--color-background));
   line-height: 1.5;
   margin: 0;
   padding: 0;
@@ -83,12 +85,12 @@ body {
 
 /* Focus styles for accessibility */
 :focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--theme-accent, var(--color-primary));
   outline-offset: 2px;
 }
 
 /* Selection styles */
 ::selection {
-  background-color: var(--color-primary);
-  color: var(--color-text-light);
+  background-color: var(--theme-accent, var(--color-primary));
+  color: #ffffff;
 }

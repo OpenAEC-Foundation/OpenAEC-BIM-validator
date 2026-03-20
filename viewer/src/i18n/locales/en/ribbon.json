@@ -1,0 +1,28 @@
+{
+  "tabs": {
+    "file": "File",
+    "home": "Home",
+    "view": "View"
+  },
+  "home": {
+    "models": "Models",
+    "upload": "Upload IFC",
+    "removeModel": "Remove",
+    "validation": "Validation",
+    "validate": "Validate",
+    "idsSelect": "IDS Standard",
+    "reset": "Reset",
+    "bcf": "BCF",
+    "exportBcf": "Export BCF",
+    "syncPlatform": "Sync"
+  },
+  "view": {
+    "panels": "Panels",
+    "models": "Models",
+    "properties": "Properties",
+    "validation": "Validation",
+    "viewer": "3D View",
+    "zoomFit": "Zoom Fit",
+    "resetCamera": "Reset"
+  }
+}

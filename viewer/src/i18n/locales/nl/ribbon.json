@@ -1,0 +1,28 @@
+{
+  "tabs": {
+    "file": "Bestand",
+    "home": "Start",
+    "view": "Beeld"
+  },
+  "home": {
+    "models": "Modellen",
+    "upload": "Upload IFC",
+    "removeModel": "Verwijder",
+    "validation": "Validatie",
+    "validate": "Valideer",
+    "idsSelect": "IDS Standaard",
+    "reset": "Reset",
+    "bcf": "BCF",
+    "exportBcf": "Export BCF",
+    "syncPlatform": "Sync"
+  },
+  "view": {
+    "panels": "Panelen",
+    "models": "Modellen",
+    "properties": "Eigenschappen",
+    "validation": "Validatie",
+    "viewer": "3D Beeld",
+    "zoomFit": "Passend",
+    "resetCamera": "Herstel"
+  }
+}
