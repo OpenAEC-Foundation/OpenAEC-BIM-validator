@@ -12,6 +12,9 @@ services:
       - bim-uploads:/tmp/ifc_uploads
       - bim-processed:/tmp/ifc_processed
       - bim-jobs:/tmp/ids_validation_jobs
+    networks:
+      - default
+      - openaec_platform
     deploy:
       resources:
         limits:
@@ -21,3 +24,7 @@ volumes:
   bim-uploads:
   bim-processed:
   bim-jobs:
+
+networks:
+  openaec_platform:
+    external: true
