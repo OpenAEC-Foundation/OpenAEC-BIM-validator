@@ -8,8 +8,13 @@
 
 import { useCallback, useMemo } from "react";
 
+import { downloadBcf } from "../../api/client";
 import { useStore } from "../../store";
+import type { ViewpointCaptureCallback } from "../../store/slices/bcfSlice";
+import type { BcfCameraState } from "../../types/bcf";
+import type { SpecificationResult, ElementResult } from "../../types/validation";
 import type { IdsSelection } from "../IdsSelector";
+import { showToast } from "../Toast";
 import IdsSelector from "../IdsSelector";
 import ValidationProgress from "../ValidationProgress";
 import ErrorDisplay from "../ErrorDisplay";
@@ -17,6 +22,38 @@ import ResultsSummary from "../ResultsSummary";
 import SpecificationList from "../SpecificationList";
 
 import "./ValidationPanel.css";
+
+/**
+ * Request a viewpoint capture from CenterPanel via custom event.
+ * Returns a Promise that resolves with the capture result.
+ */
+function requestViewpointCapture(
+  globalIds: string[]
+): Promise<{ screenshot: string; camera: BcfCameraState } | null> {
+  return new Promise((resolve) => {
+    const requestId = crypto.randomUUID();
+
+    const handleResponse = (e: Event) => {
+      const detail = (
+        e as CustomEvent<{
+          requestId: string;
+          result: { screenshot: string; camera: BcfCameraState } | null;
+        }>
+      ).detail;
+      if (detail.requestId === requestId) {
+        window.removeEventListener("capture-viewpoint-response", handleResponse);
+        resolve(detail.result);
+      }
+    };
+
+    window.addEventListener("capture-viewpoint-response", handleResponse);
+    window.dispatchEvent(
+      new CustomEvent("capture-viewpoint", {
+        detail: { globalIds, requestId },
+      })
+    );
+  });
+}
 
 export function ValidationPanel() {
   const project = useStore((s) => s.project);
@@ -35,6 +72,12 @@ export function ValidationPanel() {
   const resetValidation = useStore((s) => s.resetValidation);
   const retryValidation = useStore((s) => s.retryValidation);
   const dismissValidationError = useStore((s) => s.dismissValidationError);
+
+  // BCF actions
+  const generateBcfFromValidation = useStore((s) => s.generateBcfFromValidation);
+  const createBcfFromSpecification = useStore((s) => s.createBcfFromSpecification);
+  const createBcfFromElement = useStore((s) => s.createBcfFromElement);
+  const setActiveRightTab = useStore((s) => s.setActiveRightTab);
 
   // Highlight + selection actions
   const selectElement = useStore((s) => s.selectElement);
@@ -80,6 +123,25 @@ export function ValidationPanel() {
     URL.revokeObjectURL(url);
   }, [validationResult]);
 
+  const jobId = useStore((s) => s.jobId);
+
+  const handleDownloadBcf = useCallback(async () => {
+    if (!jobId) return;
+    try {
+      const blob = await downloadBcf(jobId);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `validation-${jobId.slice(0, 8)}.bcfzip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("BCF download failed:", err);
+    }
+  }, [jobId]);
+
   /** Highlight failed elements when clicking a specification */
   const handleHighlightFailures = useCallback(() => {
     if (!validationResult) return;
@@ -109,6 +171,35 @@ export function ValidationPanel() {
   const handleClearHighlights = useCallback(() => {
     clearHighlights();
   }, [clearHighlights]);
+
+  /** Generate BCF issues from all failed validation specs */
+  const handleGenerateBcf = useCallback(async () => {
+    if (!validationResult) return;
+    const captureViewpoint: ViewpointCaptureCallback = requestViewpointCapture;
+    await generateBcfFromValidation(validationResult, captureViewpoint);
+    setActiveRightTab("bcf");
+    showToast("BCF issues gegenereerd vanuit validatie");
+  }, [validationResult, generateBcfFromValidation, setActiveRightTab]);
+
+  /** Create BCF issue from a single specification */
+  const handleCreateBcfFromSpec = useCallback(
+    async (spec: SpecificationResult) => {
+      const captureViewpoint: ViewpointCaptureCallback = requestViewpointCapture;
+      await createBcfFromSpecification(spec, captureViewpoint);
+      showToast(`BCF issue aangemaakt: ${spec.specification_name}`);
+    },
+    [createBcfFromSpecification]
+  );
+
+  /** Create BCF issue from a single element */
+  const handleCreateBcfFromElement = useCallback(
+    async (element: ElementResult, specName: string) => {
+      const captureViewpoint: ViewpointCaptureCallback = requestViewpointCapture;
+      await createBcfFromElement(element, specName, captureViewpoint);
+      showToast("BCF issue aangemaakt voor element");
+    },
+    [createBcfFromElement]
+  );
 
   /** Click on an element in the results → select, highlight, zoom, switch tab */
   const handleElementSelect = useCallback(
@@ -220,6 +311,7 @@ export function ValidationPanel() {
           <ResultsSummary
             result={validationResult}
             onDownloadJson={handleDownloadJson}
+            onDownloadBcf={jobId ? handleDownloadBcf : undefined}
           />
 
           {/* Highlight controls */}
@@ -231,6 +323,14 @@ export function ValidationPanel() {
               title="Toon gefaalde elementen in 3D"
             >
               Toon failures in 3D
+            </button>
+            <button
+              type="button"
+              className="validation-panel__btn validation-panel__btn--bcf"
+              onClick={handleGenerateBcf}
+              title="Genereer BCF issues vanuit validatie"
+            >
+              BCF issues genereren
             </button>
             <button
               type="button"
@@ -249,6 +349,8 @@ export function ValidationPanel() {
                 specifications={validationResult.specifications}
                 autoExpandFailed
                 onElementSelect={handleElementSelect}
+                onCreateBcfFromSpec={handleCreateBcfFromSpec}
+                onCreateBcfFromElement={handleCreateBcfFromElement}
               />
             </div>
           )}

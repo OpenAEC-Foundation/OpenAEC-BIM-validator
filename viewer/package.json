@@ -17,6 +17,7 @@
     "@thatopen/components-front": "^3.3.3",
     "@thatopen/fragments": "^3.3.6",
     "camera-controls": "^3.1.2",
+    "jszip": "^3.10.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-resizable-panels": "^4.7.2",

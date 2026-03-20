@@ -13,6 +13,7 @@ import { useRef, useEffect } from "react";
 import { useViewer } from "../../engine/useViewer";
 import { useStore } from "../../store";
 import type { HighlightGroup } from "../../store";
+import type { BcfCameraState } from "../../types/bcf";
 import { getModelBytes, setCachedFile } from "../../engine/modelCache";
 
 export function CenterPanel() {
@@ -113,6 +114,63 @@ export function CenterPanel() {
     window.addEventListener("zoom-to-element", handleZoomToElement);
     return () => {
       window.removeEventListener("zoom-to-element", handleZoomToElement);
+    };
+  }, []);
+
+  // Capture-viewpoint event handler: BCF panel requests a viewpoint capture
+  // for specific globalIds. Handler zooms, highlights, screenshots, and responds.
+  useEffect(() => {
+    const handleCaptureViewpoint = async (e: Event) => {
+      const { globalIds, requestId } = (
+        e as CustomEvent<{ globalIds: string[]; requestId: string }>
+      ).detail;
+      const currentEngine = engineRef.current;
+
+      if (!currentEngine || !isReadyRef.current || !globalIds?.length) {
+        window.dispatchEvent(
+          new CustomEvent("capture-viewpoint-response", {
+            detail: { requestId, result: null },
+          })
+        );
+        return;
+      }
+
+      try {
+        const result = await currentEngine.captureViewpoint(globalIds);
+        window.dispatchEvent(
+          new CustomEvent("capture-viewpoint-response", {
+            detail: { requestId, result },
+          })
+        );
+      } catch {
+        window.dispatchEvent(
+          new CustomEvent("capture-viewpoint-response", {
+            detail: { requestId, result: null },
+          })
+        );
+      }
+    };
+
+    window.addEventListener("capture-viewpoint", handleCaptureViewpoint);
+    return () => {
+      window.removeEventListener("capture-viewpoint", handleCaptureViewpoint);
+    };
+  }, []);
+
+  // Restore-camera event handler: BCF panel requests camera state restore
+  useEffect(() => {
+    const handleRestoreCamera = (e: Event) => {
+      const { camera } = (
+        e as CustomEvent<{ camera: BcfCameraState }>
+      ).detail;
+      const currentEngine = engineRef.current;
+      if (!currentEngine || !isReadyRef.current || !camera) return;
+      currentEngine.restoreCameraState(camera);
+    };
+
+    window.addEventListener("restore-camera", handleRestoreCamera);
+    return () => {
+      window.removeEventListener("restore-camera", handleRestoreCamera);
     };
   }, []);
 

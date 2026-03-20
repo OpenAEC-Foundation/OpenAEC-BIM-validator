@@ -23,9 +23,10 @@ from typing import Optional
 
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
+from server.bcf_export import generate_bcf_zip
 from server.ids_validator import IDSValidator, ValidationReport, report_to_dict
 from server.ifc_processor import GLTF_AVAILABLE, IFCProcessor
 from server.job_manager import JobManager, JobStatusResponse
@@ -818,6 +819,37 @@ async def get_job_status(job_id: str) -> JobStatusResponse:
         raise HTTPException(status_code=404, detail=f"Job not found: {job_id}")
 
     return JobStatusResponse.from_job_info(job)
+
+
+@app.get("/api/v1/jobs/{job_id}/bcf")
+async def download_bcf(job_id: str):
+    """Download validation results as BCF 2.1 .bcfzip.
+
+    Generates a BCF 2.1 ZIP archive where each failed element becomes
+    a BCF topic. Importable in BIMcollab, Solibri, Navisworks, etc.
+
+    Args:
+        job_id: UUID of the completed validation job
+    """
+    job = job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job not found: {job_id}")
+
+    if job.status != "completed" or job.result is None:
+        raise HTTPException(
+            status_code=400,
+            detail="BCF export is only available for completed validation jobs",
+        )
+
+    bcf_bytes = generate_bcf_zip(job.result)
+
+    return Response(
+        content=bcf_bytes,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="validation-{job_id[:8]}.bcfzip"',
+        },
+    )
 
 
 # ==========================================================================

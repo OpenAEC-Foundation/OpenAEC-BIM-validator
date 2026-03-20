@@ -178,3 +178,34 @@ export function isJobSuccessful(status: JobStatusResponse): boolean {
 export function isJobFailed(status: JobStatusResponse): boolean {
   return status.status === 'failed';
 }
+
+/**
+ * Download validation results as BCF 2.1 .bcfzip
+ *
+ * @param jobId - The unique identifier of the completed validation job
+ * @returns Promise resolving to a Blob containing the .bcfzip file
+ * @throws ApiError if the download fails
+ */
+export async function downloadBcf(jobId: string): Promise<Blob> {
+  if (!jobId) {
+    throw new ApiError('Job ID is required', undefined, 'Missing job_id parameter');
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}/jobs/${encodeURIComponent(jobId)}/bcf`);
+  } catch (error) {
+    throw new ApiError(
+      'Network error: Unable to download BCF file.',
+      undefined,
+      error instanceof Error ? error.message : 'Unknown network error'
+    );
+  }
+
+  if (!response.ok) {
+    const errorMessage = await parseErrorResponse(response);
+    throw new ApiError(errorMessage, response.status, errorMessage);
+  }
+
+  return response.blob();
+}

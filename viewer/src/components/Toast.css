@@ -1,0 +1,51 @@
+/**
+ * Toast notification styles.
+ * Fixed position bottom-right, magic-violet background.
+ */
+
+.toast-container {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  padding: 10px 16px;
+  border-radius: var(--radius-md, 6px);
+  color: #fff;
+  font-size: var(--font-size-sm, 13px);
+  font-family: inherit;
+  max-width: 320px;
+  cursor: pointer;
+  pointer-events: auto;
+  animation: toast-slide-in 0.25s ease-out;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.toast--success {
+  background-color: var(--magic-violet, #350E35);
+}
+
+.toast--error {
+  background-color: var(--flaming-peach, #DB4C40);
+}
+
+.toast--info {
+  background-color: var(--verdigris, #44B6A8);
+}
+
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

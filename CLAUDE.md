@@ -66,3 +66,16 @@ Check ROADMAP.md for current phase and specs.
 - 10x file size in RAM during processing
 - Clean up temp files aggressively
 - Support both IFC2X3 and IFC4
+
+---
+
+## Orchestrator
+
+Bij sessie START → lees:
+- `X:\10_3BM_bouwkunde\50_Claude-Code-Projects\lessons_learned_global.md`
+- `C:\Users\JochemK\.claude\orchestrator\sessions\bim-validator_latest.md` (indien aanwezig)
+
+Bij sessie EINDE → schrijf update naar:
+`C:\Users\JochemK\.claude\orchestrator\sessions\bim-validator_latest.md`
+
+**Registry:** `C:\Users\JochemK\.claude\orchestrator\project-registry.json`

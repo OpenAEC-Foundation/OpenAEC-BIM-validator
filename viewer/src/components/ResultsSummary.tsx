@@ -17,6 +17,8 @@ export interface ResultsSummaryProps {
   result: ValidationResult;
   /** Callback to download results as JSON */
   onDownloadJson?: () => void;
+  /** Callback to download results as BCF 2.1 .bcfzip */
+  onDownloadBcf?: () => void;
 }
 
 /**
@@ -53,7 +55,7 @@ function formatElementCount(count: number): string {
 /**
  * ResultsSummary component displaying validation overview with statistics
  */
-export function ResultsSummary({ result, onDownloadJson }: ResultsSummaryProps) {
+export function ResultsSummary({ result, onDownloadJson, onDownloadBcf }: ResultsSummaryProps) {
   const {
     success,
     ifc_file_name,
@@ -81,17 +83,30 @@ export function ResultsSummary({ result, onDownloadJson }: ResultsSummaryProps) 
             {success ? 'Validation Passed' : 'Validation Failed'}
           </h2>
         </div>
-        {onDownloadJson && (
-          <button
-            type="button"
-            className="download-btn"
-            onClick={onDownloadJson}
-            aria-label="Download results as JSON"
-          >
-            <span className="download-icon" aria-hidden="true">⬇</span>
-            <span className="download-text">JSON</span>
-          </button>
-        )}
+        <div className="summary-actions">
+          {onDownloadBcf && (
+            <button
+              type="button"
+              className="download-btn"
+              onClick={onDownloadBcf}
+              aria-label="Download results as BCF"
+            >
+              <span className="download-icon" aria-hidden="true">⬇</span>
+              <span className="download-text">BCF</span>
+            </button>
+          )}
+          {onDownloadJson && (
+            <button
+              type="button"
+              className="download-btn"
+              onClick={onDownloadJson}
+              aria-label="Download results as JSON"
+            >
+              <span className="download-icon" aria-hidden="true">⬇</span>
+              <span className="download-text">JSON</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Statistics cards */}
@@ -184,6 +199,11 @@ export function ResultsSummary({ result, onDownloadJson }: ResultsSummaryProps) 
 
         .results-summary--failure .summary-heading {
           color: var(--color-error);
+        }
+
+        .summary-actions {
+          display: flex;
+          gap: var(--spacing-sm);
         }
 
         /* Download button */

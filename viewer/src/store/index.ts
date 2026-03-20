@@ -31,14 +31,21 @@ import {
   type UiSlice,
   createUiSlice,
 } from "./slices/uiSlice";
+import {
+  type BcfSlice,
+  createBcfSlice,
+} from "./slices/bcfSlice";
 import type { Project } from "../types/project";
+import type { BcfIssue } from "../types/bcf";
 
 /** Combined store type */
-export type AppStore = ProjectSlice & ViewerSlice & ValidationSlice & UiSlice;
+export type AppStore = ProjectSlice & ViewerSlice & ValidationSlice & UiSlice & BcfSlice;
 
 /** Persisted subset of the store */
 type PersistedState = {
   project: Project | null;
+  bcfIssues: BcfIssue[];
+  bcfPlatformProjectId: string | null;
 };
 
 /** The single Zustand store instance */
@@ -49,33 +56,61 @@ export const useStore = create<AppStore>()(
       ...createViewerSlice(...args),
       ...createValidationSlice(...args),
       ...createUiSlice(...args),
+      ...createBcfSlice(...args),
     }),
     {
       name: "bim-validator-store",
       storage: createJSONStorage(() => localStorage),
       partialize: (state): PersistedState => ({
         project: state.project,
+        // Persist BCF issues but strip screenshot data to save localStorage space.
+        // Screenshots are base64 PNGs that can be 100KB+ each.
+        // TODO: Move screenshots to IndexedDB (screenshotCache.ts) in sprint 5.
+        bcfIssues: state.bcfIssues.map((issue) => ({
+          ...issue,
+          viewpoint: {
+            ...issue.viewpoint,
+            screenshotDataUrl: "", // stripped for localStorage
+          },
+        })),
+        bcfPlatformProjectId: state.bcfPlatformProjectId,
       }),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Partial<PersistedState>;
 
-        if (!persisted?.project) {
+        if (!persisted?.project && !persisted?.bcfIssues) {
           return currentState;
         }
 
-        // Reset runtime state on all models — engine must reload them
-        const project: Project = {
-          ...persisted.project,
-          models: persisted.project.models.map((m) => ({
-            ...m,
-            loadState: "pending" as const,
-            error: undefined,
-            engineModelId: undefined,
-            spatialTree: undefined,
-          })),
-        };
+        let result = { ...currentState };
 
-        return { ...currentState, project };
+        if (persisted?.project) {
+          // Reset runtime state on all models — engine must reload them
+          const project: Project = {
+            ...persisted.project,
+            models: persisted.project.models.map((m) => ({
+              ...m,
+              loadState: "pending" as const,
+              error: undefined,
+              engineModelId: undefined,
+              spatialTree: undefined,
+            })),
+          };
+          result = { ...result, project };
+        }
+
+        if (persisted?.bcfIssues) {
+          result = { ...result, bcfIssues: persisted.bcfIssues };
+        }
+
+        if (persisted?.bcfPlatformProjectId) {
+          result = {
+            ...result,
+            bcfPlatformProjectId: persisted.bcfPlatformProjectId,
+          };
+        }
+
+        return result;
       },
     }
   )
@@ -86,3 +121,4 @@ export type { ProjectSlice } from "./slices/projectSlice";
 export type { ViewerSlice, HighlightGroup } from "./slices/viewerSlice";
 export type { ValidationSlice, ValidationPhase } from "./slices/validationSlice";
 export type { UiSlice } from "./slices/uiSlice";
+export type { BcfSlice } from "./slices/bcfSlice";

@@ -14,6 +14,7 @@ import * as THREE from "three";
 
 import { PropertyExtractor } from "./PropertyExtractor";
 import type { IfcElementProperties } from "./PropertyExtractor";
+import type { BcfCameraState } from "../types/bcf";
 
 const WORKER_URL =
   "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
@@ -326,13 +327,24 @@ export class ViewerEngine {
    * the element cannot be found.
    */
   async zoomToElement(globalId: string): Promise<void> {
-    if (!this.components || !this.fragments) {
+    return this.zoomToElements([globalId]);
+  }
+
+  /**
+   * Zoom camera to fit multiple elements by their GlobalIds.
+   *
+   * Computes the combined bounding box of all elements and fits
+   * the camera to that box. Falls back to fitToAllModels() if
+   * none of the elements can be found.
+   */
+  async zoomToElements(globalIds: string[]): Promise<void> {
+    if (!this.components || !this.fragments || globalIds.length === 0) {
       this.fitToAllModels();
       return;
     }
 
     try {
-      const modelIdMap = await this.fragments.guidsToModelIdMap([globalId]);
+      const modelIdMap = await this.fragments.guidsToModelIdMap(globalIds);
       if (Object.keys(modelIdMap).length === 0) {
         this.fitToAllModels();
         return;
@@ -413,6 +425,138 @@ export class ViewerEngine {
     }
 
     return null;
+  }
+
+  // -- BCF Viewpoint Methods --
+
+  /**
+   * Capture the current canvas as a PNG data URL.
+   *
+   * Used for BCF viewpoint snapshots. Forces a render frame
+   * before capture to ensure the canvas is up-to-date (important
+   * with That Open Engine's tile-streaming renderer).
+   *
+   * @returns PNG data URL string, or empty string if renderer unavailable.
+   */
+  async takeScreenshot(): Promise<string> {
+    if (!this.world?.renderer) return "";
+
+    const renderer = this.world.renderer.three;
+
+    // Force one render frame so tile-streamed geometry is drawn
+    renderer.render(
+      this.world.scene.three,
+      this.world.camera.three
+    );
+
+    // Wait for GPU flush via requestAnimationFrame
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+    return renderer.domElement.toDataURL("image/png");
+  }
+
+  /**
+   * Get current camera state for BCF viewpoint.
+   *
+   * Returns eye/target/up vectors compatible with BCF 2.1
+   * perspective_camera and orthogonal_camera elements.
+   */
+  getCameraState(): BcfCameraState | null {
+    if (!this.world) return null;
+
+    const cam = this.world.camera as OBC.OrthoPerspectiveCamera;
+    const pos = new THREE.Vector3();
+    const target = new THREE.Vector3();
+
+    cam.controls.getPosition(pos);
+    cam.controls.getTarget(target);
+
+    const direction = new THREE.Vector3()
+      .subVectors(target, pos)
+      .normalize();
+    const up = cam.three.up.clone();
+
+    const isPerspective =
+      cam.three instanceof THREE.PerspectiveCamera;
+
+    return {
+      position: { x: pos.x, y: pos.y, z: pos.z },
+      direction: { x: direction.x, y: direction.y, z: direction.z },
+      up: { x: up.x, y: up.y, z: up.z },
+      fieldOfView: isPerspective
+        ? (cam.three as THREE.PerspectiveCamera).fov
+        : undefined,
+      aspectRatio: isPerspective
+        ? (cam.three as THREE.PerspectiveCamera).aspect
+        : undefined,
+      type: isPerspective ? "perspective" : "orthogonal",
+    };
+  }
+
+  /**
+   * Restore camera to a saved BCF viewpoint state.
+   *
+   * Computes the target position from eye + direction and
+   * uses setLookAt for smooth transition.
+   */
+  async restoreCameraState(state: BcfCameraState): Promise<void> {
+    if (!this.world) return;
+
+    const cam = this.world.camera as OBC.OrthoPerspectiveCamera;
+    const { position: p, direction: d } = state;
+
+    // Compute a target point at a reasonable distance along the direction
+    const dist = 10; // arbitrary look-at distance
+    await cam.controls.setLookAt(
+      p.x,
+      p.y,
+      p.z,
+      p.x + d.x * dist,
+      p.y + d.y * dist,
+      p.z + d.z * dist
+    );
+  }
+
+  /**
+   * Prepare the viewer for a BCF viewpoint screenshot.
+   *
+   * Zooms to the first element, highlights all target elements
+   * in red, and returns the screenshot + camera state.
+   *
+   * @param globalIds - GlobalIds of elements to feature in the viewpoint
+   * @param highlightColor - Hex color for highlighted elements
+   * @returns Screenshot data URL and camera state, or null on failure
+   */
+  async captureViewpoint(
+    globalIds: string[],
+    highlightColor: string = "#ff4444"
+  ): Promise<{ screenshot: string; camera: BcfCameraState } | null> {
+    if (!this._isInitialized || globalIds.length === 0) return null;
+
+    try {
+      // 1. Zoom to combined bounding box of all elements
+      await this.zoomToElements(globalIds);
+
+      // 2. Small delay for camera transition + tile loading
+      await new Promise((r) => setTimeout(r, 300));
+
+      // 3. Clear existing highlights, apply new ones
+      await this.clearHighlights();
+      await this.highlightByGlobalIds(globalIds, highlightColor);
+
+      // 4. Wait for render
+      await new Promise((r) => setTimeout(r, 200));
+
+      // 5. Capture
+      const screenshot = await this.takeScreenshot();
+      const camera = this.getCameraState();
+
+      if (!camera || !screenshot) return null;
+
+      return { screenshot, camera };
+    } catch {
+      return null;
+    }
   }
 
   /**

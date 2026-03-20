@@ -7,6 +7,7 @@
 import { useStore } from "../../store";
 import type { RightPanelTab } from "../../types/project";
 import { ValidationPanel } from "../validation/ValidationPanel";
+import { BcfPanel } from "../bcf/BcfPanel";
 
 /** Tab configuration */
 const TABS: { id: RightPanelTab; label: string }[] = [
@@ -49,13 +50,7 @@ export function RightPanel() {
           </div>
         )}
 
-        {activeTab === "bcf" && (
-          <div className="empty-state">
-            <p className="empty-state__text">
-              BCF export — binnenkort beschikbaar
-            </p>
-          </div>
-        )}
+        {activeTab === "bcf" && <BcfPanel />}
       </div>
     </div>
   );

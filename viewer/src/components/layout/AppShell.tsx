@@ -19,6 +19,7 @@ import { Toolbar } from "./Toolbar";
 import { LeftPanel } from "./LeftPanel";
 import { CenterPanel } from "./CenterPanel";
 import { RightPanel } from "./RightPanel";
+import { ToastContainer } from "../Toast";
 
 import "./AppShell.css";
 
@@ -78,6 +79,8 @@ export function AppShell() {
           )}
         </Group>
       </div>
+
+      <ToastContainer />
     </div>
   );
 }
