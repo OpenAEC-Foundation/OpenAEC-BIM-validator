@@ -55,7 +55,7 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background-color: var(--theme-surface, #f8f9fa);
+  background-color: var(--theme-bg-lighter, #44444C);
 }
 
 .panel__header {
@@ -64,7 +64,7 @@
   justify-content: space-between;
   padding: 4px 8px;
   border-bottom: 1px solid var(--theme-border, #e0e0e0);
-  background-color: var(--theme-surface, #f8f9fa);
+  background-color: var(--theme-bg-lighter, #44444C);
   flex-shrink: 0;
 }
 
@@ -99,7 +99,7 @@
 .tab-bar {
   display: flex;
   border-bottom: 1px solid var(--theme-border, #e0e0e0);
-  background-color: var(--theme-surface, #f8f9fa);
+  background-color: var(--theme-bg-lighter, #44444C);
   flex-shrink: 0;
 }
 
