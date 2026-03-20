@@ -99,7 +99,6 @@ export default function TitleBar({
 function UserBadge() {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
-  const oidcEnabled = useAuthStore((s) => s.oidcEnabled);
   const login = useAuthStore((s) => s.login);
   const logout = useAuthStore((s) => s.logout);
 
@@ -121,8 +120,6 @@ function UserBadge() {
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, [menuOpen]);
-
-  if (!oidcEnabled && !user) return null;
 
   if (!user) {
     return (

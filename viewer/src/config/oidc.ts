@@ -24,10 +24,32 @@ export async function getOidcConfig(): Promise<OidcConfig> {
     // Server not available
   }
 
-  // Fallback to environment variables
+  // Fallback: try well-known Authentik discovery
+  const authority = import.meta.env.VITE_OIDC_AUTHORITY || "https://auth.open-aec.com";
+  try {
+    const wellKnown = await fetch(
+      `${authority}/application/o/openaec-bim-validator/.well-known/openid-configuration`
+    );
+    if (wellKnown.ok) {
+      const disc = await wellKnown.json();
+      _cachedConfig = {
+        enabled: true,
+        authority,
+        clientId: import.meta.env.VITE_OIDC_CLIENT_ID ?? "openaec-bim-validator",
+        redirectUri: import.meta.env.VITE_OIDC_REDIRECT_URI ?? window.location.origin,
+        scopes: "openid profile email openaec_profile",
+        authorizationEndpoint: disc.authorization_endpoint ?? "",
+      };
+      return _cachedConfig;
+    }
+  } catch {
+    // Authentik not reachable
+  }
+
+  // Final fallback: env vars
   _cachedConfig = {
     enabled: import.meta.env.VITE_OIDC_ENABLED === "true",
-    authority: import.meta.env.VITE_OIDC_AUTHORITY ?? "",
+    authority,
     clientId: import.meta.env.VITE_OIDC_CLIENT_ID ?? "openaec-bim-validator",
     redirectUri: import.meta.env.VITE_OIDC_REDIRECT_URI ?? window.location.origin,
     scopes: "openid profile email openaec_profile",
