@@ -8,6 +8,13 @@ WORKDIR /app/viewer
 COPY viewer/package.json viewer/package-lock.json* ./
 RUN npm install
 COPY viewer/ ./
+
+# OIDC config baked into frontend at build time
+ARG VITE_OIDC_AUTHORITY=https://auth.open-aec.com/application/o/bim-validator-oidc/
+ARG VITE_OIDC_CLIENT_ID=bim-validator
+ENV VITE_OIDC_AUTHORITY=$VITE_OIDC_AUTHORITY
+ENV VITE_OIDC_CLIENT_ID=$VITE_OIDC_CLIENT_ID
+
 ENV NODE_OPTIONS="--max-old-space-size=3072"
 RUN npm run build
 
