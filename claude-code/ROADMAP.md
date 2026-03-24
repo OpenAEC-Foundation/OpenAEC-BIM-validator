@@ -93,22 +93,26 @@
 
 ---
 
-## Fase 4: BCF Export
+## Fase 4: BCF Platform Integratie
 
-**Doel:** Export validatie issues als BCF file
+**Doel:** Koppel validator aan OpenAEC BCF Platform voor issue tracking en samenwerking
 
 ### Specs
-1. **Spec 4.1** - BCF 2.1 Generator
-2. **Spec 4.2** - Viewpoint Generation
-3. **Spec 4.3** - Issue Mapping
-4. **Spec 4.4** - Download Endpoint
-5. **Spec 4.5** - Integration Tests
+1. **Spec 4.1** - TypeScript BCF Platform Client
+2. **Spec 4.2** - Validation-to-BCF Topic Mapper
+3. **Spec 4.3** - Viewpoint Generation (camera + component selection)
+4. **Spec 4.4** - Platform UI (project selector, push flow, status)
+5. **Spec 4.5** - BCF ZIP Download (lokale fallback)
+6. **Spec 4.6** - Integration Tests
 
 ### Exit Criteria
-- [ ] BCF file importeerbaar in BIMcollab
-- [ ] Viewpoint toont gefaald element
-- [ ] Issue title/description zinvol
-- [ ] Batch export van meerdere issues
+- [ ] Validatieresultaten pushbaar naar BCF Platform per project
+- [ ] Topics bevatten juiste GlobalId's, severity, labels
+- [ ] Viewpoints met component selection (gefaalde elementen)
+- [ ] Gebruiker kan project selecteren op platform
+- [ ] Issues zichtbaar op BCF Platform met status/overzichten
+- [ ] BCF ZIP download als lokale fallback
+- [ ] Compatibel met Revit BCF plugin (download vanuit platform)
 
 ---
 
@@ -160,4 +164,6 @@
 - Measurement tools
 - Smart views
 - Scheduling
-- Desktop app voor offline gebruik
+- Tauri desktop app (shared TypeScript codebase)
+- Power BI-achtige dashboards op BCF Platform
+- Revit plugin voor BCF download vanuit platform

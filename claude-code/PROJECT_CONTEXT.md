@@ -45,34 +45,34 @@ A lightweight, browser-based tool that allows users to:
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        Browser                               │
-├─────────────────────────────────────────────────────────────┤
-│  React UI          │  That Open Engine  │  Results Panel    │
-│  - Upload form     │  - 3D viewport     │  - Spec list      │
-│  - IDS selector    │  - Navigation      │  - Failed items   │
-│  - Settings        │  - Selection       │  - BCF export     │
-└────────┬───────────┴────────┬──────────┴────────┬──────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                         Browser                                  │
+├─────────────────────────────────────────────────────────────────┤
+│  React UI          │  That Open Engine  │  Results Panel        │
+│  - Upload form     │  - 3D viewport     │  - Spec list          │
+│  - IDS selector    │  - Navigation      │  - Failed items       │
+│  - Settings        │  - Selection       │  - BCF platform push  │
+└────────┬───────────┴────────┬──────────┴────────┬───────────────┘
          │                    │                    │
-         ▼                    ▼                    ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     FastAPI Backend                          │
-├─────────────────────────────────────────────────────────────┤
-│  POST /api/upload     - Receive IFC + IDS files             │
-│  GET  /api/status/:id - Check validation progress           │
-│  GET  /api/results/:id - Get validation results             │
-│  POST /api/bcf/:id    - Generate BCF file                   │
-└────────┬────────────────────────────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   Validation Engine                          │
-├─────────────────────────────────────────────────────────────┤
-│  IfcOpenShell  │  ifctester        │  BCF Generator         │
-│  - Parse IFC   │  - Load IDS       │  - Create viewpoints   │
-│  - Extract     │  - Run checks     │  - Package issues      │
-│    elements    │  - Collect fails  │  - Generate .bcf       │
-└─────────────────────────────────────────────────────────────┘
+         ▼                    │                    ▼
+┌─────────────────────┐       │        ┌──────────────────────────┐
+│  FastAPI Backend     │       │        │  OpenAEC BCF Platform    │
+│  - IFC parsing       │       │        │  /bcf/2.1/projects/...   │
+│  - IDS validation    │       │        │  /bcf/2.1/.../topics/... │
+│  - Results JSON      │       │        │  (Rust/Axum + PostgreSQL)│
+└──────────────────────┘       │        └────────────┬─────────────┘
+                               │                     │
+                               │                     ▼
+                               │            ┌─────────────────────┐
+                               │            │  Revit BCF Plugin    │
+                               │            │  (download issues)   │
+                               │            └─────────────────────┘
+                               │
+                               ▼
+                      ┌─────────────────────┐
+                      │  Tauri Desktop App   │
+                      │  (zelfde TS code)    │
+                      └─────────────────────┘
 ```
 
 ## Key Features
@@ -96,11 +96,13 @@ A lightweight, browser-based tool that allows users to:
 - [ ] Highlight failed elements in red
 - [ ] Camera fly-to on element click
 
-### Phase 4: BCF Export
-- [ ] Generate BCF 2.1 file
-- [ ] One issue per failed specification
-- [ ] Include viewpoint with camera position
-- [ ] Element selection in viewpoint
+### Phase 4: BCF Platform Integratie
+- [ ] TypeScript BCF Platform client (praat met openaec-bcf-platform API)
+- [ ] Validation results → BCF topics mapper
+- [ ] Push naar platform per project (met API key auth)
+- [ ] Platform UI: project selector, push flow, status
+- [ ] BCF ZIP download als lokale fallback (JSZip in browser)
+- [ ] Compatibel met Revit BCF plugin download
 
 ### Phase 5: Polish & Launch
 - [ ] 3BM branding (Magic Violet, Verdigris)

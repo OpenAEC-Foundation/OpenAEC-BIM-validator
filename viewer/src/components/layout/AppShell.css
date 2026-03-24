@@ -128,6 +128,23 @@
   border-bottom-color: var(--theme-accent, #D97706);
 }
 
+.tab-bar__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  margin-left: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  color: #ffffff;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-full);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Viewer canvas container */
 .viewer-container {
   position: relative;

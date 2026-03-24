@@ -1,201 +1,294 @@
-# Fase 4: BCF Export
+# Fase 4: BCF Platform Integratie
 
 ## Doel
-Export validatie issues als BCF file voor gebruik in BIM software.
+Koppel de BIM Validator aan het OpenAEC BCF Platform zodat validatie-issues
+direct opgeslagen worden per project, bekeken kunnen worden met status/overzichten,
+en via Revit plugin gedownload kunnen worden door andere gebruikers.
+
+## Context
+
+### OpenAEC BCF Platform
+- **Repo:** `openaec-bcf-platform`
+- **Tech:** Rust/Axum + PostgreSQL + React
+- **API:** BCF 2.1 compliant REST API op `/bcf/2.1/`
+- **Auth:** OIDC (Authentik) + API keys per project (`bcfk_...`)
+- **Features:** Projecten, topics, comments, viewpoints, snapshots, BCF ZIP import/export
+
+### Design keuze: TypeScript nu, Rust `bcf-client` crate later
+Geen Python BCF generator. Integratie-logica in TypeScript voor de validator web-app.
+
+**Lange termijn:** een gedeelde Rust `bcf-client` crate (apart project) die herbruikbaar is in:
+- Tauri desktop app (native)
+- Solibri plugin
+- Revit plugin
+- CLI tools
+- Browser via WASM
+
+**Nu (fase 4):** lichtgewicht TypeScript client in de validator frontend.
+Zelfde API calls, makkelijk later te vervangen door WASM-compiled `bcf-client`.
+
+## Architectuur
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     BIM Validator Frontend                       │
+├─────────────────────────────────────────────────────────────────┤
+│  ValidationPanel        │  BCF Platform Panel                   │
+│  - Run validation       │  - Platform URL config                │
+│  - View results         │  - API key config                     │
+│  - Highlight elements   │  - Project selector                   │
+│                         │  - "Push to Platform" button          │
+│                         │  - Push status/progress               │
+└────────┬────────────────┴──────────┬────────────────────────────┘
+         │                           │
+         ▼                           ▼
+┌────────────────────┐    ┌──────────────────────────────────────┐
+│  Validator Backend  │    │     OpenAEC BCF Platform API         │
+│  (Python/FastAPI)   │    │     /bcf/2.1/projects/...            │
+│  - IFC parsing      │    │     /bcf/2.1/.../topics/...          │
+│  - IDS validation   │    │     /bcf/2.1/.../viewpoints/...      │
+│  - Results JSON     │    │                                      │
+└─────────────────────┘    └──────────────────────────────────────┘
+                                      │
+                                      ▼
+                           ┌──────────────────────┐
+                           │  Revit BCF Plugin     │
+                           │  (download issues)    │
+                           └──────────────────────┘
+```
 
 ## Specs
 
-### Spec 4.1 - BCF 2.1 Generator
-- `engine/bcf_generator.py`
-- BCF 2.1 specificatie implementatie
-- Structuur:
-  ```
-  bcf.zip/
-  ├── bcf.version
-  ├── extensions.xml (optional)
-  └── {guid}/
-      ├── markup.bcf
-      ├── viewpoint.bcfv
-      └── snapshot.png
-  ```
-- UUID generatie voor topics
-- Proper XML encoding
+### Spec 4.1 - TypeScript BCF Platform Client
 
-### Spec 4.2 - Viewpoint Generation
-- Camera positie berekenen voor element
-- Bounding box bepaling
-- Optimal viewing angle algoritme
-- Components sectie met:
-  - Selection (gefaald element)
-  - Visibility (context elementen)
-- Orthogonal en perspective support
-
-### Spec 4.3 - Issue Mapping
-- Map ValidationResult naar BCF Topics
-- Topic velden:
-  - `Title` - Korte beschrijving van fout
-  - `Description` - Gedetailleerde uitleg
-  - `Priority` - Gebaseerd op IDS severity
-  - `Type` - "IDS Validation"
-  - `Status` - "Open"
-  - `AssignedTo` - Leeg (user fills in)
-- Labels voor categorisatie
-- Reference links naar IDS spec
-
-### Spec 4.4 - Download Endpoint
-- `GET /api/v1/results/{job_id}/bcf`
-- Genereer BCF on-demand
-- Stream response voor grote files
-- Content-Disposition header voor download
-- Caching van gegenereerde BCF files
-
-### Spec 4.5 - Integration Tests
-- Test BCF import in:
-  - BIMcollab (primary)
-  - Solibri
-  - Navisworks
-- Valideer viewpoint correctheid
-- Verify issue data integriteit
-
-## Exit Criteria
-- [ ] BCF file importeerbaar in BIMcollab
-- [ ] Viewpoint toont gefaald element
-- [ ] Issue title/description zinvol
-- [ ] Batch export van meerdere issues
-
-## BCF Structure Details
-
-### bcf.version
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<Version VersionId="2.1" xsi:noNamespaceSchemaLocation="version.xsd">
-  <DetailedVersion>2.1</DetailedVersion>
-</Version>
-```
-
-### markup.bcf
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<Markup>
-  <Header>
-    <File IfcProject="{project_guid}" isExternal="false">
-      <Filename>model.ifc</Filename>
-    </File>
-  </Header>
-  <Topic Guid="{topic_guid}" TopicType="IDS Validation">
-    <Title>Missing FireRating property</Title>
-    <Description>Element IfcWall (GlobalId: 2O2Fr$t4X7Zf8NOew3FL9r)
-    does not have required property 'FireRating' in Pset_WallCommon.</Description>
-    <Priority>High</Priority>
-    <CreationDate>2024-01-15T10:30:00Z</CreationDate>
-    <CreationAuthor>IFC Validator</CreationAuthor>
-    <ModifiedDate>2024-01-15T10:30:00Z</ModifiedDate>
-    <ModifiedAuthor>IFC Validator</ModifiedAuthor>
-    <Labels>
-      <Label>IDS</Label>
-      <Label>Property Missing</Label>
-    </Labels>
-  </Topic>
-  <Viewpoints>
-    <ViewPoint Guid="{viewpoint_guid}">
-      <Viewpoint>viewpoint.bcfv</Viewpoint>
-      <Snapshot>snapshot.png</Snapshot>
-    </ViewPoint>
-  </Viewpoints>
-</Markup>
-```
-
-### viewpoint.bcfv
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<VisualizationInfo Guid="{viewpoint_guid}">
-  <Components>
-    <Selection>
-      <Component IfcGuid="2O2Fr$t4X7Zf8NOew3FL9r"/>
-    </Selection>
-    <Visibility DefaultVisibility="true">
-      <Exceptions/>
-    </Visibility>
-  </Components>
-  <PerspectiveCamera>
-    <CameraViewPoint>
-      <X>10.5</X>
-      <Y>5.2</Y>
-      <Z>3.0</Z>
-    </CameraViewPoint>
-    <CameraDirection>
-      <X>-0.7</X>
-      <Y>-0.5</Y>
-      <Z>-0.3</Z>
-    </CameraDirection>
-    <CameraUpVector>
-      <X>0</X>
-      <Y>0</Y>
-      <Z>1</Z>
-    </CameraUpVector>
-    <FieldOfView>60</FieldOfView>
-  </PerspectiveCamera>
-</VisualizationInfo>
-```
-
-## API Signatures
-
-```python
-# engine/bcf_generator.py
-
-class BCFGenerator:
-    def __init__(self, validation_result: ValidationResult):
-        self.result = validation_result
-
-    def generate(self) -> bytes:
-        """Generate BCF zip file as bytes."""
-
-    def _create_topic(self, element_result: ElementResult) -> Topic:
-        """Create BCF topic from validation element result."""
-
-    def _create_viewpoint(
-        self,
-        element: ElementResult,
-        camera_position: CameraPosition
-    ) -> Viewpoint:
-        """Create viewpoint for element."""
-
-    def _calculate_camera(
-        self,
-        bounding_box: BoundingBox
-    ) -> CameraPosition:
-        """Calculate optimal camera position for element."""
-
-class Topic(BaseModel):
-    guid: UUID
-    title: str
-    description: str
-    priority: str
-    topic_type: str = "IDS Validation"
-    status: str = "Open"
-    labels: list[str]
-    creation_date: datetime
-    creation_author: str = "IFC Validator"
-
-class Viewpoint(BaseModel):
-    guid: UUID
-    camera: PerspectiveCamera | OrthogonalCamera
-    components: Components
-```
-
-## Frontend Integration
+API client die praat met het BCF Platform:
 
 ```typescript
-// Download BCF button in results view
-const downloadBCF = async (jobId: string) => {
-  const response = await fetch(`/api/v1/results/${jobId}/bcf`);
-  const blob = await response.blob();
+// lib/bcfPlatformClient.ts
 
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `validation-${jobId}.bcf`;
-  a.click();
-  window.URL.revokeObjectURL(url);
-};
+interface BcfPlatformConfig {
+  baseUrl: string;      // bijv. "https://bcf.openaec.com"
+  apiKey: string;       // "bcfk_..." project-scoped API key
+}
+
+class BcfPlatformClient {
+  constructor(config: BcfPlatformConfig);
+
+  // Projects
+  listProjects(): Promise<BcfProject[]>;
+  getProject(id: string): Promise<BcfProject>;
+
+  // Topics
+  listTopics(projectId: string): Promise<BcfTopic[]>;
+  createTopic(projectId: string, data: CreateTopicRequest): Promise<BcfTopic>;
+  updateTopic(projectId: string, topicId: string, data: UpdateTopicRequest): Promise<BcfTopic>;
+
+  // Comments
+  createComment(projectId: string, topicId: string, data: CreateCommentRequest): Promise<BcfComment>;
+
+  // Viewpoints
+  createViewpoint(projectId: string, topicId: string, data: CreateViewpointRequest): Promise<BcfViewpoint>;
+}
 ```
+
+**BCF Platform API endpoints:**
+- `GET    /bcf/2.1/projects` — lijst projecten
+- `POST   /bcf/2.1/projects/{pid}/topics` — maak topic
+- `POST   /bcf/2.1/projects/{pid}/topics/{tid}/comments` — maak comment
+- `POST   /bcf/2.1/projects/{pid}/topics/{tid}/viewpoints` — maak viewpoint
+
+**Authenticatie:** `Authorization: Bearer bcfk_...` header met project API key.
+
+### Spec 4.2 - Validation-to-BCF Topic Mapper
+
+Map `ValidationResult` naar BCF topics:
+
+```typescript
+// lib/validationToBcf.ts
+
+interface TopicMapping {
+  topic: CreateTopicRequest;
+  comment: CreateCommentRequest;
+  viewpoint: CreateViewpointRequest;
+}
+
+function mapValidationToTopics(result: ValidationResult): TopicMapping[] {
+  // 1 topic per gefaalde specification
+  // Groepeer gefaalde elementen per spec
+}
+```
+
+**Mapping regels:**
+| Validation veld | BCF Topic veld | Voorbeeld |
+|----------------|---------------|-----------|
+| spec.name | title | "Missing FireRating property" |
+| spec.description + failed elements | description | Gedetailleerde uitleg met GlobalId's |
+| spec.severity | priority | critical→High, warning→Normal |
+| "IDS Validation" | topic_type | Altijd "IDS Validation" |
+| "Open" | topic_status | Altijd "Open" |
+| spec.ifc_entity, check type | labels | ["IfcWall", "Property Missing", "IDS"] |
+| failed element GlobalId's | viewpoint.components.selection | Component references |
+
+**Topic beschrijving format:**
+```
+IDS Specification: {spec_name}
+IFC Entity: {entity_type}
+Check: {requirement_type}
+
+Failed elements ({count}):
+- {GlobalId} — {element_name} ({element_type})
+- {GlobalId} — {element_name} ({element_type})
+...
+
+Source: {ids_filename}
+```
+
+### Spec 4.3 - Viewpoint Generation
+
+Per topic een viewpoint met component selection:
+
+```typescript
+interface CreateViewpointRequest {
+  components: {
+    selection: Array<{ ifc_guid: string }>;       // gefaalde elementen
+    visibility: {
+      default_visibility: true;
+      exceptions: [];                              // alles zichtbaar
+    };
+    coloring: Array<{
+      color: string;                               // "FF0000" rood voor failures
+      components: Array<{ ifc_guid: string }>;
+    }>;
+  };
+  // Camera optioneel - als 3D viewer actief is, capture huidige positie
+  camera?: {
+    camera_type: "perspective";
+    position: { x: number; y: number; z: number };
+    direction: { x: number; y: number; z: number };
+    up: { x: number; y: number; z: number };
+    field_of_view: number;
+  };
+}
+```
+
+**Viewpoint strategie:**
+- Selection: alle gefaalde GlobalId's van de specification
+- Coloring: rood (#FF0000) voor gefaalde elementen
+- Camera: capture vanuit 3D viewer als beschikbaar, anders geen camera
+- Snapshot: optioneel - canvas capture als PNG (later)
+
+### Spec 4.4 - Platform UI Componenten
+
+#### 4.4.1 - Platform Settings
+```typescript
+// Opgeslagen in localStorage
+interface PlatformSettings {
+  url: string;          // BCF Platform URL
+  apiKey: string;       // Project API key
+  projectId?: string;   // Laatst geselecteerde project
+}
+```
+
+- Invoervelden voor URL + API key
+- "Test verbinding" knop
+- Persistentie in localStorage
+
+#### 4.4.2 - Project Selector
+- Dropdown met projecten van het platform
+- Haalt lijst op via `GET /bcf/2.1/projects`
+- Toont project naam + aantal bestaande topics
+
+#### 4.4.3 - Push Flow
+Na succesvolle validatie:
+1. Gebruiker klikt "Push naar BCF Platform"
+2. Kies project (of maak nieuw aan)
+3. Preview: hoeveel topics worden aangemaakt
+4. Bevestig → push topics één voor één
+5. Progress bar met status per topic
+6. Klaar → link naar project op platform
+
+#### 4.4.4 - BCF Tab in RightPanel
+- Vervang placeholder "binnenkort beschikbaar"
+- Platform status (verbonden / niet verbonden)
+- Laatste push info (datum, aantal topics)
+- Link naar project op platform
+
+### Spec 4.5 - BCF ZIP Download (Lokale Fallback)
+
+Voor offline gebruik of import in andere tools:
+
+```typescript
+// lib/bcfZipGenerator.ts
+
+async function generateBcfZip(result: ValidationResult): Promise<Blob> {
+  // Genereer BCF 2.1 ZIP in browser met JSZip
+  // Zelfde mapping als platform push
+  // Return als downloadbare Blob
+}
+```
+
+**Structuur:**
+```
+validation-results.bcf/
+├── bcf.version
+└── {topic-guid}/
+    ├── markup.bcf
+    └── viewpoint.bcfv
+```
+
+- Gebruikt JSZip voor ZIP generatie in browser
+- Zelfde mapping logica als platform push
+- Download knop naast "Push naar Platform"
+
+### Spec 4.6 - Integration Tests
+
+- [ ] Topics correct aangemaakt op platform
+- [ ] GlobalId's komen overeen met IFC elementen
+- [ ] BCF ZIP importeerbaar in BIMcollab
+- [ ] BCF ZIP importeerbaar in Revit (via BCF plugin)
+- [ ] Viewpoint selection werkt in ontvangende tool
+- [ ] Labels en priority correct gemapped
+- [ ] Grote validatie (100+ failures) werkt binnen timeout
+- [ ] API key auth werkt correct
+- [ ] Foutafhandeling bij platform onbereikbaar
+
+## Dependencies
+
+### NPM packages (toe te voegen aan viewer)
+- `jszip` — BCF ZIP generatie in browser
+- Geen andere nieuwe dependencies nodig (fetch API voor HTTP)
+
+### BCF Platform vereisten
+- Platform draait en is bereikbaar
+- API key aangemaakt voor het project
+- CORS geconfigureerd voor validator domein
+
+## Flow: Validatie → Platform → Revit
+
+```
+1. Gebruiker upload IFC + IDS in Validator
+2. Validator backend valideert → resultaten JSON
+3. Frontend toont resultaten in ValidationPanel
+4. Gebruiker klikt "Push naar BCF Platform"
+5. Frontend mapped results → BCF topics (TypeScript)
+6. Frontend pusht topics naar Platform API
+7. Platform slaat op in PostgreSQL
+8. Op Platform: overzichten, status tracking, dashboards
+9. Andere gebruiker opent Revit → BCF plugin
+10. Plugin download BCF van Platform (GET /api/v1/projects/{id}/export-bcf)
+11. Issues zichtbaar in Revit met element selectie
+```
+
+## Later (niet in scope fase 4)
+
+- **Rust `bcf-client` crate** — gedeelde API client voor alle platformen:
+  - Compileert naar native (Tauri, Solibri plugin, Revit plugin, CLI)
+  - Compileert naar WASM (browser, vervangt TypeScript client)
+  - Leeft in eigen repo of als crate in openaec-bcf-platform workspace
+- Snapshot generatie (canvas capture → PNG upload)
+- Bi-directionele sync (status updates terug naar validator)
+- Automatische push na validatie (zonder handmatige stap)
+- Power BI-achtige dashboards op BCF Platform
+- SSO doorverbinding (zelfde Authentik voor validator + platform)
+- Solibri plugin — upload BCF issues naar platform
+- Revit plugin — download + upload BCF issues

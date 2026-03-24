@@ -1,532 +1,465 @@
 /**
- * BCF slice — manages BCF issue state in the Zustand store.
+ * BCF slice — manages the local BCF issue queue, authentication,
+ * and BCF Platform integration (project management + push).
  *
- * Handles issue CRUD, filtering, sorting, viewpoint generation
- * from validation results, and BCF export preparation.
- *
- * Screenshots are stored as data URLs in the issue objects.
- * For production use with 100+ issues, migrate to IndexedDB
- * via a screenshotCache (same pattern as modelCache.ts).
+ * Three concerns:
+ * A. Issue Queue — local list of BCF issues
+ * B. Auth — OIDC (Authentik) or API key
+ * C. Platform — projects, push, ZIP download
  */
 
 import type { StateCreator } from "zustand";
 import type {
-  BcfIssue,
-  BcfComment,
-  BcfViewpoint,
-  BcfCameraState,
-  IssueFilter,
-  IssueSortBy,
-  SortDirection,
-  IssueStats,
-  IssueCreationMetadata,
-  IssueStatus,
-  IssuePriority,
-} from "../../types/bcf";
+  BcfApiConfig,
+  BcfProject,
+  BcfAuthState,
+  CreateProjectRequest,
+  PushProgress,
+  PushResult,
+} from "../../types/bcfPlatform";
+import type { BcfIssue } from "../../types/bcfIssue";
+import { createBcfPlatformApi } from "../../api/bcfPlatformApi";
+import { generateBcfZip, downloadBlob } from "../../lib/bcfZipGenerator";
 import {
-  severityToIssueType,
-  severityToPriority,
-} from "../../types/bcf";
-import type {
-  ValidationResult,
-  SpecificationResult,
-  ElementResult,
-} from "../../types/validation";
+  isOidcConfigured,
+  initOidc,
+  signinRedirect,
+  processOidcCallback,
+  getSignedInUser,
+  signout,
+  onTokenRenewed,
+} from "../../lib/oidcManager";
 
-/** Callback to capture a viewpoint from the viewer engine */
-export type ViewpointCaptureCallback = (
-  globalIds: string[]
-) => Promise<{ screenshot: string; camera: BcfCameraState } | null>;
+const STORAGE_KEY_URL = "bcf-platform-url";
+const STORAGE_KEY_APIKEY = "bcf-platform-apikey";
 
-/** BCF sync status */
-export type BcfSyncStatus = "idle" | "syncing" | "done" | "error";
+type BcfPhase =
+  | "disconnected"
+  | "connecting"
+  | "connected"
+  | "pushing"
+  | "done"
+  | "error";
 
 export interface BcfSlice {
-  // ─── State ──────────────────────────────────────────────────────
-
-  /** All BCF issues */
+  // ── Issue Queue ────────────────────────────────────────
   bcfIssues: BcfIssue[];
+  bcfAddIssue: (issue: BcfIssue) => void;
+  bcfAddIssues: (issues: BcfIssue[]) => void;
+  bcfRemoveIssue: (id: string) => void;
+  bcfClearIssues: () => void;
 
-  /** Currently active/selected issue GUID (detail view) */
-  activeBcfIssueId: string | null;
+  // ── Auth ───────────────────────────────────────────────
+  bcfAuth: BcfAuthState;
+  bcfOidcAvailable: boolean;
+  bcfLoginOidc: () => Promise<void>;
+  bcfLogout: () => Promise<void>;
+  bcfConnectApiKey: (url: string, apiKey: string) => Promise<void>;
+  bcfInitAuth: () => Promise<void>;
 
-  /** Filter for issue list */
-  bcfFilter: IssueFilter;
+  // ── Platform ───────────────────────────────────────────
+  bcfPlatformUrl: string;
+  bcfPhase: BcfPhase;
+  bcfProjects: BcfProject[];
+  bcfSelectedProjectId: string | null;
+  bcfError: string | null;
 
-  /** Sort field */
-  bcfSortBy: IssueSortBy;
+  bcfSetPlatformUrl: (url: string) => void;
+  bcfRefreshProjects: () => Promise<void>;
+  bcfSelectProject: (projectId: string | null) => void;
+  bcfCreateProject: (data: CreateProjectRequest) => Promise<BcfProject | null>;
 
-  /** Sort direction */
-  bcfSortDirection: SortDirection;
+  // ── Push ───────────────────────────────────────────────
+  bcfPushProgress: PushProgress | null;
+  bcfPushResult: PushResult | null;
+  bcfPushIssues: (issueIds?: string[]) => Promise<void>;
+  bcfResetPush: () => void;
 
-  /** Whether bulk issue generation is in progress */
-  bcfGenerating: boolean;
-
-  /** Progress message during generation */
-  bcfGenerationProgress: string | null;
-
-  /** BCF Platform project ID (persisted) */
-  bcfPlatformProjectId: string | null;
-
-  /** Current sync status */
-  bcfSyncStatus: BcfSyncStatus;
-
-  /** Sync progress message */
-  bcfSyncProgress: string | null;
-
-  // ─── CRUD Actions ───────────────────────────────────────────────
-
-  /** Add a new issue to the store */
-  addBcfIssue: (issue: BcfIssue) => void;
-
-  /** Update an existing issue by GUID */
-  updateBcfIssue: (guid: string, updates: Partial<BcfIssue>) => void;
-
-  /** Delete an issue by GUID */
-  deleteBcfIssue: (guid: string) => void;
-
-  /** Set the active issue (opens detail view) */
-  setActiveBcfIssue: (guid: string | null) => void;
-
-  /** Add a comment to an issue */
-  addBcfComment: (issueGuid: string, comment: BcfComment) => void;
-
-  // ─── Filter & Sort ──────────────────────────────────────────────
-
-  /** Set the issue list filter */
-  setBcfFilter: (filter: IssueFilter) => void;
-
-  /** Set sort field */
-  setBcfSortBy: (sortBy: IssueSortBy) => void;
-
-  /** Toggle sort direction */
-  toggleBcfSortDirection: () => void;
-
-  // ─── Validation Integration ─────────────────────────────────────
-
-  /**
-   * Generate BCF issues from validation results (bulk).
-   * Creates one issue per failed specification.
-   */
-  generateBcfFromValidation: (
-    validationResult: ValidationResult,
-    captureViewpoint: ViewpointCaptureCallback
-  ) => Promise<void>;
-
-  /**
-   * Create a single BCF issue from a specification.
-   */
-  createBcfFromSpecification: (
-    spec: SpecificationResult,
-    captureViewpoint: ViewpointCaptureCallback
-  ) => Promise<void>;
-
-  /**
-   * Create a single BCF issue from one element.
-   */
-  createBcfFromElement: (
-    element: ElementResult,
-    specName: string,
-    captureViewpoint: ViewpointCaptureCallback
-  ) => Promise<void>;
-
-  // ─── Computed helpers ───────────────────────────────────────────
-
-  /** Get filtered + sorted issues */
-  getFilteredBcfIssues: () => BcfIssue[];
-
-  /** Get issue statistics */
-  getBcfStats: () => IssueStats;
-
-  /** Clear all BCF issues */
-  clearAllBcfIssues: () => void;
-
-  // ─── Platform Sync ──────────────────────────────────────────────
-
-  /** Set the BCF platform project ID */
-  setBcfPlatformProjectId: (id: string | null) => void;
-
-  /** Set the sync status */
-  setBcfSyncStatus: (status: BcfSyncStatus) => void;
-
-  /** Set sync progress message */
-  setBcfSyncProgress: (progress: string | null) => void;
+  // ── Local export ───────────────────────────────────────
+  bcfDownloadZip: (issueIds?: string[]) => Promise<void>;
 }
 
-// ─── Helper: create a placeholder viewpoint ─────────────────────
+// ── Helpers ────────────────────────────────────────────────
 
-function createPlaceholderViewpoint(): BcfViewpoint {
-  return {
-    guid: crypto.randomUUID(),
-    camera: {
-      position: { x: 15, y: 15, z: 15 },
-      direction: { x: -0.577, y: -0.577, z: -0.577 },
-      up: { x: 0, y: 1, z: 0 },
-      type: "perspective",
-      fieldOfView: 60,
-    },
-    screenshotDataUrl: "",
-    components: {
-      selection: [],
-      visibility: { defaultVisibility: true, exceptions: [] },
-      coloring: [],
-    },
-  };
+function loadUrl(): string {
+  return localStorage.getItem(STORAGE_KEY_URL) ?? "";
 }
 
-// ─── Helper: build a BcfIssue object ────────────────────────────
-
-function buildIssue(
-  meta: IssueCreationMetadata,
-  viewpoint: BcfViewpoint,
-  index: number
-): BcfIssue {
-  const now = new Date().toISOString();
-  const guid = crypto.randomUUID();
-
-  // Build first comment from validation failure description
-  const initialComment: BcfComment = {
-    guid: crypto.randomUUID(),
-    author: "Validator",
-    date: now,
-    comment: meta.description,
-    viewpointGuid: viewpoint.guid,
-  };
-
-  return {
-    guid,
-    title: meta.title,
-    description: meta.description,
-    type: meta.type,
-    status: "Open",
-    priority: meta.priority,
-    assignedTo: "",
-    creationDate: now,
-    modifiedDate: now,
-    creationAuthor: "Validator",
-    labels: meta.specificationName ? [meta.specificationName] : [],
-    viewpoint,
-    comments: [initialComment],
-    sourceSpecification: meta.specificationName,
-    sourceRequirement: meta.requirementDescription,
-    failedGlobalIds: meta.globalIds,
-    index,
-  };
+function loadApiKey(): string {
+  return localStorage.getItem(STORAGE_KEY_APIKEY) ?? "";
 }
 
-// ─── Helper: extract failed GlobalIds from a specification ──────
-
-function extractFailedGlobalIds(spec: SpecificationResult): string[] {
-  const ids: string[] = [];
-  for (const req of spec.requirements) {
-    for (const el of req.elements) {
-      if (el.status === "fail" && el.global_id) {
-        ids.push(el.global_id);
-      }
-    }
-  }
-  // Deduplicate
-  return [...new Set(ids)];
+function getApiConfig(state: { bcfPlatformUrl: string; bcfAuth: BcfAuthState }): BcfApiConfig | null {
+  const token = state.bcfAuth.accessToken;
+  const url = state.bcfPlatformUrl;
+  if (!token || !url) return null;
+  return { url, token };
 }
 
-// ─── Helper: build description from spec failures ───────────────
-
-function buildSpecDescription(spec: SpecificationResult): string {
-  const failedReqs = spec.requirements.filter((r) => r.status === "fail");
-  const lines = failedReqs.map(
-    (r) => `- ${r.requirement_description} (${r.failed_elements} gefaald)`
-  );
-  return `Validatie gefaald voor specificatie "${spec.specification_name}":\n${lines.join("\n")}`;
-}
-
-// ─── Helper: build viewpoint with captured data ─────────────────
-
-function buildViewpoint(
-  globalIds: string[],
-  capture: { screenshot: string; camera: BcfCameraState } | null
-): BcfViewpoint {
-  const viewpoint: BcfViewpoint = {
-    guid: crypto.randomUUID(),
-    camera: capture?.camera ?? createPlaceholderViewpoint().camera,
-    screenshotDataUrl: capture?.screenshot ?? "",
-    components: {
-      selection: globalIds.map((id) => ({ ifcGuid: id })),
-      visibility: { defaultVisibility: true, exceptions: [] },
-      coloring: [
-        {
-          color: "#FF4444",
-          components: globalIds.map((id) => ({ ifcGuid: id })),
-        },
-      ],
-    },
-  };
-  return viewpoint;
-}
-
-// ─── Sorting helpers ────────────────────────────────────────────
-
-const PRIORITY_ORDER: Record<IssuePriority, number> = {
-  Critical: 0,
-  High: 1,
-  Normal: 2,
-  Low: 3,
-};
-
-const STATUS_ORDER: Record<IssueStatus, number> = {
-  Open: 0,
-  "In Progress": 1,
-  Closed: 2,
-};
-
-function sortIssues(
-  issues: BcfIssue[],
-  sortBy: IssueSortBy,
-  direction: SortDirection
-): BcfIssue[] {
-  const sorted = [...issues].sort((a, b) => {
-    let cmp = 0;
-    switch (sortBy) {
-      case "date":
-        cmp =
-          new Date(b.modifiedDate).getTime() -
-          new Date(a.modifiedDate).getTime();
-        break;
-      case "priority":
-        cmp = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
-        break;
-      case "status":
-        cmp = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
-        break;
-      case "type":
-        cmp = a.type.localeCompare(b.type);
-        break;
-    }
-    return direction === "asc" ? cmp : -cmp;
-  });
-  return sorted;
-}
-
-// ─── Slice creator ──────────────────────────────────────────────
+// ── Slice creator ──────────────────────────────────────────
 
 export const createBcfSlice: StateCreator<BcfSlice> = (set, get) => ({
-  // State
+  // ── Issue Queue state ──────────────────────────────────
   bcfIssues: [],
-  activeBcfIssueId: null,
-  bcfFilter: "all",
-  bcfSortBy: "date",
-  bcfSortDirection: "desc",
-  bcfGenerating: false,
-  bcfGenerationProgress: null,
-  bcfPlatformProjectId: null,
-  bcfSyncStatus: "idle",
-  bcfSyncProgress: null,
 
-  // ─── CRUD ───────────────────────────────────────────────────────
-
-  addBcfIssue: (issue: BcfIssue) => {
-    set((state) => ({
-      bcfIssues: [...state.bcfIssues, issue],
-    }));
+  bcfAddIssue: (issue: BcfIssue) => {
+    set((s) => ({ bcfIssues: [...s.bcfIssues, issue] }));
   },
 
-  updateBcfIssue: (guid: string, updates: Partial<BcfIssue>) => {
-    set((state) => ({
-      bcfIssues: state.bcfIssues.map((issue) =>
-        issue.guid === guid
-          ? { ...issue, ...updates, modifiedDate: new Date().toISOString() }
-          : issue
-      ),
-    }));
+  bcfAddIssues: (issues: BcfIssue[]) => {
+    set((s) => ({ bcfIssues: [...s.bcfIssues, ...issues] }));
   },
 
-  deleteBcfIssue: (guid: string) => {
-    set((state) => ({
-      bcfIssues: state.bcfIssues.filter((i) => i.guid !== guid),
-      activeBcfIssueId:
-        state.activeBcfIssueId === guid ? null : state.activeBcfIssueId,
-    }));
+  bcfRemoveIssue: (id: string) => {
+    set((s) => ({ bcfIssues: s.bcfIssues.filter((i) => i.id !== id) }));
   },
 
-  setActiveBcfIssue: (guid: string | null) => {
-    set({ activeBcfIssueId: guid });
+  bcfClearIssues: () => {
+    set({ bcfIssues: [] });
   },
 
-  addBcfComment: (issueGuid: string, comment: BcfComment) => {
-    set((state) => ({
-      bcfIssues: state.bcfIssues.map((issue) =>
-        issue.guid === issueGuid
-          ? {
-              ...issue,
-              comments: [...issue.comments, comment],
-              modifiedDate: new Date().toISOString(),
-            }
-          : issue
-      ),
-    }));
-  },
+  // ── Auth state ─────────────────────────────────────────
+  bcfAuth: { method: "none" },
+  bcfOidcAvailable: isOidcConfigured(),
 
-  // ─── Filter & Sort ──────────────────────────────────────────────
+  bcfInitAuth: async () => {
+    // Try to restore OIDC session
+    if (isOidcConfigured()) {
+      try {
+        initOidc();
 
-  setBcfFilter: (filter: IssueFilter) => {
-    set({ bcfFilter: filter });
-  },
+        // Check for callback
+        const callbackUser = await processOidcCallback();
+        if (callbackUser) {
+          set({
+            bcfAuth: {
+              method: "oidc",
+              user: { name: callbackUser.name, email: callbackUser.email, sub: callbackUser.sub },
+              accessToken: callbackUser.accessToken,
+              expiresAt: callbackUser.expiresAt,
+            },
+            bcfPhase: "connecting",
+          });
+          // Load projects
+          await get().bcfRefreshProjects();
+          set({ bcfPhase: "connected" });
+          return;
+        }
 
-  setBcfSortBy: (sortBy: IssueSortBy) => {
-    set({ bcfSortBy: sortBy });
-  },
+        // Check for existing session
+        const existingUser = await getSignedInUser();
+        if (existingUser) {
+          set({
+            bcfAuth: {
+              method: "oidc",
+              user: { name: existingUser.name, email: existingUser.email, sub: existingUser.sub },
+              accessToken: existingUser.accessToken,
+              expiresAt: existingUser.expiresAt,
+            },
+            bcfPhase: "connecting",
+          });
+          await get().bcfRefreshProjects();
+          set({ bcfPhase: "connected" });
 
-  toggleBcfSortDirection: () => {
-    set((state) => ({
-      bcfSortDirection: state.bcfSortDirection === "asc" ? "desc" : "asc",
-    }));
-  },
+          // Listen for token renewal
+          onTokenRenewed((renewed) => {
+            set((s) => ({
+              bcfAuth: {
+                ...s.bcfAuth,
+                accessToken: renewed.accessToken,
+                expiresAt: renewed.expiresAt,
+              },
+            }));
+          });
+          return;
+        }
+      } catch (err) {
+        console.warn("OIDC init failed:", err);
+      }
+    }
 
-  // ─── Validation Integration ─────────────────────────────────────
-
-  generateBcfFromValidation: async (
-    validationResult: ValidationResult,
-    captureViewpoint: ViewpointCaptureCallback
-  ) => {
-    const failedSpecs = validationResult.specifications.filter(
-      (s) => s.status === "fail"
-    );
-
-    if (failedSpecs.length === 0) return;
-
-    set({ bcfGenerating: true, bcfGenerationProgress: "Issues genereren..." });
-
-    const newIssues: BcfIssue[] = [];
-    const existingCount = get().bcfIssues.length;
-
-    for (const [i, spec] of failedSpecs.entries()) {
+    // Try API key from localStorage
+    const savedUrl = loadUrl();
+    const savedKey = loadApiKey();
+    if (savedUrl && savedKey) {
       set({
-        bcfGenerationProgress: `Issue ${i + 1}/${failedSpecs.length}: ${spec.specification_name}`,
+        bcfPlatformUrl: savedUrl,
+        bcfAuth: { method: "apikey", accessToken: savedKey },
+        bcfPhase: "connecting",
       });
+      try {
+        await get().bcfRefreshProjects();
+        set({ bcfPhase: "connected" });
+      } catch {
+        set({ bcfPhase: "disconnected", bcfAuth: { method: "none" } });
+      }
+    }
+  },
 
-      const globalIds = extractFailedGlobalIds(spec);
-      if (globalIds.length === 0) continue;
+  bcfLoginOidc: async () => {
+    if (!isOidcConfigured()) {
+      set({ bcfError: "OIDC niet geconfigureerd (VITE_OIDC_AUTHORITY / VITE_OIDC_CLIENT_ID ontbreken)" });
+      return;
+    }
+    try {
+      if (!getSignedInUser) initOidc();
+      await signinRedirect();
+      // Browser redirects away — no code after this runs
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "OIDC login mislukt";
+      set({ bcfError: msg, bcfPhase: "error" });
+    }
+  },
 
-      // Capture viewpoint (zoom + screenshot)
-      const capture = await captureViewpoint(globalIds);
-
-      const viewpoint = buildViewpoint(globalIds, capture);
-
-      const meta: IssueCreationMetadata = {
-        title: spec.specification_name,
-        description: buildSpecDescription(spec),
-        type: severityToIssueType(spec.severity),
-        priority: severityToPriority(spec.severity),
-        specificationName: spec.specification_name,
-        globalIds,
-      };
-
-      const issue = buildIssue(meta, viewpoint, existingCount + i);
-      newIssues.push(issue);
+  bcfLogout: async () => {
+    const { bcfAuth } = get();
+    if (bcfAuth.method === "oidc") {
+      try {
+        await signout();
+      } catch {
+        // continue with local cleanup
+      }
     }
 
-    set((state) => ({
-      bcfIssues: [...state.bcfIssues, ...newIssues],
-      bcfGenerating: false,
-      bcfGenerationProgress: null,
-    }));
+    // Clear API key storage
+    localStorage.removeItem(STORAGE_KEY_URL);
+    localStorage.removeItem(STORAGE_KEY_APIKEY);
+
+    set({
+      bcfAuth: { method: "none" },
+      bcfPhase: "disconnected",
+      bcfProjects: [],
+      bcfSelectedProjectId: null,
+      bcfPushProgress: null,
+      bcfPushResult: null,
+      bcfError: null,
+    });
   },
 
-  createBcfFromSpecification: async (
-    spec: SpecificationResult,
-    captureViewpoint: ViewpointCaptureCallback
-  ) => {
-    const globalIds = extractFailedGlobalIds(spec);
-    if (globalIds.length === 0) return;
+  bcfConnectApiKey: async (url: string, apiKey: string) => {
+    set({
+      bcfPlatformUrl: url,
+      bcfAuth: { method: "apikey", accessToken: apiKey },
+      bcfPhase: "connecting",
+      bcfError: null,
+    });
 
-    const capture = await captureViewpoint(globalIds);
-    const viewpoint = buildViewpoint(globalIds, capture);
+    const api = createBcfPlatformApi({ url, token: apiKey });
 
-    const meta: IssueCreationMetadata = {
-      title: spec.specification_name,
-      description: buildSpecDescription(spec),
-      type: severityToIssueType(spec.severity),
-      priority: severityToPriority(spec.severity),
-      specificationName: spec.specification_name,
-      globalIds,
-    };
-
-    const issue = buildIssue(meta, viewpoint, get().bcfIssues.length);
-
-    set((state) => ({
-      bcfIssues: [...state.bcfIssues, issue],
-    }));
-  },
-
-  createBcfFromElement: async (
-    element: ElementResult,
-    specName: string,
-    captureViewpoint: ViewpointCaptureCallback
-  ) => {
-    if (!element.global_id) return;
-
-    const globalIds = [element.global_id];
-    const capture = await captureViewpoint(globalIds);
-    const viewpoint = buildViewpoint(globalIds, capture);
-
-    const elementName = element.element_name
-      ? `${element.element_type}: ${element.element_name}`
-      : element.element_type;
-
-    const meta: IssueCreationMetadata = {
-      title: `${elementName} — ${specName}`,
-      description: element.messages.join("\n"),
-      type: "Error",
-      priority: "Normal",
-      specificationName: specName,
-      requirementDescription: specName,
-      globalIds,
-    };
-
-    const issue = buildIssue(meta, viewpoint, get().bcfIssues.length);
-
-    set((state) => ({
-      bcfIssues: [...state.bcfIssues, issue],
-    }));
-  },
-
-  // ─── Computed ───────────────────────────────────────────────────
-
-  getFilteredBcfIssues: (): BcfIssue[] => {
-    const { bcfIssues, bcfFilter, bcfSortBy, bcfSortDirection } = get();
-
-    let filtered = bcfIssues;
-    if (bcfFilter !== "all") {
-      filtered = bcfIssues.filter((i) => i.status === bcfFilter);
+    const ok = await api.testConnection();
+    if (!ok) {
+      set({
+        bcfPhase: "error",
+        bcfError: "Kan geen verbinding maken met het BCF Platform. Controleer de URL.",
+      });
+      return;
     }
 
-    return sortIssues(filtered, bcfSortBy, bcfSortDirection);
+    try {
+      const projects = await api.listProjects();
+      localStorage.setItem(STORAGE_KEY_URL, url);
+      localStorage.setItem(STORAGE_KEY_APIKEY, apiKey);
+      set({
+        bcfPhase: "connected",
+        bcfProjects: projects,
+        bcfError: null,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Onbekende fout";
+      set({
+        bcfPhase: "error",
+        bcfError: `Verbinding mislukt: ${message}`,
+      });
+    }
   },
 
-  getBcfStats: (): IssueStats => {
+  // ── Platform state ─────────────────────────────────────
+  bcfPlatformUrl: loadUrl(),
+  bcfPhase: "disconnected",
+  bcfProjects: [],
+  bcfSelectedProjectId: null,
+  bcfError: null,
+
+  bcfSetPlatformUrl: (url: string) => {
+    localStorage.setItem(STORAGE_KEY_URL, url);
+    set({ bcfPlatformUrl: url });
+  },
+
+  bcfRefreshProjects: async () => {
+    const apiConfig = getApiConfig(get());
+    if (!apiConfig) return;
+
+    try {
+      const api = createBcfPlatformApi(apiConfig);
+      const projects = await api.listProjects();
+      set({ bcfProjects: projects, bcfError: null });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Onbekende fout";
+      set({ bcfError: `Projecten laden mislukt: ${message}` });
+    }
+  },
+
+  bcfSelectProject: (projectId: string | null) => {
+    set({ bcfSelectedProjectId: projectId });
+  },
+
+  bcfCreateProject: async (data: CreateProjectRequest) => {
+    const apiConfig = getApiConfig(get());
+    if (!apiConfig) return null;
+
+    try {
+      const api = createBcfPlatformApi(apiConfig);
+      const project = await api.createProject(data);
+      // Add to list and select it
+      set((s) => ({
+        bcfProjects: [...s.bcfProjects, project],
+        bcfSelectedProjectId: project.project_id,
+        bcfError: null,
+      }));
+      return project;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Onbekende fout";
+      set({ bcfError: `Project aanmaken mislukt: ${message}` });
+      return null;
+    }
+  },
+
+  // ── Push ───────────────────────────────────────────────
+  bcfPushProgress: null,
+  bcfPushResult: null,
+
+  bcfPushIssues: async (issueIds?: string[]) => {
+    const { bcfSelectedProjectId, bcfIssues } = get();
+    const apiConfig = getApiConfig(get());
+    if (!apiConfig || !bcfSelectedProjectId) return;
+
+    const toPush = issueIds
+      ? bcfIssues.filter((i) => issueIds.includes(i.id))
+      : bcfIssues.filter((i) => i.pushState === "queued");
+
+    if (toPush.length === 0) return;
+
+    const api = createBcfPlatformApi(apiConfig);
+
+    set({
+      bcfPhase: "pushing",
+      bcfPushProgress: {
+        total: toPush.length,
+        completed: 0,
+        failed: 0,
+        currentTopic: toPush[0]?.title ?? null,
+      },
+    });
+
+    const errors: string[] = [];
+    let completed = 0;
+    let failed = 0;
+
+    for (const issue of toPush) {
+      // Mark individual issue as pushing
+      set((s) => ({
+        bcfIssues: s.bcfIssues.map((i) =>
+          i.id === issue.id ? { ...i, pushState: "pushing" as const } : i,
+        ),
+        bcfPushProgress: {
+          total: toPush.length,
+          completed,
+          failed,
+          currentTopic: issue.title,
+        },
+      }));
+
+      try {
+        // 1. Create topic
+        const topic = await api.createTopic(
+          bcfSelectedProjectId,
+          issue.mapping.topic,
+        );
+
+        // 2. Create viewpoint with component selection
+        if (issue.mapping.viewpoint.components?.selection?.length) {
+          await api.createViewpoint(
+            bcfSelectedProjectId,
+            topic.guid,
+            issue.mapping.viewpoint,
+          );
+        }
+
+        // 3. Create comment
+        await api.createComment(
+          bcfSelectedProjectId,
+          topic.guid,
+          issue.mapping.comment,
+        );
+
+        completed++;
+
+        // Mark issue as pushed
+        set((s) => ({
+          bcfIssues: s.bcfIssues.map((i) =>
+            i.id === issue.id
+              ? { ...i, pushState: "pushed" as const, remoteTopicGuid: topic.guid }
+              : i,
+          ),
+        }));
+      } catch (err) {
+        failed++;
+        const message = err instanceof Error ? err.message : "Onbekende fout";
+        errors.push(`"${issue.title}": ${message}`);
+
+        // Mark issue as failed
+        set((s) => ({
+          bcfIssues: s.bcfIssues.map((i) =>
+            i.id === issue.id
+              ? { ...i, pushState: "failed" as const, pushError: message }
+              : i,
+          ),
+        }));
+      }
+    }
+
+    set({
+      bcfPhase: "done",
+      bcfPushProgress: {
+        total: toPush.length,
+        completed,
+        failed,
+        currentTopic: null,
+      },
+      bcfPushResult: {
+        projectId: bcfSelectedProjectId,
+        topicsCreated: completed,
+        topicsFailed: failed,
+        errors,
+      },
+    });
+  },
+
+  bcfResetPush: () => {
+    set({
+      bcfPhase: "connected",
+      bcfPushProgress: null,
+      bcfPushResult: null,
+      bcfError: null,
+    });
+  },
+
+  // ── Local export ───────────────────────────────────────
+  bcfDownloadZip: async (issueIds?: string[]) => {
     const { bcfIssues } = get();
-    return {
-      open: bcfIssues.filter((i) => i.status === "Open").length,
-      inProgress: bcfIssues.filter((i) => i.status === "In Progress").length,
-      closed: bcfIssues.filter((i) => i.status === "Closed").length,
-      total: bcfIssues.length,
-    };
-  },
+    const toExport = issueIds
+      ? bcfIssues.filter((i) => issueIds.includes(i.id))
+      : bcfIssues;
 
-  clearAllBcfIssues: () => {
-    set({ bcfIssues: [], activeBcfIssueId: null });
-  },
+    if (toExport.length === 0) return;
 
-  // ─── Platform Sync ──────────────────────────────────────────────
-
-  setBcfPlatformProjectId: (id: string | null) => {
-    set({ bcfPlatformProjectId: id });
-  },
-
-  setBcfSyncStatus: (status: BcfSyncStatus) => {
-    set({ bcfSyncStatus: status });
-  },
-
-  setBcfSyncProgress: (progress: string | null) => {
-    set({ bcfSyncProgress: progress });
+    try {
+      const blob = await generateBcfZip(toExport);
+      const timestamp = new Date().toISOString().slice(0, 10);
+      downloadBlob(blob, `bim-validator-${timestamp}.bcf`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Onbekende fout";
+      set({ bcfError: `BCF export mislukt: ${message}` });
+    }
   },
 });

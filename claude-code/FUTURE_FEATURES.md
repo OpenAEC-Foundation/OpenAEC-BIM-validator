@@ -32,11 +32,12 @@
 - Tijdlijn slider
 - Animatie van bouwvolgorde
 
-### Desktop App
-- Electron wrapper
+### Desktop App (Tauri)
+- Tauri app met gedeelde TypeScript codebase
 - Lokale verwerking (geen upload)
 - Grotere bestanden (>1GB)
 - Offline gebruik
+- Zelfde BCF Platform integratie als web-app
 
 ### Multi-Language
 - Nederlands (default)
@@ -58,6 +59,7 @@
   - ISO 19650 compliance
 
 ### Integration Plugins
+- Revit BCF plugin — download issues vanuit BCF Platform
 - Revit add-in voor direct valideren
 - ArchiCAD add-on
 - BIMcollab Zoom plugin
@@ -79,7 +81,7 @@
 | Clash Detection | High | High | P2 |
 | Measurement | Medium | Low | P1 |
 | Smart Views | Medium | Medium | P1 |
-| Desktop App | Medium | Medium | P2 |
+| Tauri Desktop App | Medium | Medium | P2 |
 | Template Library | High | Low | P1 |
 | PDF Reports | Medium | Low | P1 |
 

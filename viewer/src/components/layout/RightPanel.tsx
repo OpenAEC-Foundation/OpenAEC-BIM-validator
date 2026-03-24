@@ -19,6 +19,7 @@ const TABS: { id: RightPanelTab; label: string }[] = [
 export function RightPanel() {
   const activeTab = useStore((s) => s.activeRightTab);
   const setActiveTab = useStore((s) => s.setActiveRightTab);
+  const bcfIssueCount = useStore((s) => s.bcfIssues.length);
 
   return (
     <div className="panel">
@@ -34,6 +35,9 @@ export function RightPanel() {
             onClick={() => setActiveTab(tab.id)}
           >
             {tab.label}
+            {tab.id === "bcf" && bcfIssueCount > 0 && (
+              <span className="tab-bar__badge">{bcfIssueCount}</span>
+            )}
           </button>
         ))}
       </div>

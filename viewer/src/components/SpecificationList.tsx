@@ -22,8 +22,10 @@ export interface SpecificationListProps {
   onElementSelect?: (globalId: string) => void;
   /** Callback to create a BCF issue from a failed specification */
   onCreateBcfFromSpec?: (spec: SpecificationResult) => void;
-  /** Callback to create a BCF issue from a failed element */
-  onCreateBcfFromElement?: (element: ElementResult, specName: string) => void;
+  /** Callback to create a BCF issue from a failed requirement */
+  onCreateBcfFromRequirement?: (spec: SpecificationResult, req: RequirementResult) => void;
+  /** Callback to create a BCF issue from a single failed element */
+  onCreateBcfFromElement?: (spec: SpecificationResult, req: RequirementResult, el: ElementResult) => void;
 }
 
 /** Props for a single specification item */
@@ -34,24 +36,25 @@ interface SpecificationItemProps {
   initiallyExpanded?: boolean;
   /** Callback when an element is clicked */
   onElementSelect?: (globalId: string) => void;
-  /** Callback to create BCF from this specification */
+  /** BCF callbacks */
   onCreateBcfFromSpec?: (spec: SpecificationResult) => void;
-  /** Callback to create BCF from a failed element */
-  onCreateBcfFromElement?: (element: ElementResult, specName: string) => void;
+  onCreateBcfFromRequirement?: (spec: SpecificationResult, req: RequirementResult) => void;
+  onCreateBcfFromElement?: (spec: SpecificationResult, req: RequirementResult, el: ElementResult) => void;
 }
 
 /** Props for a single requirement item */
 interface RequirementItemProps {
   /** The requirement result data */
   requirement: RequirementResult;
+  /** Parent specification */
+  specification: SpecificationResult;
   /** Index for unique key generation */
   index: number;
-  /** Specification name for BCF context */
-  specName: string;
   /** Callback when an element is clicked */
   onElementSelect?: (globalId: string) => void;
-  /** Callback to create BCF from a failed element */
-  onCreateBcfFromElement?: (element: ElementResult, specName: string) => void;
+  /** BCF callbacks */
+  onCreateBcfFromRequirement?: (spec: SpecificationResult, req: RequirementResult) => void;
+  onCreateBcfFromElement?: (spec: SpecificationResult, req: RequirementResult, el: ElementResult) => void;
 }
 
 /** Maximum elements to show before "Show more" */
@@ -107,19 +110,17 @@ function formatGlobalId(globalId: string | null): string {
 /** Props for a single element item */
 interface ElementItemProps {
   element: ElementResult;
-  specName: string;
   onSelect?: (globalId: string) => void;
-  onCreateBcf?: (element: ElementResult, specName: string) => void;
+  onCreateBcf?: (el: ElementResult) => void;
 }
 
 /**
  * ElementItem component for displaying a single element.
  * Clickable when onSelect is provided and the element has a GlobalId.
  */
-function ElementItem({ element, specName, onSelect, onCreateBcf }: ElementItemProps) {
+function ElementItem({ element, onSelect, onCreateBcf }: ElementItemProps) {
   const isPassed = element.status === 'pass';
   const isClickable = !!onSelect && !!element.global_id;
-  const canCreateBcf = !isPassed && !!onCreateBcf && !!element.global_id;
 
   const handleClick = () => {
     if (isClickable && element.global_id) {
@@ -127,11 +128,9 @@ function ElementItem({ element, specName, onSelect, onCreateBcf }: ElementItemPr
     }
   };
 
-  const handleBcfClick = (e: React.MouseEvent) => {
+  const handleBcf = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (canCreateBcf) {
-      onCreateBcf(element, specName);
-    }
+    onCreateBcf?.(element);
   };
 
   return (
@@ -152,12 +151,13 @@ function ElementItem({ element, specName, onSelect, onCreateBcf }: ElementItemPr
         <span className="element-global-id" title={element.global_id || 'No GlobalId'}>
           ({formatGlobalId(element.global_id)})
         </span>
-        {canCreateBcf && (
+        {!isPassed && onCreateBcf && (
           <button
             type="button"
-            className="element-bcf-btn"
-            onClick={handleBcfClick}
-            title="BCF issue aanmaken"
+            className="bcf-action-btn"
+            onClick={handleBcf}
+            title="Maak BCF issue van dit element"
+            aria-label="Maak BCF issue"
           >
             +BCF
           </button>
@@ -179,7 +179,7 @@ function ElementItem({ element, specName, onSelect, onCreateBcf }: ElementItemPr
 /**
  * RequirementItem component for displaying a single requirement
  */
-function RequirementItem({ requirement, index, specName, onElementSelect, onCreateBcfFromElement }: RequirementItemProps) {
+function RequirementItem({ requirement, specification, index, onElementSelect, onCreateBcfFromRequirement, onCreateBcfFromElement }: RequirementItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAllElements, setShowAllElements] = useState(false);
 
@@ -204,6 +204,11 @@ function RequirementItem({ requirement, index, specName, onElementSelect, onCrea
     setShowAllElements(true);
   }, []);
 
+  const handleBcfReq = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onCreateBcfFromRequirement?.(specification, requirement);
+  }, [specification, requirement, onCreateBcfFromRequirement]);
+
   return (
     <div className={`requirement-item ${isPassed ? 'requirement-item--pass' : 'requirement-item--fail'}`}>
       <button
@@ -226,6 +231,17 @@ function RequirementItem({ requirement, index, specName, onElementSelect, onCrea
           <span className="requirement-failed-count" aria-label={`${requirement.failed_elements} failed elements`}>
             [{requirement.failed_elements}]
           </span>
+        )}
+        {!isPassed && onCreateBcfFromRequirement && (
+          <button
+            type="button"
+            className="bcf-action-btn"
+            onClick={handleBcfReq}
+            title="Maak BCF issue van deze requirement"
+            aria-label="Maak BCF issue"
+          >
+            +BCF
+          </button>
         )}
       </button>
 
@@ -252,9 +268,12 @@ function RequirementItem({ requirement, index, specName, onElementSelect, onCrea
                 <ElementItem
                   key={element.global_id || `element-${idx}`}
                   element={element}
-                  specName={specName}
                   onSelect={onElementSelect}
-                  onCreateBcf={onCreateBcfFromElement}
+                  onCreateBcf={
+                    onCreateBcfFromElement
+                      ? (el) => onCreateBcfFromElement(specification, requirement, el)
+                      : undefined
+                  }
                 />
               ))}
 
@@ -278,24 +297,21 @@ function RequirementItem({ requirement, index, specName, onElementSelect, onCrea
 /**
  * SpecificationItem component for displaying a single specification
  */
-function SpecificationItem({ specification, initiallyExpanded = false, onElementSelect, onCreateBcfFromSpec, onCreateBcfFromElement }: SpecificationItemProps) {
+function SpecificationItem({ specification, initiallyExpanded = false, onElementSelect, onCreateBcfFromSpec, onCreateBcfFromRequirement, onCreateBcfFromElement }: SpecificationItemProps) {
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
 
   const isPassed = specification.status === 'pass';
   const severityInfo = getSeverityInfo(specification.severity);
   const hasFailedRequirements = specification.failed_requirements > 0;
-  const canCreateBcf = !isPassed && !!onCreateBcfFromSpec;
 
   const toggleExpanded = useCallback(() => {
     setIsExpanded(prev => !prev);
   }, []);
 
-  const handleBcfClick = useCallback((e: React.MouseEvent) => {
+  const handleBcfSpec = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    if (canCreateBcf) {
-      onCreateBcfFromSpec(specification);
-    }
-  }, [canCreateBcf, onCreateBcfFromSpec, specification]);
+    onCreateBcfFromSpec?.(specification);
+  }, [specification, onCreateBcfFromSpec]);
 
   return (
     <div className={`specification-item ${isPassed ? 'specification-item--pass' : 'specification-item--fail'}`}>
@@ -318,20 +334,21 @@ function SpecificationItem({ specification, initiallyExpanded = false, onElement
         <span className="specification-name" title={specification.specification_name}>
           {specification.specification_name}
         </span>
-        {canCreateBcf && (
-          <button
-            type="button"
-            className="specification-bcf-btn"
-            onClick={handleBcfClick}
-            title="BCF issue aanmaken voor deze specificatie"
-          >
-            +BCF
-          </button>
-        )}
         {hasFailedRequirements && (
           <span className="specification-failed-badge" aria-label={`${specification.failed_requirements} failed requirements`}>
             [{specification.failed_requirements}]
           </span>
+        )}
+        {!isPassed && onCreateBcfFromSpec && (
+          <button
+            type="button"
+            className="bcf-action-btn"
+            onClick={handleBcfSpec}
+            title="Maak BCF issue van deze specificatie"
+            aria-label="Maak BCF issue"
+          >
+            +BCF
+          </button>
         )}
       </button>
 
@@ -357,9 +374,10 @@ function SpecificationItem({ specification, initiallyExpanded = false, onElement
               <RequirementItem
                 key={`${specification.specification_name}-req-${idx}`}
                 requirement={requirement}
+                specification={specification}
                 index={idx}
-                specName={specification.specification_name}
                 onElementSelect={onElementSelect}
+                onCreateBcfFromRequirement={onCreateBcfFromRequirement}
                 onCreateBcfFromElement={onCreateBcfFromElement}
               />
             ))}
@@ -373,7 +391,7 @@ function SpecificationItem({ specification, initiallyExpanded = false, onElement
 /**
  * SpecificationList component displaying all validation specifications
  */
-export function SpecificationList({ specifications, autoExpandFailed = true, onElementSelect, onCreateBcfFromSpec, onCreateBcfFromElement }: SpecificationListProps) {
+export function SpecificationList({ specifications, autoExpandFailed = true, onElementSelect, onCreateBcfFromSpec, onCreateBcfFromRequirement, onCreateBcfFromElement }: SpecificationListProps) {
   if (specifications.length === 0) {
     return (
       <div className="specification-list specification-list--empty">
@@ -399,6 +417,7 @@ export function SpecificationList({ specifications, autoExpandFailed = true, onE
           initiallyExpanded={autoExpandFailed && spec.status === 'fail'}
           onElementSelect={onElementSelect}
           onCreateBcfFromSpec={onCreateBcfFromSpec}
+          onCreateBcfFromRequirement={onCreateBcfFromRequirement}
           onCreateBcfFromElement={onCreateBcfFromElement}
         />
       ))}
@@ -753,37 +772,6 @@ const specificationListStyles = `
     outline-offset: -2px;
   }
 
-  /* BCF buttons */
-  .specification-bcf-btn,
-  .element-bcf-btn {
-    font-size: 0.6875rem;
-    padding: 1px 6px;
-    border-radius: 3px;
-    border: 1px solid var(--magic-violet, #350E35);
-    background: transparent;
-    color: var(--magic-violet, #350E35);
-    cursor: pointer;
-    font-weight: 600;
-    font-family: inherit;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition: all var(--transition-fast);
-  }
-
-  .specification-bcf-btn:hover,
-  .element-bcf-btn:hover {
-    background-color: var(--magic-violet, #350E35);
-    color: #fff;
-  }
-
-  .element-bcf-btn {
-    opacity: 0;
-  }
-
-  .element-item--fail:hover .element-bcf-btn {
-    opacity: 1;
-  }
-
   .show-more-btn {
     display: block;
     width: 100%;
@@ -806,6 +794,31 @@ const specificationListStyles = `
   .show-more-btn:focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
+  }
+
+  /* BCF action button */
+  .bcf-action-btn {
+    padding: 2px var(--spacing-xs);
+    background-color: rgba(68, 182, 168, 0.15);
+    color: var(--color-primary);
+    border: 1px solid rgba(68, 182, 168, 0.3);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all var(--transition-fast);
+  }
+
+  .bcf-action-btn:hover {
+    background-color: rgba(68, 182, 168, 0.3);
+    border-color: var(--color-primary);
+  }
+
+  .bcf-action-btn:active {
+    background-color: var(--color-primary);
+    color: white;
   }
 
   /* Responsive adjustments */

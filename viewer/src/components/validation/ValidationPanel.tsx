@@ -6,54 +6,25 @@
  * specifications highlights the affected elements in the 3D viewer.
  */
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 
-import { downloadBcf } from "../../api/client";
 import { useStore } from "../../store";
-import type { ViewpointCaptureCallback } from "../../store/slices/bcfSlice";
-import type { BcfCameraState } from "../../types/bcf";
-import type { SpecificationResult, ElementResult } from "../../types/validation";
 import type { IdsSelection } from "../IdsSelector";
-import { showToast } from "../Toast";
 import IdsSelector from "../IdsSelector";
 import ValidationProgress from "../ValidationProgress";
 import ErrorDisplay from "../ErrorDisplay";
 import ResultsSummary from "../ResultsSummary";
 import SpecificationList from "../SpecificationList";
+import type { SpecificationResult, RequirementResult, ElementResult } from "../../types/validation";
+import { createBcfIssue } from "../../types/bcfIssue";
+import {
+  mapSpecToTopic,
+  mapRequirementToTopic,
+  mapElementToTopic,
+  mapValidationToTopics,
+} from "../../lib/validationToBcf";
 
 import "./ValidationPanel.css";
-
-/**
- * Request a viewpoint capture from CenterPanel via custom event.
- * Returns a Promise that resolves with the capture result.
- */
-function requestViewpointCapture(
-  globalIds: string[]
-): Promise<{ screenshot: string; camera: BcfCameraState } | null> {
-  return new Promise((resolve) => {
-    const requestId = crypto.randomUUID();
-
-    const handleResponse = (e: Event) => {
-      const detail = (
-        e as CustomEvent<{
-          requestId: string;
-          result: { screenshot: string; camera: BcfCameraState } | null;
-        }>
-      ).detail;
-      if (detail.requestId === requestId) {
-        window.removeEventListener("capture-viewpoint-response", handleResponse);
-        resolve(detail.result);
-      }
-    };
-
-    window.addEventListener("capture-viewpoint-response", handleResponse);
-    window.dispatchEvent(
-      new CustomEvent("capture-viewpoint", {
-        detail: { globalIds, requestId },
-      })
-    );
-  });
-}
 
 export function ValidationPanel() {
   const project = useStore((s) => s.project);
@@ -73,16 +44,19 @@ export function ValidationPanel() {
   const retryValidation = useStore((s) => s.retryValidation);
   const dismissValidationError = useStore((s) => s.dismissValidationError);
 
-  // BCF actions
-  const generateBcfFromValidation = useStore((s) => s.generateBcfFromValidation);
-  const createBcfFromSpecification = useStore((s) => s.createBcfFromSpecification);
-  const createBcfFromElement = useStore((s) => s.createBcfFromElement);
-  const setActiveRightTab = useStore((s) => s.setActiveRightTab);
-
   // Highlight + selection actions
   const selectElement = useStore((s) => s.selectElement);
   const setHighlightGroup = useStore((s) => s.setHighlightGroup);
   const clearHighlights = useStore((s) => s.clearHighlights);
+  const setActiveRightTab = useStore((s) => s.setActiveRightTab);
+
+  // BCF actions
+  const bcfAddIssue = useStore((s) => s.bcfAddIssue);
+  const bcfAddIssues = useStore((s) => s.bcfAddIssues);
+
+  // Inline feedback for BCF actions
+  const [bcfFeedback, setBcfFeedback] = useState<string | null>(null);
+
   /** Get the first loaded IFC file from the project */
   const loadedModel = useMemo(() => {
     return project?.models.find((m) => m.loadState === "loaded");
@@ -123,25 +97,6 @@ export function ValidationPanel() {
     URL.revokeObjectURL(url);
   }, [validationResult]);
 
-  const jobId = useStore((s) => s.jobId);
-
-  const handleDownloadBcf = useCallback(async () => {
-    if (!jobId) return;
-    try {
-      const blob = await downloadBcf(jobId);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `validation-${jobId.slice(0, 8)}.bcfzip`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("BCF download failed:", err);
-    }
-  }, [jobId]);
-
   /** Highlight failed elements when clicking a specification */
   const handleHighlightFailures = useCallback(() => {
     if (!validationResult) return;
@@ -172,35 +127,6 @@ export function ValidationPanel() {
     clearHighlights();
   }, [clearHighlights]);
 
-  /** Generate BCF issues from all failed validation specs */
-  const handleGenerateBcf = useCallback(async () => {
-    if (!validationResult) return;
-    const captureViewpoint: ViewpointCaptureCallback = requestViewpointCapture;
-    await generateBcfFromValidation(validationResult, captureViewpoint);
-    setActiveRightTab("bcf");
-    showToast("BCF issues gegenereerd vanuit validatie");
-  }, [validationResult, generateBcfFromValidation, setActiveRightTab]);
-
-  /** Create BCF issue from a single specification */
-  const handleCreateBcfFromSpec = useCallback(
-    async (spec: SpecificationResult) => {
-      const captureViewpoint: ViewpointCaptureCallback = requestViewpointCapture;
-      await createBcfFromSpecification(spec, captureViewpoint);
-      showToast(`BCF issue aangemaakt: ${spec.specification_name}`);
-    },
-    [createBcfFromSpecification]
-  );
-
-  /** Create BCF issue from a single element */
-  const handleCreateBcfFromElement = useCallback(
-    async (element: ElementResult, specName: string) => {
-      const captureViewpoint: ViewpointCaptureCallback = requestViewpointCapture;
-      await createBcfFromElement(element, specName, captureViewpoint);
-      showToast("BCF issue aangemaakt voor element");
-    },
-    [createBcfFromElement]
-  );
-
   /** Click on an element in the results → select, highlight, zoom, switch tab */
   const handleElementSelect = useCallback(
     (globalId: string) => {
@@ -210,13 +136,74 @@ export function ValidationPanel() {
         color: "#44B6A8",
         globalIds: [globalId],
       });
-
       window.dispatchEvent(
         new CustomEvent("zoom-to-element", { detail: { globalId } })
       );
     },
-    [selectElement, setHighlightGroup]
+    [selectElement, setHighlightGroup, setActiveRightTab]
   );
+
+  // ── BCF issue creation handlers ───────────────────────
+  const showBcfFeedback = useCallback((msg: string) => {
+    setBcfFeedback(msg);
+    setTimeout(() => setBcfFeedback(null), 2500);
+  }, []);
+
+  const ifcFileName = validationResult?.ifc_file_name ?? "";
+  const idsFileName = validationResult?.ids_file_name ?? "";
+
+  const handleCreateBcfFromSpec = useCallback(
+    (spec: SpecificationResult) => {
+      const mapping = mapSpecToTopic(spec, ifcFileName, idsFileName);
+      const issue = createBcfIssue(spec.specification_name, { specificationName: spec.specification_name }, mapping);
+      bcfAddIssue(issue);
+      showBcfFeedback(`BCF issue aangemaakt: ${spec.specification_name}`);
+    },
+    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback],
+  );
+
+  const handleCreateBcfFromRequirement = useCallback(
+    (spec: SpecificationResult, req: RequirementResult) => {
+      const mapping = mapRequirementToTopic(spec, req, ifcFileName, idsFileName);
+      const title = `${spec.specification_name} — ${req.requirement_description}`;
+      const issue = createBcfIssue(title, {
+        specificationName: spec.specification_name,
+        requirementDescription: req.requirement_description,
+      }, mapping);
+      bcfAddIssue(issue);
+      showBcfFeedback(`BCF issue aangemaakt: ${req.requirement_description}`);
+    },
+    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback],
+  );
+
+  const handleCreateBcfFromElement = useCallback(
+    (spec: SpecificationResult, req: RequirementResult, el: ElementResult) => {
+      const mapping = mapElementToTopic(spec, req, el, ifcFileName, idsFileName);
+      const elName = el.element_name ?? el.element_type;
+      const title = `${el.element_type} "${elName}"`;
+      const issue = createBcfIssue(title, {
+        specificationName: spec.specification_name,
+        requirementDescription: req.requirement_description,
+        elementGlobalId: el.global_id ?? undefined,
+      }, mapping);
+      bcfAddIssue(issue);
+      showBcfFeedback(`BCF issue aangemaakt: ${elName}`);
+    },
+    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback],
+  );
+
+  const handleCreateBcfBulk = useCallback(() => {
+    if (!validationResult) return;
+    const mappings = mapValidationToTopics(validationResult);
+    const issues = mappings.map((mapping, idx) => {
+      const spec = validationResult.specifications.filter((s) => s.status === "fail")[idx];
+      const specName = spec?.specification_name ?? `Issue ${idx + 1}`;
+      return createBcfIssue(specName, { specificationName: specName }, mapping);
+    });
+    bcfAddIssues(issues);
+    showBcfFeedback(`${issues.length} BCF issues aangemaakt`);
+    setActiveRightTab("bcf");
+  }, [validationResult, bcfAddIssues, showBcfFeedback, setActiveRightTab]);
 
   const inputsDisabled = phase === "submitting" || phase === "polling";
   const canSubmit =
@@ -240,15 +227,17 @@ export function ValidationPanel() {
 
   return (
     <div className="validation-panel">
-      {/* IDS Selection + Submit in one block */}
+      {/* IDS Selection */}
       <div className="validation-panel__section">
+        <h3 className="validation-panel__heading">IDS Standaard</h3>
         <IdsSelector
           onSelectionChange={handleIdsChange}
           disabled={inputsDisabled}
         />
       </div>
 
-      <div className="validation-panel__actions">
+      {/* Submit button */}
+      <div className="validation-panel__section validation-panel__actions">
         <button
           type="button"
           className="validation-panel__btn validation-panel__btn--primary"
@@ -258,6 +247,7 @@ export function ValidationPanel() {
         >
           {phase === "submitting" ? "Bezig..." : "Valideer"}
         </button>
+
         {phase === "completed" && (
           <button
             type="button"
@@ -311,10 +301,9 @@ export function ValidationPanel() {
           <ResultsSummary
             result={validationResult}
             onDownloadJson={handleDownloadJson}
-            onDownloadBcf={jobId ? handleDownloadBcf : undefined}
           />
 
-          {/* Highlight controls */}
+          {/* Highlight controls + BCF bulk */}
           <div className="validation-panel__highlight-bar">
             <button
               type="button"
@@ -326,21 +315,29 @@ export function ValidationPanel() {
             </button>
             <button
               type="button"
-              className="validation-panel__btn validation-panel__btn--bcf"
-              onClick={handleGenerateBcf}
-              title="Genereer BCF issues vanuit validatie"
-            >
-              BCF issues genereren
-            </button>
-            <button
-              type="button"
               className="validation-panel__btn validation-panel__btn--secondary"
               onClick={handleClearHighlights}
               title="Verwijder highlights"
             >
               Wis highlights
             </button>
+            {validationResult.failed_specifications > 0 && (
+              <button
+                type="button"
+                className="validation-panel__btn validation-panel__btn--bcf"
+                onClick={handleCreateBcfBulk}
+                title="Maak BCF issues van alle failures"
+              >
+                Alle failures → BCF
+              </button>
+            )}
           </div>
+
+          {bcfFeedback && (
+            <div className="validation-panel__bcf-feedback" role="status">
+              {bcfFeedback}
+            </div>
+          )}
 
           {validationResult.specifications.length > 0 && (
             <div className="validation-panel__specs">
@@ -350,6 +347,7 @@ export function ValidationPanel() {
                 autoExpandFailed
                 onElementSelect={handleElementSelect}
                 onCreateBcfFromSpec={handleCreateBcfFromSpec}
+                onCreateBcfFromRequirement={handleCreateBcfFromRequirement}
                 onCreateBcfFromElement={handleCreateBcfFromElement}
               />
             </div>

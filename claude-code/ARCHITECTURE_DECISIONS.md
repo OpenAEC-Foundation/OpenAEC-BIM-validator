@@ -102,22 +102,54 @@ Need affordable, high-memory VPS for IFC processing.
 
 ---
 
-## ADR-006: BCF 2.1 for Issue Export
+## ADR-006: BCF 2.1 via OpenAEC BCF Platform
 
-**Status:** Accepted  
+**Status:** Accepted (updated 2026-03-24)
 **Date:** 2025-01-01
 
 ### Context
 Validation failures need to be shareable with authoring tools.
+We have built a separate BCF Platform (openaec-bcf-platform) with full BCF 2.1 API.
 
 ### Decision
-Export as BCF 2.1 format.
+Push validation results as BCF topics to OpenAEC BCF Platform via REST API.
+Additionally support local BCF ZIP download as fallback.
 
 ### Consequences
-- Industry standard
-- Import in BIMcollab, Solibri, Navisworks, etc.
-- Includes viewpoints with camera position
-- Element references via GlobalId
+- Issues stored centrally per project on platform
+- Status tracking, overzichten, en dashboards op platform
+- Revit users can download via BCF plugin
+- API key auth per project
+- Platform must be reachable from validator frontend
+- No Python BCF generator needed — all in TypeScript
+
+---
+
+## ADR-008: Geen Python voor BCF — TypeScript nu, Rust crate later
+
+**Status:** Accepted
+**Date:** 2026-03-24
+
+### Context
+BCF integratie moet herbruikbaar zijn buiten de web-app:
+- Tauri desktop app
+- Solibri plugin (BCF upload)
+- Revit plugin (BCF download/upload)
+- CLI tools
+
+Python is niet herbruikbaar in deze contexten.
+
+### Decision
+- **Fase 4 (nu):** Lichtgewicht TypeScript client in validator frontend
+- **Later:** Gedeelde Rust `bcf-client` crate die compileert naar native + WASM
+- Python backend doet alleen IFC parsing + IDS validatie
+
+### Consequences
+- TypeScript client is snel te bouwen, voldoende voor web-app
+- Later vervangbaar door WASM-compiled Rust crate zonder API-wijzigingen
+- Rust crate herbruikbaar in Tauri, Solibri plugin, Revit plugin
+- Geen Python BCF dependencies
+- Frontend praat direct met BCF Platform API (twee backends)
 
 ---
 
