@@ -1,10 +1,17 @@
 import { create } from "zustand";
+import {
+  isOidcConfigured,
+  initOidc,
+  signinRedirect,
+  processOidcCallback,
+  getSignedInUser,
+  signout,
+} from "../lib/oidcManager";
 
 export interface AuthUser {
   username: string;
   display_name: string;
-  role: string;
-  tenant?: string;
+  email: string;
 }
 
 interface AuthState {
@@ -16,85 +23,77 @@ interface AuthState {
   logout: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+let oidcInitialized = false;
+
+function ensureOidcInit() {
+  if (!oidcInitialized && isOidcConfigured()) {
+    initOidc();
+    oidcInitialized = true;
+  }
+}
+
+export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  oidcEnabled: false,
+  oidcEnabled: isOidcConfigured(),
   loading: false,
 
   checkAuth: async () => {
+    if (!isOidcConfigured()) return;
+
     set({ loading: true });
     try {
-      const res = await fetch("/api/auth/me", { credentials: "include" });
-      if (res.ok) {
-        const user: AuthUser = await res.json();
-        set({ user, loading: false });
-      } else {
-        set({ user: null, loading: false });
+      ensureOidcInit();
+
+      // Check for OIDC callback (code in URL after redirect from Authentik)
+      const callbackUser = await processOidcCallback();
+      if (callbackUser) {
+        set({
+          user: {
+            username: callbackUser.name,
+            display_name: callbackUser.name,
+            email: callbackUser.email,
+          },
+          loading: false,
+        });
+        return;
       }
+
+      // Check for existing session
+      const existing = await getSignedInUser();
+      if (existing) {
+        set({
+          user: {
+            username: existing.name,
+            display_name: existing.name,
+            email: existing.email,
+          },
+          loading: false,
+        });
+        return;
+      }
+
+      set({ user: null, loading: false });
     } catch {
       set({ user: null, loading: false });
-    }
-
-    // Check OIDC availability
-    try {
-      const { getOidcConfig } = await import("../config/oidc");
-      const config = await getOidcConfig();
-      set({ oidcEnabled: config.enabled });
-    } catch {
-      set({ oidcEnabled: false });
     }
   },
 
   login: async () => {
     try {
-      const { getOidcConfig } = await import("../config/oidc");
-      const config = await getOidcConfig();
-      if (!config.enabled || !config.authorizationEndpoint) return;
-
-      // PKCE code verifier
-      const codeVerifier = crypto.getRandomValues(new Uint8Array(32));
-      const encoded = btoa(String.fromCharCode(...codeVerifier))
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=+$/, "");
-      sessionStorage.setItem("oidc_code_verifier", encoded);
-
-      const hashBuffer = await crypto.subtle.digest(
-        "SHA-256",
-        new TextEncoder().encode(encoded)
-      );
-      const codeChallenge = btoa(String.fromCharCode(...new Uint8Array(hashBuffer)))
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=+$/, "");
-
-      const params = new URLSearchParams({
-        response_type: "code",
-        client_id: config.clientId,
-        redirect_uri: config.redirectUri,
-        scope: config.scopes,
-        code_challenge: codeChallenge,
-        code_challenge_method: "S256",
-      });
-
-      window.location.href = `${config.authorizationEndpoint}?${params}`;
-    } catch {
-      // OIDC not available
+      ensureOidcInit();
+      await signinRedirect();
+      // Browser redirects away — no code after this runs
+    } catch (err) {
+      console.error("OIDC login failed:", err);
     }
   },
 
   logout: async () => {
     try {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
+      await signout();
     } catch {
-      // Server not available
+      // signout may fail if not initialized
     }
     set({ user: null });
-    const { loading: _l, ...state } = get();
-    void _l;
-    void state;
   },
 }));
