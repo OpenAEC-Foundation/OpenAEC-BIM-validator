@@ -74,6 +74,7 @@ function markupXml(
   const t = issue.mapping.topic;
   const c = issue.mapping.comment;
   const now = new Date().toISOString();
+  const hasSnapshot = !!issue.screenshot;
 
   const labelsXml = (t.labels ?? [])
     .map((l) => `      <Label>${esc(l)}</Label>`)
@@ -104,6 +105,7 @@ function markupXml(
     `  <Viewpoints>`,
     `    <ViewPoint Guid="${viewpointGuid}">`,
     `      <Viewpoint>viewpoint.bcfv</Viewpoint>`,
+    hasSnapshot ? `      <Snapshot>snapshot.png</Snapshot>` : "",
     `    </ViewPoint>`,
     `  </Viewpoints>`,
     `</Markup>`,
@@ -165,6 +167,19 @@ function viewpointXml(viewpointGuid: string, issue: BcfIssue): string {
     .join("\n");
 }
 
+// ── Snapshot helpers ───────────────────────────────────────
+
+/** Strip data URL prefix and decode base64 to binary */
+function dataUrlToBytes(dataUrl: string): Uint8Array {
+  const base64 = dataUrl.replace(/^data:[^;]+;base64,/, "");
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
 // ── Public API ─────────────────────────────────────────────
 
 /**
@@ -192,6 +207,11 @@ export async function generateBcfZip(issues: BcfIssue[]): Promise<Blob> {
       markupXml(topicGuid, viewpointGuid, commentGuid, issue),
     );
     folder.file("viewpoint.bcfv", viewpointXml(viewpointGuid, issue));
+
+    // Add screenshot if available
+    if (issue.screenshot) {
+      folder.file("snapshot.png", dataUrlToBytes(issue.screenshot));
+    }
   }
 
   return zip.generateAsync({ type: "blob", mimeType: "application/zip" });

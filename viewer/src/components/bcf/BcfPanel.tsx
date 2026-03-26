@@ -1,28 +1,20 @@
 /**
  * BcfPanel — BCF issue management panel.
  *
- * Three sections:
- * 1. Issue Queue — local list of BCF issues
+ * Two sections:
+ * 1. Issue Queue — local list of BCF issues with thumbnails + expandable detail
  * 2. Local Export — download as BCF ZIP
- * 3. Platform — auth + project selection + push
+ *
+ * Platform auth/push has moved to Backstage + Ribbon.
  */
 
-import { useEffect } from "react";
 import { useStore } from "../../store";
 import { BcfIssueQueue } from "./BcfIssueQueue";
 import { BcfLocalExport } from "./BcfLocalExport";
-import { BcfPlatformSection } from "./BcfPlatformSection";
 import "./BcfPanel.css";
 
 export function BcfPanel() {
-  const bcfInitAuth = useStore((s) => s.bcfInitAuth);
   const issues = useStore((s) => s.bcfIssues);
-
-  // Initialize auth on first mount (restore OIDC session or API key)
-  useEffect(() => {
-    void bcfInitAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <div className="bcf-panel">
@@ -36,10 +28,6 @@ export function BcfPanel() {
           <BcfLocalExport />
         </>
       )}
-
-      {/* Section 3: Platform Push */}
-      <div className="bcf-panel__divider" />
-      <BcfPlatformSection />
     </div>
   );
 }

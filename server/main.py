@@ -998,6 +998,200 @@ async def get_element_properties(model_id: str, global_id: str):
 
 
 # ==========================================================================
+# Cloud storage (Nextcloud) — opt-in via environment variables
+# ==========================================================================
+
+NEXTCLOUD_URL = os.environ.get("NEXTCLOUD_URL", "")
+NEXTCLOUD_SERVICE_USER = os.environ.get("NEXTCLOUD_SERVICE_USER", "")
+NEXTCLOUD_SERVICE_PASS = os.environ.get("NEXTCLOUD_SERVICE_PASS", "")
+CLOUD_ENABLED = bool(NEXTCLOUD_URL and NEXTCLOUD_SERVICE_USER and NEXTCLOUD_SERVICE_PASS)
+
+_nextcloud_client = None
+
+
+def get_nextcloud_client():
+    """Get or create the singleton NextcloudClient.
+
+    Returns the client if cloud storage is configured, otherwise raises 503.
+    """
+    global _nextcloud_client
+    if not CLOUD_ENABLED:
+        raise HTTPException(
+            status_code=503,
+            detail="Cloud storage is not configured",
+        )
+    if _nextcloud_client is None:
+        from server.nextcloud_client import NextcloudClient
+
+        _nextcloud_client = NextcloudClient(
+            base_url=NEXTCLOUD_URL,
+            username=NEXTCLOUD_SERVICE_USER,
+            password=NEXTCLOUD_SERVICE_PASS,
+        )
+    return _nextcloud_client
+
+
+@app.get("/api/cloud/status")
+async def cloud_status():
+    """Check if cloud storage is enabled and reachable."""
+    from server.models.cloud import CloudStatusResponse
+
+    if not CLOUD_ENABLED:
+        return CloudStatusResponse(enabled=False, connected=False)
+
+    client = get_nextcloud_client()
+    try:
+        connected = await client.test_connection()
+    except Exception:
+        connected = False
+
+    return CloudStatusResponse(enabled=True, connected=connected)
+
+
+@app.get("/api/cloud/projects")
+async def cloud_list_projects():
+    """List available project folders in Nextcloud."""
+    from server.models.cloud import CloudProjectItem, CloudProjectsResponse
+
+    client = get_nextcloud_client()
+    try:
+        items = await client.list_projects()
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    return CloudProjectsResponse(
+        projects=[
+            CloudProjectItem(name=item.name, last_modified=item.last_modified)
+            for item in items
+        ]
+    )
+
+
+@app.get("/api/cloud/projects/{project}/files")
+async def cloud_list_files(project: str):
+    """List BCF files in a project's tool subdirectory."""
+    from server.models.cloud import CloudFileItem, CloudFilesResponse
+
+    client = get_nextcloud_client()
+    try:
+        items = await client.list_files(project)
+    except Exception as exc:
+        from server.nextcloud_client import NextcloudError
+
+        if isinstance(exc, NextcloudError) and exc.status_code:
+            raise HTTPException(
+                status_code=exc.status_code, detail=str(exc)
+            ) from exc
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    return CloudFilesResponse(
+        project=project,
+        files=[
+            CloudFileItem(
+                name=item.name,
+                size=item.content_length,
+                last_modified=item.last_modified,
+            )
+            for item in items
+        ],
+    )
+
+
+@app.get("/api/cloud/projects/{project}/files/{filename}")
+async def cloud_download_file(project: str, filename: str):
+    """Download a file from a project's tool subdirectory."""
+    client = get_nextcloud_client()
+    try:
+        content = await client.download_file(project, filename)
+    except Exception as exc:
+        from server.nextcloud_client import NextcloudError
+
+        if isinstance(exc, NextcloudError) and exc.status_code:
+            raise HTTPException(
+                status_code=exc.status_code, detail=str(exc)
+            ) from exc
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    return Response(
+        content=content,
+        media_type="application/octet-stream",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+        },
+    )
+
+
+@app.put("/api/cloud/projects/{project}/files/{filename}")
+async def cloud_upload_file(
+    project: str,
+    filename: str,
+    file: UploadFile = File(...),
+):
+    """Upload a file to a project's tool subdirectory."""
+    from server.models.cloud import CloudUploadResponse
+
+    client = get_nextcloud_client()
+    content = await file.read()
+    try:
+        await client.upload_file(project, filename, content)
+    except Exception as exc:
+        from server.nextcloud_client import NextcloudError
+
+        if isinstance(exc, NextcloudError) and exc.status_code:
+            raise HTTPException(
+                status_code=exc.status_code, detail=str(exc)
+            ) from exc
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    return CloudUploadResponse(success=True, project=project, filename=filename)
+
+
+@app.delete("/api/cloud/projects/{project}/files/{filename}")
+async def cloud_delete_file(project: str, filename: str):
+    """Delete a file from a project's tool subdirectory."""
+    from server.models.cloud import CloudDeleteResponse
+
+    client = get_nextcloud_client()
+    try:
+        await client.delete_file(project, filename)
+    except Exception as exc:
+        from server.nextcloud_client import NextcloudError
+
+        if isinstance(exc, NextcloudError) and exc.status_code:
+            raise HTTPException(
+                status_code=exc.status_code, detail=str(exc)
+            ) from exc
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    return CloudDeleteResponse(success=True, project=project, filename=filename)
+
+
+@app.post("/api/cloud/projects/{project}/save")
+async def cloud_save_bcf(
+    project: str,
+    file: UploadFile = File(...),
+    filename: str = Form("validation.bcf"),
+):
+    """Convenience endpoint: save a BCF file to a project's cloud folder."""
+    from server.models.cloud import CloudUploadResponse
+
+    client = get_nextcloud_client()
+    content = await file.read()
+    try:
+        await client.upload_file(project, filename, content)
+    except Exception as exc:
+        from server.nextcloud_client import NextcloudError
+
+        if isinstance(exc, NextcloudError) and exc.status_code:
+            raise HTTPException(
+                status_code=exc.status_code, detail=str(exc)
+            ) from exc
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    return CloudUploadResponse(success=True, project=project, filename=filename)
+
+
+# ==========================================================================
 # Static file serving — serve built frontend in production
 # ==========================================================================
 

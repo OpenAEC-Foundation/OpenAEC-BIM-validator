@@ -14,7 +14,11 @@
     "reset": "Reset",
     "bcf": "BCF",
     "exportBcf": "Export BCF",
-    "syncPlatform": "Sync"
+    "syncPlatform": "Sync",
+    "pushPlatform": "Push",
+    "bcfLogin": "Inloggen",
+    "cloudSave": "Cloud Opslaan",
+    "cloudOpen": "Cloud Openen"
   },
   "view": {
     "panels": "Panelen",

@@ -29,6 +29,7 @@ import StatusBar from "../chrome/StatusBar";
 import Backstage from "../chrome/backstage/Backstage";
 import SettingsDialog from "../chrome/settings/SettingsDialog";
 import FeedbackDialog from "../feedback/FeedbackDialog";
+import CloudDialog from "../cloud/CloudDialog";
 
 import { LeftPanel } from "./LeftPanel";
 import { CenterPanel } from "./CenterPanel";
@@ -64,11 +65,27 @@ export function AppShell() {
   const setActiveRightTab = useStore((s) => s.setActiveRightTab);
   const submitValidation = useStore((s) => s.submitValidation);
   const validationPhase = useStore((s) => s.validationPhase);
+  const cloudEnabled = useStore((s) => s.cloudEnabled);
+  const cloudCheckStatus = useStore((s) => s.cloudCheckStatus);
+
+  // BCF platform state
+  const bcfPhase = useStore((s) => s.bcfPhase);
+  const bcfIssues = useStore((s) => s.bcfIssues);
+  const bcfSelectedProjectId = useStore((s) => s.bcfSelectedProjectId);
+  const bcfPushIssues = useStore((s) => s.bcfPushIssues);
+  const bcfInitAuth = useStore((s) => s.bcfInitAuth);
+
+  const bcfConnected = bcfPhase === "connected" || bcfPhase === "pushing" || bcfPhase === "done";
+  const bcfHasQueuedIssues = bcfIssues.some((i) => i.pushState === "queued");
 
   // --- Local chrome state ---
   const [backstageOpen, setBackstageOpen] = useState(false);
+  const [backstageInitialPanel, setBackstageInitialPanel] = useState<string | undefined>();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [cloudDialogOpen, setCloudDialogOpen] = useState(false);
+  const [cloudDialogMode, setCloudDialogMode] = useState<"save" | "open">("save");
+  const [cloudBcfBlob, setCloudBcfBlob] = useState<Blob | undefined>();
   const [theme, setTheme] = useState(() => getSetting("theme", "light"));
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -77,6 +94,16 @@ export function AppShell() {
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
+
+  // Check cloud status on mount
+  useEffect(() => {
+    cloudCheckStatus();
+  }, [cloudCheckStatus]);
+
+  // Initialize BCF auth on mount (restore OIDC session or API key)
+  useEffect(() => {
+    void bcfInitAuth();
+  }, [bcfInitAuth]);
 
   // Listen for validation requests from the ValidationPanel
   useEffect(() => {
@@ -146,11 +173,57 @@ export function AppShell() {
     window.dispatchEvent(new CustomEvent("bcf-export-request"));
   }, []);
 
+  const handleCloudSave = useCallback(() => {
+    // Generate BCF blob first, then open cloud dialog in save mode
+    const { bcfIssues } = useStore.getState();
+    if (bcfIssues.length === 0) return;
+
+    import("../../lib/bcfZipGenerator").then(({ generateBcfZip }) => {
+      generateBcfZip(bcfIssues).then((blob) => {
+        const timestamp = new Date().toISOString().slice(0, 10);
+        setCloudBcfBlob(blob);
+        setCloudDialogMode("save");
+        setCloudDialogOpen(true);
+        // Update suggested filename based on project
+        const projectName = project?.name ?? "validation";
+        void projectName;
+        void timestamp;
+      }).catch(console.error);
+    }).catch(console.error);
+  }, [project]);
+
+  const handleBcfLogin = useCallback(() => {
+    setBackstageInitialPanel("bcf-platform");
+    setBackstageOpen(true);
+  }, []);
+
+  const handleBcfPush = useCallback(() => {
+    if (!bcfConnected || !bcfSelectedProjectId || !bcfHasQueuedIssues) return;
+    void bcfPushIssues();
+  }, [bcfConnected, bcfSelectedProjectId, bcfHasQueuedIssues, bcfPushIssues]);
+
+  const handleCloudOpen = useCallback(() => {
+    setCloudDialogMode("open");
+    setCloudBcfBlob(undefined);
+    setCloudDialogOpen(true);
+  }, []);
+
+  const handleCloudFileOpened = useCallback((blob: Blob, filename: string) => {
+    // Download the BCF file to local filesystem
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
   const handleEscape = useCallback(() => {
+    if (cloudDialogOpen) { setCloudDialogOpen(false); return; }
     if (backstageOpen) { setBackstageOpen(false); return; }
     if (settingsOpen) { setSettingsOpen(false); return; }
     if (feedbackOpen) { setFeedbackOpen(false); return; }
-  }, [backstageOpen, settingsOpen, feedbackOpen]);
+  }, [cloudDialogOpen, backstageOpen, settingsOpen, feedbackOpen]);
 
   // --- Keyboard shortcuts ---
   useKeyboardShortcuts({
@@ -175,12 +248,19 @@ export function AppShell() {
       />
 
       <Ribbon
-        onFileTabClick={() => setBackstageOpen(true)}
+        onFileTabClick={() => { setBackstageInitialPanel(undefined); setBackstageOpen(true); }}
         onUploadIfc={handleUploadClick}
         onValidate={handleValidateClick}
         onExportBcf={handleExportBcf}
+        onBcfLogin={handleBcfLogin}
+        onBcfPush={handleBcfPush}
+        onCloudSave={handleCloudSave}
+        onCloudOpen={handleCloudOpen}
         hasModel={hasLoadedModel}
         isValidating={isValidating}
+        bcfConnected={bcfConnected}
+        bcfHasQueuedIssues={bcfHasQueuedIssues}
+        cloudEnabled={cloudEnabled}
         leftPanelVisible={!leftCollapsed}
         rightPanelVisible={!rightCollapsed}
         onToggleLeftPanel={toggleLeftPanel}
@@ -240,11 +320,14 @@ export function AppShell() {
       {/* Overlays */}
       <Backstage
         open={backstageOpen}
-        onClose={() => setBackstageOpen(false)}
+        initialPanel={backstageInitialPanel}
+        onClose={() => { setBackstageOpen(false); setBackstageInitialPanel(undefined); }}
         onOpenLocal={handleUploadClick}
         onExportBcf={handleExportBcf}
+        onCloudOpen={handleCloudOpen}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenFeedback={() => setFeedbackOpen(true)}
+        cloudEnabled={cloudEnabled}
       />
 
       <SettingsDialog
@@ -257,6 +340,15 @@ export function AppShell() {
       <FeedbackDialog
         open={feedbackOpen}
         onClose={() => setFeedbackOpen(false)}
+      />
+
+      <CloudDialog
+        open={cloudDialogOpen}
+        onClose={() => setCloudDialogOpen(false)}
+        mode={cloudDialogMode}
+        bcfBlob={cloudBcfBlob}
+        suggestedFilename={`${project?.name ?? "validation"}-${new Date().toISOString().slice(0, 10)}.bcf`}
+        onFileOpened={handleCloudFileOpened}
       />
 
       <ToastContainer />

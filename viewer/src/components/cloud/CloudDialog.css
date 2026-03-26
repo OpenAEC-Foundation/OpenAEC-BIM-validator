@@ -1,0 +1,204 @@
+/* CloudDialog — Nextcloud save/open modal */
+
+.cloud-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.cloud-dialog__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cloud-dialog__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--theme-text-secondary, #666);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cloud-dialog__project-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.cloud-dialog__select {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid var(--theme-border, #d0d0d0);
+  border-radius: 3px;
+  background: var(--theme-surface, #fff);
+  color: var(--theme-text, #222);
+  font-size: 12px;
+  outline: none;
+}
+
+.cloud-dialog__select:focus {
+  border-color: var(--theme-accent, #44b6a8);
+}
+
+.cloud-dialog__input {
+  padding: 6px 8px;
+  border: 1px solid var(--theme-border, #d0d0d0);
+  border-radius: 3px;
+  background: var(--theme-surface, #fff);
+  color: var(--theme-text, #222);
+  font-size: 12px;
+  outline: none;
+}
+
+.cloud-dialog__input:focus {
+  border-color: var(--theme-accent, #44b6a8);
+}
+
+/* File list */
+.cloud-dialog__files {
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid var(--theme-border, #d0d0d0);
+  border-radius: 3px;
+  background: var(--theme-bg-lighter, #f8f8f8);
+}
+
+.cloud-dialog__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.cloud-dialog__table thead th {
+  position: sticky;
+  top: 0;
+  padding: 6px 8px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--theme-text-secondary, #666);
+  background: var(--theme-surface, #fff);
+  border-bottom: 1px solid var(--theme-border, #d0d0d0);
+}
+
+.cloud-dialog__table tbody tr {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.cloud-dialog__table tbody tr:hover {
+  background: var(--theme-hover, rgba(68, 182, 168, 0.08));
+}
+
+.cloud-dialog__table tbody tr.cloud-dialog__row--selected {
+  background: var(--theme-accent-bg, rgba(68, 182, 168, 0.15));
+}
+
+.cloud-dialog__table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--theme-border-light, #eee);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cloud-dialog__table td:first-child {
+  max-width: 200px;
+}
+
+.cloud-dialog__notice {
+  padding: 16px;
+  text-align: center;
+  color: var(--theme-text-secondary, #999);
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* Footer */
+.cloud-dialog__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cloud-dialog__error {
+  font-size: 11px;
+  color: var(--theme-danger, #db4c40);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cloud-dialog__actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Buttons */
+.cloud-dialog__btn {
+  padding: 6px 14px;
+  border: 1px solid var(--theme-border, #d0d0d0);
+  border-radius: 3px;
+  background: var(--theme-surface, #fff);
+  color: var(--theme-text, #222);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.cloud-dialog__btn:hover:not(:disabled) {
+  background: var(--theme-hover, #f0f0f0);
+}
+
+.cloud-dialog__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cloud-dialog__btn--primary {
+  background: var(--theme-accent, #44b6a8);
+  color: #fff;
+  border-color: var(--theme-accent, #44b6a8);
+}
+
+.cloud-dialog__btn--primary:hover:not(:disabled) {
+  background: var(--theme-accent-hover, #3a9e92);
+}
+
+.cloud-dialog__btn--secondary {
+  background: transparent;
+}
+
+.cloud-dialog__btn--danger {
+  color: var(--theme-danger, #db4c40);
+  border-color: transparent;
+  background: transparent;
+  padding: 2px 6px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cloud-dialog__btn--danger:hover:not(:disabled) {
+  background: rgba(219, 76, 64, 0.1);
+}
+
+.cloud-dialog__btn--small {
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.cloud-dialog__btn--icon {
+  padding: 5px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

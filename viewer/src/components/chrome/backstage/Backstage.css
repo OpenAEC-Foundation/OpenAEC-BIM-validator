@@ -261,3 +261,206 @@
   color: var(--theme-text-secondary);
   margin: 0;
 }
+
+/* ── BCF Platform Panel ──────────────────────── */
+
+.bs-platform-panel {
+  max-width: 480px;
+}
+
+.bs-platform-title {
+  font-size: 22px;
+  font-weight: 300;
+  color: var(--theme-accent);
+  margin: 0 0 8px 0;
+}
+
+.bs-platform-desc {
+  font-size: 12px;
+  color: var(--theme-text);
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+}
+
+.bs-platform-subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--theme-text);
+  margin: 0 0 8px 0;
+}
+
+.bs-platform-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.bs-platform-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bs-platform-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--theme-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bs-platform-input {
+  padding: 8px 10px;
+  border: 1px solid var(--theme-border);
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--theme-text);
+  background: var(--theme-bg);
+  transition: border-color 0.15s;
+}
+
+.bs-platform-input:focus {
+  outline: none;
+  border-color: var(--theme-accent);
+}
+
+.bs-platform-select {
+  padding: 8px 10px;
+  border: 1px solid var(--theme-border);
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--theme-text);
+  background: var(--theme-bg);
+  cursor: pointer;
+  flex: 1;
+}
+
+.bs-platform-select:focus {
+  outline: none;
+  border-color: var(--theme-accent);
+}
+
+.bs-platform-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.bs-platform-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--theme-border);
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: default;
+  transition: all 0.15s;
+}
+
+.bs-platform-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bs-platform-btn--primary {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+  border-color: var(--theme-accent);
+}
+
+.bs-platform-btn--primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.bs-platform-btn--secondary {
+  background: transparent;
+  color: var(--theme-text);
+}
+
+.bs-platform-btn--secondary:hover:not(:disabled) {
+  background: var(--theme-hover);
+}
+
+.bs-platform-btn--danger {
+  background: transparent;
+  color: var(--theme-error, #db4c40);
+  border-color: var(--theme-error, #db4c40);
+}
+
+.bs-platform-btn--danger:hover:not(:disabled) {
+  background: var(--theme-error, #db4c40);
+  color: #fff;
+}
+
+.bs-platform-btn--icon {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.bs-platform-btn--icon:hover:not(:disabled) {
+  background: var(--theme-hover);
+}
+
+.bs-platform-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 3px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.bs-platform-status--connected {
+  background: rgba(68, 182, 168, 0.1);
+  color: var(--theme-accent);
+}
+
+.bs-platform-status--error {
+  background: rgba(219, 76, 64, 0.1);
+  color: var(--theme-error, #db4c40);
+}
+
+.bs-platform-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.bs-platform-status--connected .bs-platform-status-dot {
+  background: var(--theme-accent);
+}
+
+.bs-platform-status--error .bs-platform-status-dot {
+  background: var(--theme-error, #db4c40);
+}
+
+.bs-platform-link {
+  color: var(--theme-accent);
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.bs-platform-link:hover {
+  text-decoration: underline;
+}
+
+.bs-platform-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--theme-border);
+  border-radius: 3px;
+  background: var(--theme-bg-lighter);
+}

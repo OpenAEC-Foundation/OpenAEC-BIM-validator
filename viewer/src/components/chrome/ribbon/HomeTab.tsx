@@ -10,6 +10,10 @@ import {
   resetIcon,
   bcfExportIcon,
   syncIcon,
+  pushIcon,
+  loginIcon,
+  cloudSaveIcon,
+  cloudOpenIcon,
 } from "./icons";
 
 interface HomeTabProps {
@@ -19,8 +23,15 @@ interface HomeTabProps {
   onResetValidation?: () => void;
   onExportBcf?: () => void;
   onSyncPlatform?: () => void;
+  onBcfLogin?: () => void;
+  onBcfPush?: () => void;
+  onCloudSave?: () => void;
+  onCloudOpen?: () => void;
   hasModel?: boolean;
   isValidating?: boolean;
+  bcfConnected?: boolean;
+  bcfHasQueuedIssues?: boolean;
+  cloudEnabled?: boolean;
 }
 
 export default function HomeTab({
@@ -30,8 +41,15 @@ export default function HomeTab({
   onResetValidation,
   onExportBcf,
   onSyncPlatform,
+  onBcfLogin,
+  onBcfPush,
+  onCloudSave,
+  onCloudOpen,
   hasModel,
   isValidating,
+  bcfConnected,
+  bcfHasQueuedIssues,
+  cloudEnabled,
 }: HomeTabProps) {
   const { t } = useTranslation("ribbon");
 
@@ -90,6 +108,38 @@ export default function HomeTab({
               size="small"
               onClick={onSyncPlatform}
             />
+            {bcfConnected ? (
+              <RibbonButton
+                icon={pushIcon}
+                label={t("home.pushPlatform")}
+                size="small"
+                onClick={onBcfPush}
+                disabled={!bcfHasQueuedIssues}
+              />
+            ) : (
+              <RibbonButton
+                icon={loginIcon}
+                label={t("home.bcfLogin")}
+                size="small"
+                onClick={onBcfLogin}
+              />
+            )}
+            {cloudEnabled && (
+              <>
+                <RibbonButton
+                  icon={cloudSaveIcon}
+                  label={t("home.cloudSave")}
+                  size="small"
+                  onClick={onCloudSave}
+                />
+                <RibbonButton
+                  icon={cloudOpenIcon}
+                  label={t("home.cloudOpen")}
+                  size="small"
+                  onClick={onCloudOpen}
+                />
+              </>
+            )}
           </RibbonButtonStack>
         </RibbonGroup>
       </div>

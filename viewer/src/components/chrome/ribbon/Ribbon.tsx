@@ -16,10 +16,17 @@ interface RibbonProps {
   onResetValidation?: () => void;
   onExportBcf?: () => void;
   onSyncPlatform?: () => void;
+  onBcfLogin?: () => void;
+  onBcfPush?: () => void;
+  onCloudSave?: () => void;
+  onCloudOpen?: () => void;
   onZoomFit?: () => void;
   onResetCamera?: () => void;
   hasModel?: boolean;
   isValidating?: boolean;
+  bcfConnected?: boolean;
+  bcfHasQueuedIssues?: boolean;
+  cloudEnabled?: boolean;
   leftPanelVisible?: boolean;
   rightPanelVisible?: boolean;
   onToggleLeftPanel?: () => void;
@@ -34,10 +41,17 @@ export default function Ribbon({
   onResetValidation,
   onExportBcf,
   onSyncPlatform,
+  onBcfLogin,
+  onBcfPush,
+  onCloudSave,
+  onCloudOpen,
   onZoomFit,
   onResetCamera,
   hasModel,
   isValidating,
+  bcfConnected,
+  bcfHasQueuedIssues,
+  cloudEnabled,
   leftPanelVisible,
   rightPanelVisible,
   onToggleLeftPanel,
@@ -123,8 +137,15 @@ export default function Ribbon({
             onResetValidation={onResetValidation}
             onExportBcf={onExportBcf}
             onSyncPlatform={onSyncPlatform}
+            onBcfLogin={onBcfLogin}
+            onBcfPush={onBcfPush}
+            onCloudSave={onCloudSave}
+            onCloudOpen={onCloudOpen}
             hasModel={hasModel}
             isValidating={isValidating}
+            bcfConnected={bcfConnected}
+            bcfHasQueuedIssues={bcfHasQueuedIssues}
+            cloudEnabled={cloudEnabled}
           />
         );
       case "view":

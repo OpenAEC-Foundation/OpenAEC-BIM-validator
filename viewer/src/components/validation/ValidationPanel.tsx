@@ -23,6 +23,7 @@ import type {
 } from "../../types/validation";
 import type { BcfGenerationSettings } from "../../types/bcfGenerationSettings";
 import { createBcfIssue } from "../../types/bcfIssue";
+import { captureViewpoint } from "../../lib/captureViewpoint";
 import {
   mapSpecToTopic,
   mapRequirementToTopic,
@@ -59,6 +60,7 @@ export function ValidationPanel() {
   // BCF actions
   const bcfAddIssue = useStore((s) => s.bcfAddIssue);
   const bcfAddIssues = useStore((s) => s.bcfAddIssues);
+  const bcfUpdateIssue = useStore((s) => s.bcfUpdateIssue);
 
   // Tree selection state
   const [selectedItem, setSelectedItem] = useState<SelectedTreeItem | null>(
@@ -175,6 +177,19 @@ export function ValidationPanel() {
     [selectElement, setHighlightGroup]
   );
 
+  /** Fire-and-forget: capture a viewpoint screenshot and attach it to an issue */
+  const captureAndAttachScreenshot = useCallback(
+    (issueId: string, globalIds: string[]) => {
+      if (globalIds.length === 0) return;
+      void captureViewpoint(globalIds).then((result) => {
+        if (result?.screenshot) {
+          bcfUpdateIssue(issueId, { screenshot: result.screenshot });
+        }
+      });
+    },
+    [bcfUpdateIssue],
+  );
+
   // ── BCF dialog helpers ────────────────────────────────
   const showBcfFeedback = useCallback((msg: string) => {
     setBcfFeedback(msg);
@@ -212,10 +227,12 @@ export function ValidationPanel() {
           mapping
         );
         bcfAddIssue(issue);
+        const globalIds = (mapping.viewpoint.components?.selection ?? []).map((c) => c.ifc_guid);
+        captureAndAttachScreenshot(issue.id, globalIds);
         showBcfFeedback(`BCF issue: ${spec.specification_name}`);
       });
     },
-    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback, openBcfDialog]
+    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback, openBcfDialog, captureAndAttachScreenshot]
   );
 
   const handleCreateBcfFromRequirement = useCallback(
@@ -231,10 +248,12 @@ export function ValidationPanel() {
           mapping
         );
         bcfAddIssue(issue);
+        const globalIds = (mapping.viewpoint.components?.selection ?? []).map((c) => c.ifc_guid);
+        captureAndAttachScreenshot(issue.id, globalIds);
         showBcfFeedback(`BCF issue: ${req.requirement_description}`);
       });
     },
-    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback, openBcfDialog]
+    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback, openBcfDialog, captureAndAttachScreenshot]
   );
 
   const handleCreateBcfFromElement = useCallback(
@@ -252,10 +271,12 @@ export function ValidationPanel() {
           mapping
         );
         bcfAddIssue(issue);
+        const globalIds = (mapping.viewpoint.components?.selection ?? []).map((c) => c.ifc_guid);
+        captureAndAttachScreenshot(issue.id, globalIds);
         showBcfFeedback(`BCF issue: ${elName}`);
       });
     },
-    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback, openBcfDialog]
+    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback, openBcfDialog, captureAndAttachScreenshot]
   );
 
   const handleCreateBcfBulk = useCallback(() => {
@@ -275,10 +296,18 @@ export function ValidationPanel() {
         );
       });
       bcfAddIssues(issues);
+      // Capture screenshots for each issue (fire-and-forget)
+      for (let i = 0; i < issues.length; i++) {
+        const m = mappings[i];
+        const iss = issues[i];
+        if (!m || !iss) continue;
+        const globalIds = (m.viewpoint.components?.selection ?? []).map((c) => c.ifc_guid);
+        captureAndAttachScreenshot(iss.id, globalIds);
+      }
       showBcfFeedback(`${issues.length} BCF issues aangemaakt`);
       setActiveRightTab("bcf");
     });
-  }, [validationResult, bcfAddIssues, showBcfFeedback, setActiveRightTab, openBcfDialog]);
+  }, [validationResult, bcfAddIssues, showBcfFeedback, setActiveRightTab, openBcfDialog, captureAndAttachScreenshot]);
 
   const inputsDisabled = phase === "submitting" || phase === "polling";
   const canSubmit =

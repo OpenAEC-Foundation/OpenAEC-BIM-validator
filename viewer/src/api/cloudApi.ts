@@ -1,0 +1,187 @@
+/**
+ * API client for the Nextcloud cloud storage endpoints.
+ *
+ * All calls proxy through the FastAPI backend — the browser
+ * never talks to Nextcloud directly.
+ */
+
+import { ApiError } from "./client";
+
+const CLOUD_BASE = "/api/cloud";
+
+/** Parse error detail from a JSON error response. */
+async function parseError(response: Response): Promise<string> {
+  try {
+    const data = await response.json();
+    return data.detail || data.message || `Request failed (${response.status})`;
+  } catch {
+    return `Request failed with status ${response.status}`;
+  }
+}
+
+// ── Types ──────────────────────────────────────────────────────
+
+export interface CloudStatus {
+  enabled: boolean;
+  connected: boolean;
+}
+
+export interface CloudProject {
+  name: string;
+  last_modified: string;
+}
+
+export interface CloudFile {
+  name: string;
+  size: number;
+  last_modified: string;
+}
+
+// ── API functions ──────────────────────────────────────────────
+
+/** Check if cloud storage is enabled and reachable. */
+export async function cloudStatus(): Promise<CloudStatus> {
+  let response: Response;
+  try {
+    response = await fetch(`${CLOUD_BASE}/status`);
+  } catch (error) {
+    throw new ApiError(
+      "Network error: unable to check cloud status.",
+      undefined,
+      error instanceof Error ? error.message : "Unknown network error",
+    );
+  }
+
+  if (!response.ok) {
+    const msg = await parseError(response);
+    throw new ApiError(msg, response.status, msg);
+  }
+
+  return response.json();
+}
+
+/** List project folders in Nextcloud. */
+export async function cloudListProjects(): Promise<CloudProject[]> {
+  let response: Response;
+  try {
+    response = await fetch(`${CLOUD_BASE}/projects`);
+  } catch (error) {
+    throw new ApiError(
+      "Network error: unable to list cloud projects.",
+      undefined,
+      error instanceof Error ? error.message : "Unknown network error",
+    );
+  }
+
+  if (!response.ok) {
+    const msg = await parseError(response);
+    throw new ApiError(msg, response.status, msg);
+  }
+
+  const data = await response.json();
+  return data.projects;
+}
+
+/** List files in a project's tool subdirectory. */
+export async function cloudListFiles(project: string): Promise<CloudFile[]> {
+  let response: Response;
+  try {
+    response = await fetch(
+      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/files`,
+    );
+  } catch (error) {
+    throw new ApiError(
+      "Network error: unable to list cloud files.",
+      undefined,
+      error instanceof Error ? error.message : "Unknown network error",
+    );
+  }
+
+  if (!response.ok) {
+    const msg = await parseError(response);
+    throw new ApiError(msg, response.status, msg);
+  }
+
+  const data = await response.json();
+  return data.files;
+}
+
+/** Download a file from the cloud. Returns raw bytes as a Blob. */
+export async function cloudDownloadFile(
+  project: string,
+  filename: string,
+): Promise<Blob> {
+  let response: Response;
+  try {
+    response = await fetch(
+      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/files/${encodeURIComponent(filename)}`,
+    );
+  } catch (error) {
+    throw new ApiError(
+      "Network error: unable to download cloud file.",
+      undefined,
+      error instanceof Error ? error.message : "Unknown network error",
+    );
+  }
+
+  if (!response.ok) {
+    const msg = await parseError(response);
+    throw new ApiError(msg, response.status, msg);
+  }
+
+  return response.blob();
+}
+
+/** Upload a file to the cloud. */
+export async function cloudUploadFile(
+  project: string,
+  filename: string,
+  blob: Blob,
+): Promise<void> {
+  const formData = new FormData();
+  formData.append("file", blob, filename);
+
+  let response: Response;
+  try {
+    response = await fetch(
+      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/files/${encodeURIComponent(filename)}`,
+      { method: "PUT", body: formData },
+    );
+  } catch (error) {
+    throw new ApiError(
+      "Network error: unable to upload cloud file.",
+      undefined,
+      error instanceof Error ? error.message : "Unknown network error",
+    );
+  }
+
+  if (!response.ok) {
+    const msg = await parseError(response);
+    throw new ApiError(msg, response.status, msg);
+  }
+}
+
+/** Delete a file from the cloud. */
+export async function cloudDeleteFile(
+  project: string,
+  filename: string,
+): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(
+      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/files/${encodeURIComponent(filename)}`,
+      { method: "DELETE" },
+    );
+  } catch (error) {
+    throw new ApiError(
+      "Network error: unable to delete cloud file.",
+      undefined,
+      error instanceof Error ? error.message : "Unknown network error",
+    );
+  }
+
+  if (!response.ok) {
+    const msg = await parseError(response);
+    throw new ApiError(msg, response.status, msg);
+  }
+}

@@ -7,6 +7,10 @@ services:
       - "127.0.0.1:8000:8000"
     environment:
       - CORS_ORIGINS=*
+      # Nextcloud cloud storage (opt-in — leave empty to disable)
+      - NEXTCLOUD_URL=
+      - NEXTCLOUD_SERVICE_USER=
+      - NEXTCLOUD_SERVICE_PASS=
     volumes:
       # Persist uploaded files across restarts
       - bim-uploads:/tmp/ifc_uploads

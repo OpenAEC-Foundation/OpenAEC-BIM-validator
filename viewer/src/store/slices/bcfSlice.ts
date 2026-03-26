@@ -46,6 +46,7 @@ export interface BcfSlice {
   bcfIssues: BcfIssue[];
   bcfAddIssue: (issue: BcfIssue) => void;
   bcfAddIssues: (issues: BcfIssue[]) => void;
+  bcfUpdateIssue: (id: string, partial: Partial<BcfIssue>) => void;
   bcfRemoveIssue: (id: string) => void;
   bcfClearIssues: () => void;
 
@@ -108,6 +109,14 @@ export const createBcfSlice: StateCreator<BcfSlice> = (set, get) => ({
 
   bcfAddIssues: (issues: BcfIssue[]) => {
     set((s) => ({ bcfIssues: [...s.bcfIssues, ...issues] }));
+  },
+
+  bcfUpdateIssue: (id: string, partial: Partial<BcfIssue>) => {
+    set((s) => ({
+      bcfIssues: s.bcfIssues.map((i) =>
+        i.id === id ? { ...i, ...partial } : i,
+      ),
+    }));
   },
 
   bcfRemoveIssue: (id: string) => {

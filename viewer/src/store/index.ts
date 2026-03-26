@@ -28,9 +28,13 @@ import {
   type BcfSlice,
   createBcfSlice,
 } from "./slices/bcfSlice";
+import {
+  type CloudSlice,
+  createCloudSlice,
+} from "./slices/cloudSlice";
 
 /** Combined store type */
-export type AppStore = ProjectSlice & ViewerSlice & ValidationSlice & UiSlice & BcfSlice;
+export type AppStore = ProjectSlice & ViewerSlice & ValidationSlice & UiSlice & BcfSlice & CloudSlice;
 
 /** The single Zustand store instance */
 export const useStore = create<AppStore>()((...args) => ({
@@ -39,6 +43,7 @@ export const useStore = create<AppStore>()((...args) => ({
   ...createValidationSlice(...args),
   ...createUiSlice(...args),
   ...createBcfSlice(...args),
+  ...createCloudSlice(...args),
 }));
 
 /** Re-export slice types for convenience */
@@ -47,3 +52,4 @@ export type { ViewerSlice, HighlightGroup } from "./slices/viewerSlice";
 export type { ValidationSlice, ValidationPhase } from "./slices/validationSlice";
 export type { UiSlice } from "./slices/uiSlice";
 export type { BcfSlice } from "./slices/bcfSlice";
+export type { CloudSlice } from "./slices/cloudSlice";

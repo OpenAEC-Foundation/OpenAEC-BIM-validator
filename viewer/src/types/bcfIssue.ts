@@ -33,6 +33,8 @@ export interface BcfIssue {
   pushError?: string;
   /** Remote topic GUID after successful push */
   remoteTopicGuid?: string;
+  /** PNG data URL of captured viewpoint screenshot */
+  screenshot?: string;
 }
 
 /** Helper to create a BcfIssue from a TopicMapping */
