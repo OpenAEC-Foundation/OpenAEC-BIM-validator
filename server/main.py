@@ -762,6 +762,9 @@ async def validate_ifc_ids(
                 detail="Server at capacity. Too many concurrent validation jobs. Please try again later."
             )
 
+        # Cleanup old completed/failed jobs before creating new one
+        job_manager.cleanup_expired()
+
         # Create job and schedule background task
         job_manager.create_job(
             job_id=job_id,
@@ -810,9 +813,6 @@ async def get_job_status(job_id: str) -> JobStatusResponse:
     Returns:
         Job status with results if completed
     """
-    # Cleanup expired jobs opportunistically
-    job_manager.cleanup_expired()
-    
     # Get job info
     job = job_manager.get_job(job_id)
     if not job:

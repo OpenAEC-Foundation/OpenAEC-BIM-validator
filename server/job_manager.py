@@ -209,11 +209,15 @@ class JobManager:
     suitable for single-server MVP deployments.
     """
 
+    # Active jobs (pending/processing) get a much longer timeout
+    # to handle large IFC files that can take hours to validate
+    STUCK_JOB_TTL_SECONDS = 14400  # 4 hours
+
     def __init__(self, ttl_seconds: int = 3600, max_concurrent_jobs: int = 10) -> None:
         """Initialize the job manager.
 
         Args:
-            ttl_seconds: Time-to-live for completed jobs in seconds (default: 1 hour)
+            ttl_seconds: Time-to-live for completed/failed jobs in seconds (default: 1 hour)
             max_concurrent_jobs: Maximum number of concurrent jobs allowed
         """
         self._jobs: dict[str, JobInfo] = {}
@@ -375,9 +379,10 @@ class JobManager:
     def cleanup_expired(self) -> int:
         """Remove jobs older than TTL.
 
-        Removes jobs that have been completed or failed for longer than the TTL,
-        or pending/processing jobs that were created longer than TTL ago
-        (stuck jobs).
+        Completed/failed jobs are removed after ttl_seconds (default 1 hour).
+        Active jobs (pending/processing) use a much longer timeout
+        (STUCK_JOB_TTL_SECONDS = 4 hours) to avoid killing long-running
+        validations of large IFC files.
 
         Returns:
             Number of jobs removed
@@ -386,14 +391,16 @@ class JobManager:
         expired_job_ids: list[str] = []
 
         for job_id, job in self._jobs.items():
-            # For completed/failed jobs, use completed_at
-            # For pending/processing jobs, use created_at (stuck jobs)
             if job.completed_at is not None:
+                # Completed/failed: use normal TTL from completed_at
                 age_seconds = (now - job.completed_at).total_seconds()
+                ttl = self._ttl_seconds
             else:
+                # Active jobs: use longer stuck-job TTL from created_at
                 age_seconds = (now - job.created_at).total_seconds()
+                ttl = self.STUCK_JOB_TTL_SECONDS
 
-            if age_seconds >= self._ttl_seconds:
+            if age_seconds >= ttl:
                 expired_job_ids.append(job_id)
 
         for job_id in expired_job_ids:

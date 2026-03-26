@@ -653,13 +653,16 @@ class TestExpirationCleanup:
         """Test that cleanup_expired removes stuck pending jobs.
 
         Acceptance Criteria:
-        - Pending jobs older than TTL (stuck) are removed
+        - Pending jobs older than STUCK_JOB_TTL_SECONDS are removed
+        - Active jobs use a longer TTL than completed/failed jobs
         """
         # Create a job but don't start it
         job = job_manager_short_ttl.create_job()
 
-        # Mock time to simulate expiration
-        future_time = datetime.now(timezone.utc) + timedelta(seconds=2)
+        # Mock time beyond STUCK_JOB_TTL_SECONDS (4 hours) to simulate truly stuck job
+        future_time = datetime.now(timezone.utc) + timedelta(
+            seconds=JobManager.STUCK_JOB_TTL_SECONDS + 1
+        )
         with patch("server.job_manager.datetime") as mock_datetime:
             mock_datetime.now.return_value = future_time
             mock_datetime.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
@@ -668,6 +671,29 @@ class TestExpirationCleanup:
 
         assert removed_count == 1
         assert job_manager_short_ttl.get_job(job.job_id) is None
+
+    def test_cleanup_expired_preserves_active_pending_jobs(
+        self, job_manager_short_ttl: JobManager
+    ) -> None:
+        """Test that cleanup_expired does NOT remove pending jobs within stuck TTL.
+
+        Acceptance Criteria:
+        - Pending jobs younger than STUCK_JOB_TTL_SECONDS are preserved
+        - This protects long-running validations of large IFC files
+        """
+        # Create a job but don't start it
+        job = job_manager_short_ttl.create_job()
+
+        # Mock time past normal TTL but within stuck-job TTL
+        future_time = datetime.now(timezone.utc) + timedelta(seconds=2)
+        with patch("server.job_manager.datetime") as mock_datetime:
+            mock_datetime.now.return_value = future_time
+            mock_datetime.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
+
+            removed_count = job_manager_short_ttl.cleanup_expired()
+
+        assert removed_count == 0, "Active pending job should not be removed within stuck TTL"
+        assert job_manager_short_ttl.get_job(job.job_id) is not None
 
     def test_cleanup_expired_preserves_recent_jobs(
         self, job_manager: JobManager
