@@ -1,876 +1,410 @@
 /**
- * SpecificationList Component
+ * ResultsTree — BIMcollab-style flat tree for validation results.
  *
- * Expandable list of specifications with pass/fail badges.
- * - Shows all specifications from validation result
- * - Pass/fail badge for each specification
- * - Expandable/collapsible sections
- * - Shows failed count in badge
- * - Nested requirements display with element details
+ * Replaces the old card-based SpecificationList with compact 24px rows,
+ * expand arrows, severity dots, and indentation levels.
  */
 
-import { useState, useCallback } from 'react';
-import type { SpecificationResult, RequirementResult, ElementResult } from '../types/validation';
+import { useState, useCallback, useMemo } from "react";
 
-/** Props for the SpecificationList component */
-export interface SpecificationListProps {
-  /** Array of specification results to display */
+import type {
+  SpecificationResult,
+  RequirementResult,
+  ElementResult,
+  SelectedTreeItem,
+} from "../types/validation";
+
+/** Props for the ResultsTree component */
+export interface ResultsTreeProps {
   specifications: SpecificationResult[];
-  /** Whether to initially expand failed specifications */
   autoExpandFailed?: boolean;
-  /** Callback when a user clicks an element row (GlobalId) */
-  onElementSelect?: (globalId: string) => void;
-  /** Callback to create a BCF issue from a failed specification */
-  onCreateBcfFromSpec?: (spec: SpecificationResult) => void;
-  /** Callback to create a BCF issue from a failed requirement */
-  onCreateBcfFromRequirement?: (spec: SpecificationResult, req: RequirementResult) => void;
-  /** Callback to create a BCF issue from a single failed element */
-  onCreateBcfFromElement?: (spec: SpecificationResult, req: RequirementResult, el: ElementResult) => void;
+  selectedItem: SelectedTreeItem | null;
+  onItemSelect: (item: SelectedTreeItem) => void;
 }
 
-/** Props for a single specification item */
-interface SpecificationItemProps {
-  /** The specification result data */
-  specification: SpecificationResult;
-  /** Whether this item is initially expanded */
-  initiallyExpanded?: boolean;
-  /** Callback when an element is clicked */
-  onElementSelect?: (globalId: string) => void;
-  /** BCF callbacks */
-  onCreateBcfFromSpec?: (spec: SpecificationResult) => void;
-  onCreateBcfFromRequirement?: (spec: SpecificationResult, req: RequirementResult) => void;
-  onCreateBcfFromElement?: (spec: SpecificationResult, req: RequirementResult, el: ElementResult) => void;
-}
-
-/** Props for a single requirement item */
-interface RequirementItemProps {
-  /** The requirement result data */
-  requirement: RequirementResult;
-  /** Parent specification */
-  specification: SpecificationResult;
-  /** Index for unique key generation */
-  index: number;
-  /** Callback when an element is clicked */
-  onElementSelect?: (globalId: string) => void;
-  /** BCF callbacks */
-  onCreateBcfFromRequirement?: (spec: SpecificationResult, req: RequirementResult) => void;
-  onCreateBcfFromElement?: (spec: SpecificationResult, req: RequirementResult, el: ElementResult) => void;
-}
-
-/** Maximum elements to show before "Show more" */
-const MAX_VISIBLE_ELEMENTS = 5;
-
-/**
- * Get severity icon and color class
- */
-function getSeverityInfo(severity: string): { icon: string; className: string } {
+/** Severity → CSS color token */
+function severityColor(severity: string): string {
   switch (severity) {
-    case 'error':
-      return { icon: '🔴', className: 'severity--error' };
-    case 'warning':
-      return { icon: '🟡', className: 'severity--warning' };
-    case 'info':
-      return { icon: '🔵', className: 'severity--info' };
+    case "error":
+      return "var(--domain-fail)";
+    case "warning":
+      return "var(--domain-warning)";
+    case "info":
+      return "var(--theme-accent)";
     default:
-      return { icon: '⚪', className: 'severity--default' };
+      return "var(--theme-text-muted)";
   }
 }
 
-/**
- * Format element display name
- */
-function formatElementName(element: ElementResult): string {
+/** Format element display name */
+function formatElementName(el: ElementResult): string {
   const parts: string[] = [];
-
-  if (element.element_type) {
-    parts.push(element.element_type);
-  }
-
-  if (element.element_name) {
-    parts.push(element.element_name);
-  }
-
-  if (parts.length === 0) {
-    return 'Unknown Element';
-  }
-
-  return parts.join(': ');
+  if (el.element_type) parts.push(el.element_type);
+  if (el.element_name) parts.push(el.element_name);
+  return parts.length > 0 ? parts.join(": ") : "Unknown Element";
 }
 
-/**
- * Format GlobalId for display (truncate if needed)
- */
-function formatGlobalId(globalId: string | null): string {
-  if (!globalId) {
-    return 'N/A';
+/** Check if a tree item matches the current selection */
+function isSelected(
+  current: SelectedTreeItem | null,
+  kind: SelectedTreeItem["kind"],
+  spec: SpecificationResult,
+  req?: RequirementResult,
+  el?: ElementResult
+): boolean {
+  if (!current || current.kind !== kind) return false;
+  if (current.spec !== spec) return false;
+  if (kind === "requirement" && current.kind === "requirement") {
+    return current.req === req;
   }
-  return globalId;
+  if (kind === "element" && current.kind === "element") {
+    return current.req === req && current.el === el;
+  }
+  return kind === "spec";
 }
 
-/** Props for a single element item */
-interface ElementItemProps {
-  element: ElementResult;
-  onSelect?: (globalId: string) => void;
-  onCreateBcf?: (el: ElementResult) => void;
-}
+/** Specification row (level 0) */
+function SpecRow({
+  spec,
+  expanded,
+  selected,
+  onToggle,
+  onSelect,
+}: {
+  spec: SpecificationResult;
+  expanded: boolean;
+  selected: boolean;
+  onToggle: () => void;
+  onSelect: () => void;
+}) {
+  const isFail = spec.status === "fail";
 
-/**
- * ElementItem component for displaying a single element.
- * Clickable when onSelect is provided and the element has a GlobalId.
- */
-function ElementItem({ element, onSelect, onCreateBcf }: ElementItemProps) {
-  const isPassed = element.status === 'pass';
-  const isClickable = !!onSelect && !!element.global_id;
+  const handleClick = useCallback(() => {
+    onSelect();
+  }, [onSelect]);
 
-  const handleClick = () => {
-    if (isClickable && element.global_id) {
-      onSelect(element.global_id);
-    }
-  };
-
-  const handleBcf = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onCreateBcf?.(element);
-  };
+  const handleToggle = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onToggle();
+    },
+    [onToggle]
+  );
 
   return (
     <div
-      className={`element-item ${isPassed ? 'element-item--pass' : 'element-item--fail'}${isClickable ? ' element-item--clickable' : ''}`}
+      className={`vt-row${selected ? " vt-row--selected" : ""}`}
+      style={{ paddingLeft: 4 }}
       onClick={handleClick}
-      role={isClickable ? "button" : undefined}
-      tabIndex={isClickable ? 0 : undefined}
-      onKeyDown={isClickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(); } : undefined}
+      role="treeitem"
+      aria-expanded={expanded}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
     >
-      <div className="element-header">
-        <span className="element-status-icon" aria-hidden="true">
-          {isPassed ? '✓' : '✗'}
+      <span
+        className="vt-row__arrow"
+        onClick={handleToggle}
+        role="button"
+        tabIndex={-1}
+      >
+        {expanded ? "\u25BC" : "\u25B6"}
+      </span>
+      <span
+        className="vt-row__dot"
+        style={{ backgroundColor: severityColor(spec.severity) }}
+      />
+      <span className="vt-row__label" title={spec.specification_name}>
+        {spec.specification_name}
+      </span>
+      {isFail && (
+        <span className="vt-row__count vt-row__count--fail">
+          {spec.failed_requirements}
         </span>
-        <span className="element-name" title={formatElementName(element)}>
-          {formatElementName(element)}
-        </span>
-        <span className="element-global-id" title={element.global_id || 'No GlobalId'}>
-          ({formatGlobalId(element.global_id)})
-        </span>
-        {!isPassed && onCreateBcf && (
-          <button
-            type="button"
-            className="bcf-action-btn"
-            onClick={handleBcf}
-            title="Maak BCF issue van dit element"
-            aria-label="Maak BCF issue"
-          >
-            +BCF
-          </button>
-        )}
-      </div>
-      {element.messages.length > 0 && (
-        <ul className="element-messages">
-          {element.messages.map((message, idx) => (
-            <li key={idx} className="element-message">
-              {message}
-            </li>
-          ))}
-        </ul>
       )}
+      {!isFail && <span className="vt-row__count vt-row__count--pass">OK</span>}
     </div>
   );
 }
 
-/**
- * RequirementItem component for displaying a single requirement
- */
-function RequirementItem({ requirement, specification, index, onElementSelect, onCreateBcfFromRequirement, onCreateBcfFromElement }: RequirementItemProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [showAllElements, setShowAllElements] = useState(false);
+/** Requirement row (level 1) */
+function ReqRow({
+  req,
+  expanded,
+  selected,
+  onToggle,
+  onSelect,
+}: {
+  req: RequirementResult;
+  expanded: boolean;
+  selected: boolean;
+  onToggle: () => void;
+  onSelect: () => void;
+}) {
+  const isFail = req.status === "fail";
+  const hasChildren = req.elements.length > 0;
 
-  const isPassed = requirement.status === 'pass';
-  const hasFailedElements = requirement.failed_elements > 0;
-  const failedElements = requirement.elements.filter(e => e.status === 'fail');
-  const passedElements = requirement.elements.filter(e => e.status === 'pass');
+  const handleClick = useCallback(() => {
+    onSelect();
+  }, [onSelect]);
 
-  // Determine which elements to show (prioritize failed)
-  const elementsToShow = showAllElements
-    ? requirement.elements
-    : [...failedElements, ...passedElements].slice(0, MAX_VISIBLE_ELEMENTS);
-
-  const remainingCount = requirement.elements.length - elementsToShow.length;
-
-  const toggleExpanded = useCallback(() => {
-    setIsExpanded(prev => !prev);
-  }, []);
-
-  const handleShowMore = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowAllElements(true);
-  }, []);
-
-  const handleBcfReq = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    onCreateBcfFromRequirement?.(specification, requirement);
-  }, [specification, requirement, onCreateBcfFromRequirement]);
+  const handleToggle = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onToggle();
+    },
+    [onToggle]
+  );
 
   return (
-    <div className={`requirement-item ${isPassed ? 'requirement-item--pass' : 'requirement-item--fail'}`}>
-      <button
-        type="button"
-        className="requirement-header"
-        onClick={toggleExpanded}
-        aria-expanded={isExpanded}
-        aria-controls={`requirement-content-${index}`}
-      >
-        <span className="requirement-expand-icon" aria-hidden="true">
-          {isExpanded ? '▼' : '▶'}
+    <div
+      className={`vt-row${selected ? " vt-row--selected" : ""}`}
+      style={{ paddingLeft: 24 }}
+      onClick={handleClick}
+      role="treeitem"
+      aria-expanded={hasChildren ? expanded : undefined}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
+    >
+      {hasChildren ? (
+        <span
+          className="vt-row__arrow"
+          onClick={handleToggle}
+          role="button"
+          tabIndex={-1}
+        >
+          {expanded ? "\u25BC" : "\u25B6"}
         </span>
-        <span className={`requirement-status-badge ${isPassed ? 'badge--pass' : 'badge--fail'}`}>
-          {isPassed ? '✓' : '✗'}
+      ) : (
+        <span className="vt-row__arrow vt-row__arrow--empty" />
+      )}
+      <span
+        className="vt-row__dot"
+        style={{
+          backgroundColor: isFail ? "var(--domain-fail)" : "var(--domain-pass)",
+        }}
+      />
+      <span className="vt-row__label" title={req.requirement_description}>
+        {req.requirement_description}
+      </span>
+      {isFail && (
+        <span className="vt-row__count vt-row__count--fail">
+          {req.failed_elements}
         </span>
-        <span className="requirement-description">
-          {requirement.requirement_description}
-        </span>
-        {hasFailedElements && (
-          <span className="requirement-failed-count" aria-label={`${requirement.failed_elements} failed elements`}>
-            [{requirement.failed_elements}]
-          </span>
-        )}
-        {!isPassed && onCreateBcfFromRequirement && (
-          <button
-            type="button"
-            className="bcf-action-btn"
-            onClick={handleBcfReq}
-            title="Maak BCF issue van deze requirement"
-            aria-label="Maak BCF issue"
-          >
-            +BCF
-          </button>
-        )}
-      </button>
-
-      {isExpanded && (
-        <div id={`requirement-content-${index}`} className="requirement-content">
-          <div className="requirement-stats">
-            <span className="stat">
-              <span className="stat-label">Total:</span>
-              <span className="stat-value">{requirement.total_elements}</span>
-            </span>
-            <span className="stat stat--pass">
-              <span className="stat-label">Passed:</span>
-              <span className="stat-value">{requirement.total_elements - requirement.failed_elements}</span>
-            </span>
-            <span className="stat stat--fail">
-              <span className="stat-label">Failed:</span>
-              <span className="stat-value">{requirement.failed_elements}</span>
-            </span>
-          </div>
-
-          {elementsToShow.length > 0 && (
-            <div className="elements-list">
-              {elementsToShow.map((element, idx) => (
-                <ElementItem
-                  key={element.global_id || `element-${idx}`}
-                  element={element}
-                  onSelect={onElementSelect}
-                  onCreateBcf={
-                    onCreateBcfFromElement
-                      ? (el) => onCreateBcfFromElement(specification, requirement, el)
-                      : undefined
-                  }
-                />
-              ))}
-
-              {!showAllElements && remainingCount > 0 && (
-                <button
-                  type="button"
-                  className="show-more-btn"
-                  onClick={handleShowMore}
-                >
-                  Show {remainingCount} more element{remainingCount !== 1 ? 's' : ''}...
-                </button>
-              )}
-            </div>
-          )}
-        </div>
       )}
     </div>
   );
 }
 
-/**
- * SpecificationItem component for displaying a single specification
- */
-function SpecificationItem({ specification, initiallyExpanded = false, onElementSelect, onCreateBcfFromSpec, onCreateBcfFromRequirement, onCreateBcfFromElement }: SpecificationItemProps) {
-  const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
-
-  const isPassed = specification.status === 'pass';
-  const severityInfo = getSeverityInfo(specification.severity);
-  const hasFailedRequirements = specification.failed_requirements > 0;
-
-  const toggleExpanded = useCallback(() => {
-    setIsExpanded(prev => !prev);
-  }, []);
-
-  const handleBcfSpec = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    onCreateBcfFromSpec?.(specification);
-  }, [specification, onCreateBcfFromSpec]);
+/** Element row (level 2) */
+function ElRow({
+  el,
+  selected,
+  onSelect,
+}: {
+  el: ElementResult;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const isFail = el.status === "fail";
 
   return (
-    <div className={`specification-item ${isPassed ? 'specification-item--pass' : 'specification-item--fail'}`}>
-      <button
-        type="button"
-        className="specification-header"
-        onClick={toggleExpanded}
-        aria-expanded={isExpanded}
-        aria-controls={`spec-content-${specification.specification_name}`}
-      >
-        <span className="specification-expand-icon" aria-hidden="true">
-          {isExpanded ? '▼' : '▶'}
+    <div
+      className={`vt-row${selected ? " vt-row--selected" : ""}`}
+      style={{ paddingLeft: 44 }}
+      onClick={onSelect}
+      role="treeitem"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+    >
+      <span className="vt-row__arrow vt-row__arrow--empty" />
+      <span
+        className="vt-row__dot"
+        style={{
+          backgroundColor: isFail ? "var(--domain-fail)" : "var(--domain-pass)",
+        }}
+      />
+      <span className="vt-row__label" title={formatElementName(el)}>
+        {formatElementName(el)}
+      </span>
+      {el.global_id && (
+        <span className="vt-row__gid" title={el.global_id}>
+          {el.global_id.slice(0, 8)}
         </span>
-        <span className={`specification-status-badge ${isPassed ? 'badge--pass' : 'badge--fail'}`}>
-          {isPassed ? '✓' : '✗'}
-        </span>
-        <span className={`specification-severity ${severityInfo.className}`} aria-label={`Severity: ${specification.severity}`}>
-          <span aria-hidden="true">{severityInfo.icon}</span>
-        </span>
-        <span className="specification-name" title={specification.specification_name}>
-          {specification.specification_name}
-        </span>
-        {hasFailedRequirements && (
-          <span className="specification-failed-badge" aria-label={`${specification.failed_requirements} failed requirements`}>
-            [{specification.failed_requirements}]
-          </span>
-        )}
-        {!isPassed && onCreateBcfFromSpec && (
-          <button
-            type="button"
-            className="bcf-action-btn"
-            onClick={handleBcfSpec}
-            title="Maak BCF issue van deze specificatie"
-            aria-label="Maak BCF issue"
-          >
-            +BCF
-          </button>
-        )}
-      </button>
-
-      {isExpanded && (
-        <div id={`spec-content-${specification.specification_name}`} className="specification-content">
-          <div className="specification-stats">
-            <span className="stat">
-              <span className="stat-label">Requirements:</span>
-              <span className="stat-value">{specification.total_requirements}</span>
-            </span>
-            <span className="stat stat--pass">
-              <span className="stat-label">Passed:</span>
-              <span className="stat-value">{specification.total_requirements - specification.failed_requirements}</span>
-            </span>
-            <span className="stat stat--fail">
-              <span className="stat-label">Failed:</span>
-              <span className="stat-value">{specification.failed_requirements}</span>
-            </span>
-          </div>
-
-          <div className="requirements-list">
-            {specification.requirements.map((requirement, idx) => (
-              <RequirementItem
-                key={`${specification.specification_name}-req-${idx}`}
-                requirement={requirement}
-                specification={specification}
-                index={idx}
-                onElementSelect={onElementSelect}
-                onCreateBcfFromRequirement={onCreateBcfFromRequirement}
-                onCreateBcfFromElement={onCreateBcfFromElement}
-              />
-            ))}
-          </div>
-        </div>
       )}
     </div>
   );
 }
 
 /**
- * SpecificationList component displaying all validation specifications
+ * ResultsTree — flat tree displaying validation specifications,
+ * requirements, and elements.
  */
-export function SpecificationList({ specifications, autoExpandFailed = true, onElementSelect, onCreateBcfFromSpec, onCreateBcfFromRequirement, onCreateBcfFromElement }: SpecificationListProps) {
+export function ResultsTree({
+  specifications,
+  autoExpandFailed = true,
+  selectedItem,
+  onItemSelect,
+}: ResultsTreeProps) {
+  // Sort: failed first
+  const sorted = useMemo(
+    () =>
+      [...specifications].sort((a, b) => {
+        if (a.status === "fail" && b.status === "pass") return -1;
+        if (a.status === "pass" && b.status === "fail") return 1;
+        return 0;
+      }),
+    [specifications]
+  );
+
+  // Track expanded state per spec/req by reference identity
+  const [expandedSpecs, setExpandedSpecs] = useState<Set<SpecificationResult>>(
+    () => {
+      const initial = new Set<SpecificationResult>();
+      if (autoExpandFailed) {
+        for (const s of specifications) {
+          if (s.status === "fail") initial.add(s);
+        }
+      }
+      return initial;
+    }
+  );
+
+  const [expandedReqs, setExpandedReqs] = useState<Set<RequirementResult>>(
+    () => new Set()
+  );
+
+  const toggleSpec = useCallback((spec: SpecificationResult) => {
+    setExpandedSpecs((prev) => {
+      const next = new Set(prev);
+      if (next.has(spec)) next.delete(spec);
+      else next.add(spec);
+      return next;
+    });
+  }, []);
+
+  const toggleReq = useCallback((req: RequirementResult) => {
+    setExpandedReqs((prev) => {
+      const next = new Set(prev);
+      if (next.has(req)) next.delete(req);
+      else next.add(req);
+      return next;
+    });
+  }, []);
+
   if (specifications.length === 0) {
     return (
-      <div className="specification-list specification-list--empty">
-        <p className="empty-message">No specifications to display.</p>
-        <style>{specificationListStyles}</style>
+      <div className="vt-tree vt-tree--empty">
+        <p className="vt-tree__empty-msg">Geen specificaties gevonden.</p>
       </div>
     );
   }
 
-  // Sort specifications: failed first, then passed
-  const sortedSpecifications = [...specifications].sort((a, b) => {
-    if (a.status === 'fail' && b.status === 'pass') return -1;
-    if (a.status === 'pass' && b.status === 'fail') return 1;
-    return 0;
-  });
-
   return (
-    <div className="specification-list" role="list" aria-label="Validation Specifications">
-      {sortedSpecifications.map((spec) => (
-        <SpecificationItem
-          key={spec.specification_name}
-          specification={spec}
-          initiallyExpanded={autoExpandFailed && spec.status === 'fail'}
-          onElementSelect={onElementSelect}
-          onCreateBcfFromSpec={onCreateBcfFromSpec}
-          onCreateBcfFromRequirement={onCreateBcfFromRequirement}
-          onCreateBcfFromElement={onCreateBcfFromElement}
-        />
-      ))}
-      <style>{specificationListStyles}</style>
+    <div className="vt-tree" role="tree" aria-label="Validation Results">
+      {sorted.map((spec) => {
+        const specExpanded = expandedSpecs.has(spec);
+
+        return (
+          <div key={spec.specification_name} role="group">
+            <SpecRow
+              spec={spec}
+              expanded={specExpanded}
+              selected={isSelected(selectedItem, "spec", spec)}
+              onToggle={() => toggleSpec(spec)}
+              onSelect={() => onItemSelect({ kind: "spec", spec })}
+            />
+            {specExpanded &&
+              spec.requirements.map((req, ri) => {
+                const reqExpanded = expandedReqs.has(req);
+                const failedEls = req.elements.filter(
+                  (e) => e.status === "fail"
+                );
+                const passedEls = req.elements.filter(
+                  (e) => e.status === "pass"
+                );
+                const orderedEls = [...failedEls, ...passedEls];
+
+                return (
+                  <div key={`${spec.specification_name}-req-${ri}`} role="group">
+                    <ReqRow
+                      req={req}
+                      expanded={reqExpanded}
+                      selected={isSelected(
+                        selectedItem,
+                        "requirement",
+                        spec,
+                        req
+                      )}
+                      onToggle={() => toggleReq(req)}
+                      onSelect={() =>
+                        onItemSelect({ kind: "requirement", spec, req })
+                      }
+                    />
+                    {reqExpanded &&
+                      orderedEls.map((el, ei) => (
+                        <ElRow
+                          key={el.global_id ?? `el-${ei}`}
+                          el={el}
+                          selected={isSelected(
+                            selectedItem,
+                            "element",
+                            spec,
+                            req,
+                            el
+                          )}
+                          onSelect={() =>
+                            onItemSelect({ kind: "element", spec, req, el })
+                          }
+                        />
+                      ))}
+                  </div>
+                );
+              })}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-/** Styles for the SpecificationList component */
-const specificationListStyles = `
-  .specification-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
-  }
-
-  .specification-list--empty {
-    padding: var(--spacing-xl);
-    text-align: center;
-    background-color: var(--color-surface);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--color-border);
-  }
-
-  .empty-message {
-    color: var(--color-text-secondary);
-    font-size: var(--font-size-base);
-    margin: 0;
-  }
-
-  /* Specification Item */
-  .specification-item {
-    background-color: var(--color-surface);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--color-border);
-    overflow: hidden;
-  }
-
-  .specification-item--pass {
-    border-left: 4px solid var(--color-success);
-  }
-
-  .specification-item--fail {
-    border-left: 4px solid var(--color-error);
-  }
-
-  .specification-header {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    width: 100%;
-    padding: var(--spacing-md);
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: var(--font-size-base);
-    text-align: left;
-    color: var(--color-text);
-    transition: background-color var(--transition-fast);
-  }
-
-  .specification-header:hover {
-    background-color: var(--color-hover);
-  }
-
-  .specification-header:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: -2px;
-  }
-
-  .specification-expand-icon {
-    font-size: var(--font-size-xs);
-    color: var(--color-text-secondary);
-    min-width: 12px;
-    transition: transform var(--transition-fast);
-  }
-
-  .specification-status-badge {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    min-width: 24px;
-    border-radius: var(--radius-full);
-    font-size: var(--font-size-sm);
-    font-weight: 700;
-  }
-
-  .badge--pass {
-    background-color: rgba(68, 182, 168, 0.2);
-    color: var(--color-success);
-  }
-
-  .badge--fail {
-    background-color: rgba(219, 76, 64, 0.2);
-    color: var(--color-error);
-  }
-
-  .specification-severity {
-    display: flex;
-    align-items: center;
-    font-size: var(--font-size-sm);
-  }
-
-  .severity--error {
-    color: var(--color-error);
-  }
-
-  .severity--warning {
-    color: var(--color-warning);
-  }
-
-  .severity--info {
-    color: var(--color-primary);
-  }
-
-  .specification-name {
-    flex: 1;
-    font-weight: 500;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .specification-failed-badge {
-    padding: var(--spacing-xs) var(--spacing-sm);
-    background-color: rgba(219, 76, 64, 0.15);
-    color: var(--color-error);
-    border-radius: var(--radius-sm);
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .specification-content {
-    padding: 0 var(--spacing-md) var(--spacing-md);
-    border-top: 1px solid var(--color-border);
-  }
-
-  .specification-stats,
-  .requirement-stats {
-    display: flex;
-    gap: var(--spacing-lg);
-    padding: var(--spacing-sm) 0;
-    font-size: var(--font-size-sm);
-  }
-
-  .stat {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-  }
-
-  .stat-label {
-    color: var(--color-text-secondary);
-  }
-
-  .stat-value {
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .stat--pass .stat-value {
-    color: var(--color-success);
-  }
-
-  .stat--fail .stat-value {
-    color: var(--color-error);
-  }
-
-  /* Requirements List */
-  .requirements-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs);
-    margin-top: var(--spacing-sm);
-    padding-left: var(--spacing-md);
-    border-left: 2px solid var(--color-border);
-  }
-
-  .requirement-item {
-    background-color: var(--color-background);
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--color-border);
-    overflow: hidden;
-  }
-
-  .requirement-item--pass {
-    border-left: 3px solid var(--color-success);
-  }
-
-  .requirement-item--fail {
-    border-left: 3px solid var(--color-error);
-  }
-
-  .requirement-header {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    width: 100%;
-    padding: var(--spacing-sm) var(--spacing-md);
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: var(--font-size-sm);
-    text-align: left;
-    color: var(--color-text);
-    transition: background-color var(--transition-fast);
-  }
-
-  .requirement-header:hover {
-    background-color: var(--color-hover);
-  }
-
-  .requirement-header:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: -2px;
-  }
-
-  .requirement-expand-icon {
-    font-size: var(--font-size-xs);
-    color: var(--color-text-secondary);
-    min-width: 10px;
-  }
-
-  .requirement-status-badge {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    min-width: 20px;
-    border-radius: var(--radius-full);
-    font-size: var(--font-size-xs);
-    font-weight: 700;
-  }
-
-  .requirement-description {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .requirement-failed-count {
-    padding: 2px var(--spacing-xs);
-    background-color: rgba(219, 76, 64, 0.15);
-    color: var(--color-error);
-    border-radius: var(--radius-sm);
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .requirement-content {
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-top: 1px solid var(--color-border);
-  }
-
-  /* Elements List */
-  .elements-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs);
-    margin-top: var(--spacing-sm);
-  }
-
-  .element-item {
-    padding: var(--spacing-sm);
-    background-color: var(--color-surface);
-    border-radius: var(--radius-sm);
-    border-left: 2px solid var(--color-border);
-  }
-
-  .element-item--pass {
-    border-left-color: var(--color-success);
-  }
-
-  .element-item--fail {
-    border-left-color: var(--color-error);
-    background-color: rgba(219, 76, 64, 0.05);
-  }
-
-  .element-header {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    font-size: var(--font-size-sm);
-  }
-
-  .element-status-icon {
-    font-weight: 700;
-    font-size: var(--font-size-xs);
-  }
-
-  .element-item--pass .element-status-icon {
-    color: var(--color-success);
-  }
-
-  .element-item--fail .element-status-icon {
-    color: var(--color-error);
-  }
-
-  .element-name {
-    font-weight: 500;
-    color: var(--color-text);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    flex: 1;
-  }
-
-  .element-global-id {
-    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, monospace;
-    font-size: var(--font-size-xs);
-    color: var(--color-text-secondary);
-    flex-shrink: 0;
-  }
-
-  .element-messages {
-    margin: var(--spacing-xs) 0 0;
-    padding-left: var(--spacing-lg);
-    list-style: disc;
-  }
-
-  .element-message {
-    font-size: var(--font-size-xs);
-    color: var(--color-text-secondary);
-    line-height: 1.4;
-  }
-
-  .element-item--fail .element-message {
-    color: var(--color-error);
-  }
-
-  .element-item--clickable {
-    cursor: pointer;
-    transition: background-color var(--transition-fast),
-                border-left-color var(--transition-fast);
-  }
-
-  .element-item--clickable:hover {
-    background-color: var(--color-hover);
-    border-left-color: var(--color-primary);
-  }
-
-  .element-item--clickable:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: -2px;
-  }
-
-  .show-more-btn {
-    display: block;
-    width: 100%;
-    padding: var(--spacing-sm);
-    background-color: var(--color-surface);
-    border: 1px dashed var(--color-border);
-    border-radius: var(--radius-sm);
-    color: var(--color-primary);
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-  }
-
-  .show-more-btn:hover {
-    background-color: var(--color-hover);
-    border-color: var(--color-primary);
-  }
-
-  .show-more-btn:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-  }
-
-  /* BCF action button */
-  .bcf-action-btn {
-    padding: 2px var(--spacing-xs);
-    background-color: rgba(68, 182, 168, 0.15);
-    color: var(--color-primary);
-    border: 1px solid rgba(68, 182, 168, 0.3);
-    border-radius: var(--radius-sm);
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition: all var(--transition-fast);
-  }
-
-  .bcf-action-btn:hover {
-    background-color: rgba(68, 182, 168, 0.3);
-    border-color: var(--color-primary);
-  }
-
-  .bcf-action-btn:active {
-    background-color: var(--color-primary);
-    color: white;
-  }
-
-  /* Responsive adjustments */
-  @media (max-width: 600px) {
-    .specification-header,
-    .requirement-header {
-      flex-wrap: wrap;
-    }
-
-    .specification-name,
-    .requirement-description {
-      flex-basis: 100%;
-      order: 10;
-      margin-top: var(--spacing-xs);
-      white-space: normal;
-    }
-
-    .specification-stats,
-    .requirement-stats {
-      flex-wrap: wrap;
-      gap: var(--spacing-md);
-    }
-
-    .requirements-list {
-      padding-left: var(--spacing-sm);
-    }
-
-    .element-header {
-      flex-wrap: wrap;
-    }
-
-    .element-name {
-      flex-basis: 100%;
-      order: 10;
-    }
-
-    .element-global-id {
-      flex-basis: 100%;
-      order: 11;
-      margin-top: var(--spacing-xs);
-    }
-  }
-
-  @media (max-width: 400px) {
-    .specification-header {
-      padding: var(--spacing-sm);
-    }
-
-    .specification-content {
-      padding: var(--spacing-sm);
-    }
-  }
-`;
+/** Legacy props for backward compatibility with LegacyValidationView */
+export interface SpecificationListProps {
+  specifications: SpecificationResult[];
+  autoExpandFailed?: boolean;
+}
+
+/**
+ * Legacy SpecificationList wrapper — provides the old API surface
+ * (no selection state) for LegacyValidationView.
+ */
+export function SpecificationList({
+  specifications,
+  autoExpandFailed,
+}: SpecificationListProps) {
+  const [selected, setSelected] = useState<SelectedTreeItem | null>(null);
+  return (
+    <ResultsTree
+      specifications={specifications}
+      autoExpandFailed={autoExpandFailed}
+      selectedItem={selected}
+      onItemSelect={setSelected}
+    />
+  );
+}
 
 export default SpecificationList;

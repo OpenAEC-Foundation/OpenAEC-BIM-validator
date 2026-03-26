@@ -129,6 +129,14 @@ export interface SubmitValidationResponse {
 }
 
 /**
+ * Discriminated union for tree selection state in the validation results tree.
+ */
+export type SelectedTreeItem =
+  | { kind: "spec"; spec: SpecificationResult }
+  | { kind: "requirement"; spec: SpecificationResult; req: RequirementResult }
+  | { kind: "element"; spec: SpecificationResult; req: RequirementResult; el: ElementResult };
+
+/**
  * IDS standard options available for validation
  */
 export type IdsStandard = 'nl-bim' | 'rvb';

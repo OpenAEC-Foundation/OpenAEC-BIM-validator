@@ -1,9 +1,8 @@
 /**
- * ValidationPanel — IDS validation workflow in the right panel.
+ * ValidationPanel — BIMcollab-style IDS validation workflow.
  *
- * Compact layout that integrates IDS selection, validation trigger,
- * progress tracking, and results display. Clicking on failed
- * specifications highlights the affected elements in the 3D viewer.
+ * Layout: IDS selection + submit → header bar + ResultsTree + DetailPane.
+ * Replaces the old card-based layout with a flat tree and context detail pane.
  */
 
 import { useCallback, useMemo, useState } from "react";
@@ -13,9 +12,14 @@ import type { IdsSelection } from "../IdsSelector";
 import IdsSelector from "../IdsSelector";
 import ValidationProgress from "../ValidationProgress";
 import ErrorDisplay from "../ErrorDisplay";
-import ResultsSummary from "../ResultsSummary";
-import SpecificationList from "../SpecificationList";
-import type { SpecificationResult, RequirementResult, ElementResult } from "../../types/validation";
+import { ResultsTree } from "../SpecificationList";
+import { DetailPane } from "./DetailPane";
+import type {
+  SpecificationResult,
+  RequirementResult,
+  ElementResult,
+  SelectedTreeItem,
+} from "../../types/validation";
 import { createBcfIssue } from "../../types/bcfIssue";
 import {
   mapSpecToTopic,
@@ -54,6 +58,11 @@ export function ValidationPanel() {
   const bcfAddIssue = useStore((s) => s.bcfAddIssue);
   const bcfAddIssues = useStore((s) => s.bcfAddIssues);
 
+  // Tree selection state
+  const [selectedItem, setSelectedItem] = useState<SelectedTreeItem | null>(
+    null
+  );
+
   // Inline feedback for BCF actions
   const [bcfFeedback, setBcfFeedback] = useState<string | null>(null);
 
@@ -71,11 +80,6 @@ export function ValidationPanel() {
 
   const handleSubmit = useCallback(() => {
     if (!loadedModel) return;
-
-    // Find the original file — we need the File object from the input
-    // Since we don't store File references in the store, dispatch an event
-    // to get the file from the Toolbar's recent uploads
-    // For now, use a stored file reference approach
     window.dispatchEvent(
       new CustomEvent("validation-request", {
         detail: { modelId: loadedModel.id, fileName: loadedModel.fileName },
@@ -97,10 +101,9 @@ export function ValidationPanel() {
     URL.revokeObjectURL(url);
   }, [validationResult]);
 
-  /** Highlight failed elements when clicking a specification */
+  /** Highlight all failed elements in 3D */
   const handleHighlightFailures = useCallback(() => {
     if (!validationResult) return;
-
     const failedIds: string[] = [];
     for (const spec of validationResult.specifications) {
       if (spec.status === "fail") {
@@ -113,7 +116,6 @@ export function ValidationPanel() {
         }
       }
     }
-
     if (failedIds.length > 0) {
       setHighlightGroup({
         id: "validation-failures",
@@ -127,8 +129,31 @@ export function ValidationPanel() {
     clearHighlights();
   }, [clearHighlights]);
 
-  /** Click on an element in the results → select, highlight, zoom, switch tab */
-  const handleElementSelect = useCallback(
+  /** Tree item selected → update detail pane + 3D interaction for elements */
+  const handleItemSelect = useCallback(
+    (item: SelectedTreeItem) => {
+      setSelectedItem(item);
+
+      // Auto-select and zoom for elements with GlobalId
+      if (item.kind === "element" && item.el.global_id) {
+        selectElement(item.el.global_id);
+        setHighlightGroup({
+          id: "element-selection",
+          color: "#44B6A8",
+          globalIds: [item.el.global_id],
+        });
+        window.dispatchEvent(
+          new CustomEvent("zoom-to-element", {
+            detail: { globalId: item.el.global_id },
+          })
+        );
+      }
+    },
+    [selectElement, setHighlightGroup]
+  );
+
+  /** Zoom from detail pane */
+  const handleElementZoom = useCallback(
     (globalId: string) => {
       selectElement(globalId);
       setHighlightGroup({
@@ -140,7 +165,7 @@ export function ValidationPanel() {
         new CustomEvent("zoom-to-element", { detail: { globalId } })
       );
     },
-    [selectElement, setHighlightGroup, setActiveRightTab]
+    [selectElement, setHighlightGroup]
   );
 
   // ── BCF issue creation handlers ───────────────────────
@@ -155,50 +180,79 @@ export function ValidationPanel() {
   const handleCreateBcfFromSpec = useCallback(
     (spec: SpecificationResult) => {
       const mapping = mapSpecToTopic(spec, ifcFileName, idsFileName);
-      const issue = createBcfIssue(spec.specification_name, { specificationName: spec.specification_name }, mapping);
+      const issue = createBcfIssue(
+        spec.specification_name,
+        { specificationName: spec.specification_name },
+        mapping
+      );
       bcfAddIssue(issue);
-      showBcfFeedback(`BCF issue aangemaakt: ${spec.specification_name}`);
+      showBcfFeedback(`BCF issue: ${spec.specification_name}`);
     },
-    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback],
+    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback]
   );
 
   const handleCreateBcfFromRequirement = useCallback(
     (spec: SpecificationResult, req: RequirementResult) => {
-      const mapping = mapRequirementToTopic(spec, req, ifcFileName, idsFileName);
+      const mapping = mapRequirementToTopic(
+        spec,
+        req,
+        ifcFileName,
+        idsFileName
+      );
       const title = `${spec.specification_name} — ${req.requirement_description}`;
-      const issue = createBcfIssue(title, {
-        specificationName: spec.specification_name,
-        requirementDescription: req.requirement_description,
-      }, mapping);
+      const issue = createBcfIssue(
+        title,
+        {
+          specificationName: spec.specification_name,
+          requirementDescription: req.requirement_description,
+        },
+        mapping
+      );
       bcfAddIssue(issue);
-      showBcfFeedback(`BCF issue aangemaakt: ${req.requirement_description}`);
+      showBcfFeedback(`BCF issue: ${req.requirement_description}`);
     },
-    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback],
+    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback]
   );
 
   const handleCreateBcfFromElement = useCallback(
     (spec: SpecificationResult, req: RequirementResult, el: ElementResult) => {
-      const mapping = mapElementToTopic(spec, req, el, ifcFileName, idsFileName);
+      const mapping = mapElementToTopic(
+        spec,
+        req,
+        el,
+        ifcFileName,
+        idsFileName
+      );
       const elName = el.element_name ?? el.element_type;
       const title = `${el.element_type} "${elName}"`;
-      const issue = createBcfIssue(title, {
-        specificationName: spec.specification_name,
-        requirementDescription: req.requirement_description,
-        elementGlobalId: el.global_id ?? undefined,
-      }, mapping);
+      const issue = createBcfIssue(
+        title,
+        {
+          specificationName: spec.specification_name,
+          requirementDescription: req.requirement_description,
+          elementGlobalId: el.global_id ?? undefined,
+        },
+        mapping
+      );
       bcfAddIssue(issue);
-      showBcfFeedback(`BCF issue aangemaakt: ${elName}`);
+      showBcfFeedback(`BCF issue: ${elName}`);
     },
-    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback],
+    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback]
   );
 
   const handleCreateBcfBulk = useCallback(() => {
     if (!validationResult) return;
     const mappings = mapValidationToTopics(validationResult);
     const issues = mappings.map((mapping, idx) => {
-      const spec = validationResult.specifications.filter((s) => s.status === "fail")[idx];
+      const spec = validationResult.specifications.filter(
+        (s) => s.status === "fail"
+      )[idx];
       const specName = spec?.specification_name ?? `Issue ${idx + 1}`;
-      return createBcfIssue(specName, { specificationName: specName }, mapping);
+      return createBcfIssue(
+        specName,
+        { specificationName: specName },
+        mapping
+      );
     });
     bcfAddIssues(issues);
     showBcfFeedback(`${issues.length} BCF issues aangemaakt`);
@@ -211,6 +265,11 @@ export function ValidationPanel() {
     idsSelection !== null &&
     viewerReady &&
     (phase === "idle" || phase === "error" || phase === "completed");
+
+  // Result counts for header bar
+  const totalSpecs = validationResult?.total_specifications ?? 0;
+  const failedSpecs = validationResult?.failed_specifications ?? 0;
+  const passedSpecs = totalSpecs - failedSpecs;
 
   // No model loaded
   if (!project || project.models.length === 0) {
@@ -297,62 +356,91 @@ export function ValidationPanel() {
 
       {/* Results */}
       {validationResult && (
-        <div className="validation-panel__section validation-panel__results">
-          <ResultsSummary
-            result={validationResult}
-            onDownloadJson={handleDownloadJson}
-          />
-
-          {/* Highlight controls + BCF bulk */}
-          <div className="validation-panel__highlight-bar">
-            <button
-              type="button"
-              className="validation-panel__btn validation-panel__btn--highlight"
-              onClick={handleHighlightFailures}
-              title="Toon gefaalde elementen in 3D"
-            >
-              Toon failures in 3D
-            </button>
-            <button
-              type="button"
-              className="validation-panel__btn validation-panel__btn--secondary"
-              onClick={handleClearHighlights}
-              title="Verwijder highlights"
-            >
-              Wis highlights
-            </button>
-            {validationResult.failed_specifications > 0 && (
+        <>
+          {/* Header bar */}
+          <div className="vt-header">
+            <span className="vt-header__title">
+              Results ({totalSpecs})
+            </span>
+            <span className="vt-header__counts">
+              <span className="vt-header__pass">{passedSpecs}</span>
+              <span className="vt-header__sep">/</span>
+              <span className="vt-header__fail">{failedSpecs}</span>
+            </span>
+            <div className="vt-header__actions">
               <button
                 type="button"
-                className="validation-panel__btn validation-panel__btn--bcf"
-                onClick={handleCreateBcfBulk}
-                title="Maak BCF issues van alle failures"
+                className="vt-header__icon-btn"
+                onClick={handleHighlightFailures}
+                title="Toon failures in 3D"
               >
-                Alle failures → BCF
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 2a2 2 0 110 4 2 2 0 010-4z" />
+                </svg>
               </button>
-            )}
+              <button
+                type="button"
+                className="vt-header__icon-btn"
+                onClick={handleClearHighlights}
+                title="Wis highlights"
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                className="vt-header__icon-btn"
+                onClick={handleDownloadJson}
+                title="Download JSON"
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M4 1h8a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1zm1 2v2h6V3H5zm0 4v1h6V7H5zm0 3v1h4v-1H5z" />
+                </svg>
+              </button>
+              {failedSpecs > 0 && (
+                <button
+                  type="button"
+                  className="vt-header__icon-btn vt-header__icon-btn--bcf"
+                  onClick={handleCreateBcfBulk}
+                  title="Alle failures → BCF"
+                >
+                  BCF
+                </button>
+              )}
+            </div>
           </div>
 
+          {/* BCF feedback toast */}
           {bcfFeedback && (
             <div className="validation-panel__bcf-feedback" role="status">
               {bcfFeedback}
             </div>
           )}
 
-          {validationResult.specifications.length > 0 && (
-            <div className="validation-panel__specs">
-              <h3 className="validation-panel__heading">Specificaties</h3>
-              <SpecificationList
-                specifications={validationResult.specifications}
-                autoExpandFailed
-                onElementSelect={handleElementSelect}
+          {/* Tree container */}
+          <div className="vt-tree-container">
+            <ResultsTree
+              specifications={validationResult.specifications}
+              autoExpandFailed
+              selectedItem={selectedItem}
+              onItemSelect={handleItemSelect}
+            />
+          </div>
+
+          {/* Detail pane */}
+          {selectedItem && (
+            <div className="vt-detail-container">
+              <DetailPane
+                item={selectedItem}
+                onElementZoom={handleElementZoom}
                 onCreateBcfFromSpec={handleCreateBcfFromSpec}
                 onCreateBcfFromRequirement={handleCreateBcfFromRequirement}
                 onCreateBcfFromElement={handleCreateBcfFromElement}
               />
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );
