@@ -21,6 +21,7 @@ import type {
   CreateViewpointRequest,
   CreateCommentRequest,
 } from "../types/bcfPlatform";
+import type { BcfGenerationSettings } from "../types/bcfGenerationSettings";
 
 export interface TopicMapping {
   topic: CreateTopicRequest;
@@ -221,6 +222,51 @@ function buildElementDescription(
   return lines.join("\n");
 }
 
+// ── Settings application ──────────────────────────────────
+
+/** Build a title with optional prefix, spec name, and requirement name. */
+function buildTitle(
+  defaultTitle: string,
+  specName: string,
+  reqName: string | undefined,
+  settings?: BcfGenerationSettings,
+): string {
+  if (!settings) return xmlSafeText(defaultTitle);
+
+  const parts: string[] = [];
+  if (settings.titlePrefix) parts.push(settings.titlePrefix);
+  if (settings.includeSpecName) parts.push(specName);
+  if (settings.includeReqName && reqName) parts.push(reqName);
+
+  // If no parts enabled, fall back to default
+  const title = parts.length > 0 ? parts.join(" — ") : defaultTitle;
+  return xmlSafeText(title);
+}
+
+/** Apply settings overrides to a CreateTopicRequest. */
+function applySettings(
+  topic: CreateTopicRequest,
+  description: string,
+  labels: string[],
+  severity: Severity,
+  settings?: BcfGenerationSettings,
+): CreateTopicRequest {
+  if (!settings) return topic;
+
+  return {
+    ...topic,
+    description: settings.descriptionPrefix
+      ? `${settings.descriptionPrefix}\n\n${description}`
+      : description,
+    topic_type: settings.topicType || topic.topic_type,
+    priority: settings.priority || severityToPriority(severity),
+    labels: settings.label ? [...labels, settings.label] : labels,
+    assigned_to: settings.assignedTo || undefined,
+    stage: settings.milestone || undefined,
+    due_date: settings.deadline || undefined,
+  };
+}
+
 // ── Public mappers ─────────────────────────────────────────
 
 /**
@@ -231,20 +277,31 @@ export function mapSpecToTopic(
   ifcFileName: string,
   idsFileName: string,
   index = 1,
+  settings?: BcfGenerationSettings,
 ): TopicMapping {
   const globalIds = collectFailedGlobalIds(spec);
   const failedReqs = spec.requirements.filter((r) => r.status === "fail");
   const totalFailed = failedReqs.reduce((sum, r) => sum + r.failed_elements, 0);
 
-  const topic: CreateTopicRequest = {
-    title: xmlSafeText(spec.specification_name),
-    description: buildSpecDescription(spec, ifcFileName, idsFileName),
-    topic_type: "IDS Validation",
-    topic_status: "Open",
-    priority: severityToPriority(spec.severity),
-    labels: buildLabelsFromSpec(spec),
-    index,
-  };
+  const description = buildSpecDescription(spec, ifcFileName, idsFileName);
+  const labels = buildLabelsFromSpec(spec);
+  const title = buildTitle(spec.specification_name, spec.specification_name, undefined, settings);
+
+  const topic = applySettings(
+    {
+      title,
+      description,
+      topic_type: "IDS Validation",
+      topic_status: "Open",
+      priority: severityToPriority(spec.severity),
+      labels,
+      index,
+    },
+    description,
+    labels,
+    spec.severity,
+    settings,
+  );
 
   const comment: CreateCommentRequest = {
     comment:
@@ -264,18 +321,30 @@ export function mapRequirementToTopic(
   ifcFileName: string,
   idsFileName: string,
   index = 1,
+  settings?: BcfGenerationSettings,
 ): TopicMapping {
   const globalIds = collectRequirementFailedGlobalIds(req);
 
-  const topic: CreateTopicRequest = {
-    title: xmlSafeText(`${spec.specification_name} — ${req.requirement_description}`),
-    description: buildRequirementDescription(spec, req, ifcFileName, idsFileName),
-    topic_type: "IDS Validation",
-    topic_status: "Open",
-    priority: severityToPriority(spec.severity),
-    labels: buildLabelsFromRequirement(req),
-    index,
-  };
+  const defaultTitle = `${spec.specification_name} — ${req.requirement_description}`;
+  const description = buildRequirementDescription(spec, req, ifcFileName, idsFileName);
+  const labels = buildLabelsFromRequirement(req);
+  const title = buildTitle(defaultTitle, spec.specification_name, req.requirement_description, settings);
+
+  const topic = applySettings(
+    {
+      title,
+      description,
+      topic_type: "IDS Validation",
+      topic_status: "Open",
+      priority: severityToPriority(spec.severity),
+      labels,
+      index,
+    },
+    description,
+    labels,
+    spec.severity,
+    settings,
+  );
 
   const comment: CreateCommentRequest = {
     comment:
@@ -297,21 +366,31 @@ export function mapElementToTopic(
   ifcFileName: string,
   idsFileName: string,
   index = 1,
+  settings?: BcfGenerationSettings,
 ): TopicMapping {
   const globalIds = element.global_id ? [element.global_id] : [];
   const elementName = element.element_name ?? "unnamed";
 
-  const topic: CreateTopicRequest = {
-    title: xmlSafeText(
-      `${element.element_type} "${elementName}" — ${req.requirement_description}`,
-    ),
-    description: buildElementDescription(spec, req, element, ifcFileName, idsFileName),
-    topic_type: "IDS Validation",
-    topic_status: "Open",
-    priority: severityToPriority(spec.severity),
-    labels: ["IDS", element.element_type],
-    index,
-  };
+  const defaultTitle = `${element.element_type} "${elementName}" — ${req.requirement_description}`;
+  const description = buildElementDescription(spec, req, element, ifcFileName, idsFileName);
+  const labels: string[] = ["IDS", element.element_type];
+  const title = buildTitle(defaultTitle, spec.specification_name, req.requirement_description, settings);
+
+  const topic = applySettings(
+    {
+      title,
+      description,
+      topic_type: "IDS Validation",
+      topic_status: "Open",
+      priority: severityToPriority(spec.severity),
+      labels,
+      index,
+    },
+    description,
+    labels,
+    spec.severity,
+    settings,
+  );
 
   const comment: CreateCommentRequest = {
     comment:
@@ -327,10 +406,13 @@ export function mapElementToTopic(
 /**
  * Bulk: map all failed specifications to BCF topics (backward-compatible).
  */
-export function mapValidationToTopics(result: ValidationResult): TopicMapping[] {
+export function mapValidationToTopics(
+  result: ValidationResult,
+  settings?: BcfGenerationSettings,
+): TopicMapping[] {
   const failedSpecs = result.specifications.filter((s) => s.status === "fail");
 
   return failedSpecs.map((spec, index) =>
-    mapSpecToTopic(spec, result.ifc_file_name, result.ids_file_name, index + 1),
+    mapSpecToTopic(spec, result.ifc_file_name, result.ids_file_name, index + 1, settings),
   );
 }

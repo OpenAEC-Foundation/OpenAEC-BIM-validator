@@ -53,6 +53,7 @@ export interface CreateTopicRequest {
   labels?: string[];
   stage?: string;
   due_date?: string | null;
+  assigned_to?: string;
   index?: number;
 }
 

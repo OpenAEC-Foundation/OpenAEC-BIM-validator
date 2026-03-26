@@ -5,7 +5,7 @@
  * Replaces the old card-based layout with a flat tree and context detail pane.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import { useStore } from "../../store";
 import type { IdsSelection } from "../IdsSelector";
@@ -14,12 +14,14 @@ import ValidationProgress from "../ValidationProgress";
 import ErrorDisplay from "../ErrorDisplay";
 import { ResultsTree } from "../SpecificationList";
 import { DetailPane } from "./DetailPane";
+import { BcfGenerateDialog } from "./BcfGenerateDialog";
 import type {
   SpecificationResult,
   RequirementResult,
   ElementResult,
   SelectedTreeItem,
 } from "../../types/validation";
+import type { BcfGenerationSettings } from "../../types/bcfGenerationSettings";
 import { createBcfIssue } from "../../types/bcfIssue";
 import {
   mapSpecToTopic,
@@ -65,6 +67,11 @@ export function ValidationPanel() {
 
   // Inline feedback for BCF actions
   const [bcfFeedback, setBcfFeedback] = useState<string | null>(null);
+
+  // BCF dialog state
+  const [bcfDialogOpen, setBcfDialogOpen] = useState(false);
+  const [bcfDialogIssueCount, setBcfDialogIssueCount] = useState(0);
+  const pendingBcfAction = useRef<((settings: BcfGenerationSettings) => void) | null>(null);
 
   /** Get the first loaded IFC file from the project */
   const loadedModel = useMemo(() => {
@@ -168,96 +175,110 @@ export function ValidationPanel() {
     [selectElement, setHighlightGroup]
   );
 
-  // ── BCF issue creation handlers ───────────────────────
+  // ── BCF dialog helpers ────────────────────────────────
   const showBcfFeedback = useCallback((msg: string) => {
     setBcfFeedback(msg);
     setTimeout(() => setBcfFeedback(null), 2500);
   }, []);
 
+  const openBcfDialog = useCallback((issueCount: number, action: (settings: BcfGenerationSettings) => void) => {
+    setBcfDialogIssueCount(issueCount);
+    pendingBcfAction.current = action;
+    setBcfDialogOpen(true);
+  }, []);
+
+  const handleBcfDialogGenerate = useCallback((settings: BcfGenerationSettings) => {
+    pendingBcfAction.current?.(settings);
+    pendingBcfAction.current = null;
+    setBcfDialogOpen(false);
+  }, []);
+
+  const handleBcfDialogCancel = useCallback(() => {
+    pendingBcfAction.current = null;
+    setBcfDialogOpen(false);
+  }, []);
+
   const ifcFileName = validationResult?.ifc_file_name ?? "";
   const idsFileName = validationResult?.ids_file_name ?? "";
 
+  // ── BCF issue creation handlers (via dialog) ────────
   const handleCreateBcfFromSpec = useCallback(
     (spec: SpecificationResult) => {
-      const mapping = mapSpecToTopic(spec, ifcFileName, idsFileName);
-      const issue = createBcfIssue(
-        spec.specification_name,
-        { specificationName: spec.specification_name },
-        mapping
-      );
-      bcfAddIssue(issue);
-      showBcfFeedback(`BCF issue: ${spec.specification_name}`);
+      openBcfDialog(1, (settings) => {
+        const mapping = mapSpecToTopic(spec, ifcFileName, idsFileName, 1, settings);
+        const issue = createBcfIssue(
+          mapping.topic.title,
+          { specificationName: spec.specification_name },
+          mapping
+        );
+        bcfAddIssue(issue);
+        showBcfFeedback(`BCF issue: ${spec.specification_name}`);
+      });
     },
-    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback]
+    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback, openBcfDialog]
   );
 
   const handleCreateBcfFromRequirement = useCallback(
     (spec: SpecificationResult, req: RequirementResult) => {
-      const mapping = mapRequirementToTopic(
-        spec,
-        req,
-        ifcFileName,
-        idsFileName
-      );
-      const title = `${spec.specification_name} — ${req.requirement_description}`;
-      const issue = createBcfIssue(
-        title,
-        {
-          specificationName: spec.specification_name,
-          requirementDescription: req.requirement_description,
-        },
-        mapping
-      );
-      bcfAddIssue(issue);
-      showBcfFeedback(`BCF issue: ${req.requirement_description}`);
+      openBcfDialog(1, (settings) => {
+        const mapping = mapRequirementToTopic(spec, req, ifcFileName, idsFileName, 1, settings);
+        const issue = createBcfIssue(
+          mapping.topic.title,
+          {
+            specificationName: spec.specification_name,
+            requirementDescription: req.requirement_description,
+          },
+          mapping
+        );
+        bcfAddIssue(issue);
+        showBcfFeedback(`BCF issue: ${req.requirement_description}`);
+      });
     },
-    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback]
+    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback, openBcfDialog]
   );
 
   const handleCreateBcfFromElement = useCallback(
     (spec: SpecificationResult, req: RequirementResult, el: ElementResult) => {
-      const mapping = mapElementToTopic(
-        spec,
-        req,
-        el,
-        ifcFileName,
-        idsFileName
-      );
-      const elName = el.element_name ?? el.element_type;
-      const title = `${el.element_type} "${elName}"`;
-      const issue = createBcfIssue(
-        title,
-        {
-          specificationName: spec.specification_name,
-          requirementDescription: req.requirement_description,
-          elementGlobalId: el.global_id ?? undefined,
-        },
-        mapping
-      );
-      bcfAddIssue(issue);
-      showBcfFeedback(`BCF issue: ${elName}`);
+      openBcfDialog(1, (settings) => {
+        const mapping = mapElementToTopic(spec, req, el, ifcFileName, idsFileName, 1, settings);
+        const elName = el.element_name ?? el.element_type;
+        const issue = createBcfIssue(
+          mapping.topic.title,
+          {
+            specificationName: spec.specification_name,
+            requirementDescription: req.requirement_description,
+            elementGlobalId: el.global_id ?? undefined,
+          },
+          mapping
+        );
+        bcfAddIssue(issue);
+        showBcfFeedback(`BCF issue: ${elName}`);
+      });
     },
-    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback]
+    [ifcFileName, idsFileName, bcfAddIssue, showBcfFeedback, openBcfDialog]
   );
 
   const handleCreateBcfBulk = useCallback(() => {
     if (!validationResult) return;
-    const mappings = mapValidationToTopics(validationResult);
-    const issues = mappings.map((mapping, idx) => {
-      const spec = validationResult.specifications.filter(
-        (s) => s.status === "fail"
-      )[idx];
-      const specName = spec?.specification_name ?? `Issue ${idx + 1}`;
-      return createBcfIssue(
-        specName,
-        { specificationName: specName },
-        mapping
-      );
+    const failedCount = validationResult.specifications.filter((s) => s.status === "fail").length;
+    openBcfDialog(failedCount, (settings) => {
+      const mappings = mapValidationToTopics(validationResult, settings);
+      const issues = mappings.map((mapping, idx) => {
+        const spec = validationResult.specifications.filter(
+          (s) => s.status === "fail"
+        )[idx];
+        const specName = spec?.specification_name ?? `Issue ${idx + 1}`;
+        return createBcfIssue(
+          mapping.topic.title,
+          { specificationName: specName },
+          mapping
+        );
+      });
+      bcfAddIssues(issues);
+      showBcfFeedback(`${issues.length} BCF issues aangemaakt`);
+      setActiveRightTab("bcf");
     });
-    bcfAddIssues(issues);
-    showBcfFeedback(`${issues.length} BCF issues aangemaakt`);
-    setActiveRightTab("bcf");
-  }, [validationResult, bcfAddIssues, showBcfFeedback, setActiveRightTab]);
+  }, [validationResult, bcfAddIssues, showBcfFeedback, setActiveRightTab, openBcfDialog]);
 
   const inputsDisabled = phase === "submitting" || phase === "polling";
   const canSubmit =
@@ -441,6 +462,15 @@ export function ValidationPanel() {
             </div>
           )}
         </>
+      )}
+
+      {/* BCF Generation Settings Dialog */}
+      {bcfDialogOpen && (
+        <BcfGenerateDialog
+          issueCount={bcfDialogIssueCount}
+          onGenerate={handleBcfDialogGenerate}
+          onCancel={handleBcfDialogCancel}
+        />
       )}
     </div>
   );

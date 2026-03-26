@@ -1,0 +1,201 @@
+/**
+ * BcfGenerateDialog — overlay modal for BCF generation settings.
+ *
+ * Uses --theme-* tokens. Prefix: bcf-dialog-.
+ */
+
+.bcf-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.bcf-dialog {
+  width: 520px;
+  max-width: 90vw;
+  max-height: 85vh;
+  background-color: var(--theme-surface);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+
+.bcf-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--theme-border);
+  flex-shrink: 0;
+}
+
+.bcf-dialog__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--theme-text);
+  margin: 0;
+}
+
+.bcf-dialog__issue-count {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--theme-text-secondary);
+  background-color: var(--theme-accent-soft);
+  padding: 1px 8px;
+  border-radius: 10px;
+}
+
+/* ── Form body ───────────────────────────────────────────── */
+
+.bcf-dialog__body {
+  padding: 12px 14px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.bcf-dialog__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.bcf-dialog__field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bcf-dialog__field--full {
+  grid-column: 1 / -1;
+}
+
+.bcf-dialog__label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--theme-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bcf-dialog__input,
+.bcf-dialog__select {
+  padding: 5px 8px;
+  background-color: var(--theme-bg-lighter);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-sm);
+  color: var(--theme-text);
+  font-size: 12px;
+  font-family: inherit;
+  transition: border-color var(--transition-fast);
+}
+
+.bcf-dialog__input:focus,
+.bcf-dialog__select:focus {
+  outline: none;
+  border-color: var(--theme-accent);
+}
+
+.bcf-dialog__input::placeholder {
+  color: var(--theme-text-muted);
+}
+
+.bcf-dialog__select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 24px;
+}
+
+/* ── Checkbox row ────────────────────────────────────────── */
+
+.bcf-dialog__checkboxes {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding-top: 2px;
+}
+
+.bcf-dialog__checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--theme-text);
+  cursor: pointer;
+  user-select: none;
+}
+
+.bcf-dialog__checkbox-label input[type="checkbox"] {
+  accent-color: var(--theme-accent);
+  width: 13px;
+  height: 13px;
+  cursor: pointer;
+}
+
+/* ── Section divider ─────────────────────────────────────── */
+
+.bcf-dialog__section {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--theme-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding-top: 6px;
+  margin-bottom: -2px;
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--theme-border-subtle);
+  padding-top: 10px;
+}
+
+/* ── Footer ──────────────────────────────────────────────── */
+
+.bcf-dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--theme-border);
+  flex-shrink: 0;
+}
+
+.bcf-dialog__btn {
+  padding: 5px 16px;
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.bcf-dialog__btn--cancel {
+  background-color: transparent;
+  color: var(--theme-text-secondary);
+}
+
+.bcf-dialog__btn--cancel:hover {
+  background-color: var(--theme-hover);
+  color: var(--theme-text);
+}
+
+.bcf-dialog__btn--generate {
+  background-color: var(--theme-accent);
+  color: var(--theme-accent-text);
+  border-color: var(--theme-accent);
+}
+
+.bcf-dialog__btn--generate:hover {
+  background-color: var(--theme-accent-hover);
+}
