@@ -170,6 +170,41 @@ export function CenterPanel() {
     };
   }, []);
 
+  // Ribbon view actions: zoom fit, reset camera, reset view
+  useEffect(() => {
+    const handleZoomFitAll = () => {
+      const currentEngine = engineRef.current;
+      if (currentEngine && isReadyRef.current) {
+        currentEngine.fitToAllModels();
+      }
+    };
+
+    const handleResetCamera = () => {
+      const currentEngine = engineRef.current;
+      if (currentEngine && isReadyRef.current) {
+        currentEngine.resetView();
+      }
+    };
+
+    const handleResetView = async () => {
+      const currentEngine = engineRef.current;
+      if (currentEngine && isReadyRef.current) {
+        await currentEngine.clearIsolation();
+        await currentEngine.clearHighlights();
+        currentEngine.fitToAllModels();
+      }
+    };
+
+    window.addEventListener("zoom-fit-all", handleZoomFitAll);
+    window.addEventListener("reset-camera", handleResetCamera);
+    window.addEventListener("reset-view", handleResetView);
+    return () => {
+      window.removeEventListener("zoom-fit-all", handleZoomFitAll);
+      window.removeEventListener("reset-camera", handleResetCamera);
+      window.removeEventListener("reset-view", handleResetView);
+    };
+  }, []);
+
   // Capture-viewpoint event handler: BCF panel requests a viewpoint capture
   // for specific globalIds. Handler zooms, highlights, screenshots, and responds.
   useEffect(() => {

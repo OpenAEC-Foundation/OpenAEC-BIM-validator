@@ -31,17 +31,7 @@ const DEFAULT_BACKGROUND = "#1a1a2e";
 const HIGHLIGHT_OPACITY = 0.6;
 
 /** Ghost mode: opacity for non-selected elements */
-const GHOST_OPACITY = 0.12;
-
-/** Ghost mode: color for non-selected elements */
-const GHOST_COLOR = 0xcccccc;
-
-/** Saved material state for ghost mode restore */
-interface SavedMaterialState {
-  opacity: number;
-  transparent: boolean;
-  color: THREE.Color;
-}
+const GHOST_OPACITY = 0.15;
 
 /** Callbacks for engine events */
 export interface ViewerEngineCallbacks {
@@ -108,8 +98,11 @@ export class ViewerEngine {
   /** Property extractors per model, keyed by modelId. Lazy initialized. */
   private propertyExtractors = new Map<string, PropertyExtractor>();
 
-  /** Saved material states for ghost mode, keyed by material uuid. */
-  private ghostedMaterials = new Map<string, { material: THREE.Material; state: SavedMaterialState }>();
+  /** Cached all-GlobalIds per model for isolation mode. */
+  private allGuidsCache = new Map<string, string[]>();
+
+  /** Whether isolation mode is active. */
+  private _isolated = false;
 
   constructor(
     container: HTMLElement,
@@ -488,74 +481,79 @@ export class ViewerEngine {
   }
 
   /**
-   * Isolate an element: ghost all geometry to transparent grey,
-   * then highlight the selected element with an opaque overlay.
+   * Isolate an element: highlight everything else grey/transparent,
+   * highlight the selected element with an opaque colored overlay.
+   * Base materials are NOT modified — only highlight overlays are used.
    */
   async isolateElement(globalId: string): Promise<void> {
-    // 1. Ghost all model meshes
-    for (const obj of this.modelObjects.values()) {
-      obj.traverse((child) => {
-        if (!(child as THREE.Mesh).isMesh) return;
-        const mesh = child as THREE.Mesh;
-        const materials = Array.isArray(mesh.material)
-          ? mesh.material
-          : [mesh.material];
+    if (!this.fragments) return;
 
-        for (const mat of materials) {
-          if (this.ghostedMaterials.has(mat.uuid)) continue;
-
-          const colorMat = mat as THREE.Material & { color?: THREE.Color };
-          this.ghostedMaterials.set(mat.uuid, {
-            material: mat,
-            state: {
-              opacity: mat.opacity,
-              transparent: mat.transparent,
-              color: colorMat.color ? colorMat.color.clone() : new THREE.Color(0xffffff),
-            },
-          });
-
-          mat.opacity = GHOST_OPACITY;
-          mat.transparent = true;
-          if (colorMat.color) colorMat.color.setHex(GHOST_COLOR);
-          mat.needsUpdate = true;
-        }
-      });
+    // Collect all GUIDs across all models (cached after first call)
+    const otherGuids: string[] = [];
+    for (const modelId of this.modelBytes.keys()) {
+      let guids = this.allGuidsCache.get(modelId);
+      if (!guids) {
+        const extractor = this.getOrCreateExtractor(modelId);
+        if (!extractor) continue;
+        guids = await extractor.getAllGlobalIds();
+        this.allGuidsCache.set(modelId, guids);
+      }
+      for (const guid of guids) {
+        if (guid !== globalId) otherGuids.push(guid);
+      }
     }
 
-    // 2. Highlight the selected element opaquely on top of the ghost
-    if (this.fragments) {
-      await this.fragments.resetHighlight();
-      const modelIdMap = await this.fragments.guidsToModelIdMap([globalId]);
-      if (Object.keys(modelIdMap).length > 0) {
+    // Clear existing highlights
+    await this.fragments.resetHighlight();
+    if (this.highlighter) await this.highlighter.clear();
+
+    // Ghost all other elements
+    if (otherGuids.length > 0) {
+      const otherMap = await this.fragments.guidsToModelIdMap(otherGuids);
+      if (Object.keys(otherMap).length > 0) {
         await this.fragments.highlight(
           {
-            color: new THREE.Color("#44B6A8"),
-            renderedFaces: FRAGS.RenderedFaces.TWO,
-            opacity: 1.0,
-            transparent: false,
+            color: new THREE.Color(0xcccccc),
+            renderedFaces: FRAGS.RenderedFaces.ONE,
+            opacity: GHOST_OPACITY,
+            transparent: true,
           },
-          modelIdMap
+          otherMap
         );
       }
     }
+
+    // Highlight selected element opaquely
+    const selectedMap = await this.fragments.guidsToModelIdMap([globalId]);
+    if (Object.keys(selectedMap).length > 0) {
+      await this.fragments.highlight(
+        {
+          color: new THREE.Color("#44B6A8"),
+          renderedFaces: FRAGS.RenderedFaces.TWO,
+          opacity: 1.0,
+          transparent: false,
+        },
+        selectedMap
+      );
+    }
+
+    this._isolated = true;
   }
 
   /**
-   * Clear isolation: restore all ghosted materials to their original state.
+   * Clear isolation: remove all highlight overlays.
    */
   async clearIsolation(): Promise<void> {
-    for (const { material, state } of this.ghostedMaterials.values()) {
-      material.opacity = state.opacity;
-      material.transparent = state.transparent;
-      const colorMat = material as THREE.Material & { color?: THREE.Color };
-      if (colorMat.color) colorMat.color.copy(state.color);
-      material.needsUpdate = true;
-    }
-    this.ghostedMaterials.clear();
+    if (!this._isolated) return;
 
     if (this.fragments) {
       await this.fragments.resetHighlight();
     }
+    if (this.highlighter) {
+      await this.highlighter.clear();
+    }
+
+    this._isolated = false;
   }
 
   // -- BCF Viewpoint Methods --
@@ -699,7 +697,8 @@ export class ViewerEngine {
     this.modelObjects.clear();
     this.modelBoxes.clear();
     this.modelBytes.clear();
-    this.ghostedMaterials.clear();
+    this.allGuidsCache.clear();
+    this._isolated = false;
 
     for (const extractor of this.propertyExtractors.values()) {
       extractor.dispose();

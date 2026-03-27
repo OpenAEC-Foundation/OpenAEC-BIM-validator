@@ -27,6 +27,7 @@
     "validation": "Validation",
     "viewer": "3D View",
     "zoomFit": "Zoom Fit",
-    "resetCamera": "Reset"
+    "resetCamera": "Reset",
+    "resetView": "Reset View"
   }
 }

@@ -8,6 +8,7 @@
 - [ ] Deploy: `ssh jochem@bim.open-aec.com` → `cd /opt/openaec/bim-validator && sudo git pull && sudo docker compose build --no-cache && sudo docker compose up -d`
 
 ## Testen
+- [ ] Element isolatie: ghost mode testen met grote/meerdere modellen
 - [ ] Proxy auth: login via Authentik → user zichtbaar in TitleBar
 - [ ] BCF ZIP downloaden → importeren in BIMcollab/Solibri/Revit
 - [ ] Push issues naar BCF Platform → verifieer op platform UI

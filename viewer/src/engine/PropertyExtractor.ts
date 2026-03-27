@@ -144,6 +144,14 @@ export class PropertyExtractor {
   }
 
   /**
+   * Get all GlobalIds in this model. Triggers lazy init if needed.
+   */
+  async getAllGlobalIds(): Promise<string[]> {
+    await this.ensureInit();
+    return Array.from(this.globalIdIndex.keys());
+  }
+
+  /**
    * Get ALL properties for an element by GlobalId.
    */
   async getProperties(globalId: string): Promise<IfcElementProperties | null> {

@@ -27,6 +27,7 @@
     "validation": "Validatie",
     "viewer": "3D Beeld",
     "zoomFit": "Passend",
-    "resetCamera": "Herstel"
+    "resetCamera": "Herstel",
+    "resetView": "Reset"
   }
 }

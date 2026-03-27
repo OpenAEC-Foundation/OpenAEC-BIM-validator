@@ -22,6 +22,7 @@ interface RibbonProps {
   onCloudOpen?: () => void;
   onZoomFit?: () => void;
   onResetCamera?: () => void;
+  onResetView?: () => void;
   hasModel?: boolean;
   isValidating?: boolean;
   bcfConnected?: boolean;
@@ -47,6 +48,7 @@ export default function Ribbon({
   onCloudOpen,
   onZoomFit,
   onResetCamera,
+  onResetView,
   hasModel,
   isValidating,
   bcfConnected,
@@ -157,6 +159,7 @@ export default function Ribbon({
             onToggleRightPanel={onToggleRightPanel}
             onZoomFit={onZoomFit}
             onResetCamera={onResetCamera}
+            onResetView={onResetView}
           />
         );
     }

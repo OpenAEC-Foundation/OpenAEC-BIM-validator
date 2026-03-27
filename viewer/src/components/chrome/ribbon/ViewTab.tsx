@@ -7,6 +7,7 @@ import {
   panelRightIcon,
   zoomFitIcon,
   resetCameraIcon,
+  resetViewIcon,
 } from "./icons";
 
 interface ViewTabProps {
@@ -16,6 +17,7 @@ interface ViewTabProps {
   onToggleRightPanel?: () => void;
   onZoomFit?: () => void;
   onResetCamera?: () => void;
+  onResetView?: () => void;
 }
 
 export default function ViewTab({
@@ -25,6 +27,7 @@ export default function ViewTab({
   onToggleRightPanel,
   onZoomFit,
   onResetCamera,
+  onResetView,
 }: ViewTabProps) {
   const { t } = useTranslation("ribbon");
 
@@ -62,6 +65,12 @@ export default function ViewTab({
               label={t("view.resetCamera")}
               size="small"
               onClick={onResetCamera}
+            />
+            <RibbonButton
+              icon={resetViewIcon}
+              label={t("view.resetView")}
+              size="small"
+              onClick={onResetView}
             />
           </RibbonButtonStack>
         </RibbonGroup>
