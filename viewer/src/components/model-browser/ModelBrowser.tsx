@@ -74,53 +74,51 @@ function ModelItem({ model }: { model: ModelInfo }) {
   const handleExpand = useCallback(() => {
     if (!canExpand) return;
 
-    setExpanded((prev) => {
-      const willExpand = !prev;
+    const willExpand = !expanded;
+    setExpanded(willExpand);
 
-      // Lazy-load spatial tree on first expand
-      if (willExpand && !model.spatialTree && !loadingTree) {
-        setLoadingTree(true);
-        const requestId = `tree-${model.id}-${Date.now()}`;
+    // Lazy-load spatial tree on first expand
+    if (willExpand && !model.spatialTree && !loadingTree) {
+      setLoadingTree(true);
+      const requestId = `tree-${model.id}-${Date.now()}`;
 
-        const handleResponse = (e: Event) => {
-          const detail = (
-            e as CustomEvent<{
-              requestId: string;
-              tree: unknown;
-              error: string | null;
-            }>
-          ).detail;
-          if (detail.requestId !== requestId) return;
+      const handleResponse = (e: Event) => {
+        const detail = (
+          e as CustomEvent<{
+            requestId: string;
+            tree: unknown;
+            error: string | null;
+          }>
+        ).detail;
+        if (detail.requestId !== requestId) return;
 
-          window.removeEventListener(
-            "spatial-tree-response",
-            handleResponse
-          );
-
-          if (detail.tree) {
-            setModelSpatialTree(
-              model.id,
-              detail.tree as import("../../types/project").SpatialNode
-            );
-          }
-          setLoadingTree(false);
-        };
-
-        window.addEventListener("spatial-tree-response", handleResponse);
-        window.dispatchEvent(
-          new CustomEvent("spatial-tree-request", {
-            detail: {
-              engineModelId: model.engineModelId,
-              requestId,
-            },
-          })
+        window.removeEventListener(
+          "spatial-tree-response",
+          handleResponse
         );
-      }
 
-      return willExpand;
-    });
+        if (detail.tree) {
+          setModelSpatialTree(
+            model.id,
+            detail.tree as import("../../types/project").SpatialNode
+          );
+        }
+        setLoadingTree(false);
+      };
+
+      window.addEventListener("spatial-tree-response", handleResponse);
+      window.dispatchEvent(
+        new CustomEvent("spatial-tree-request", {
+          detail: {
+            engineModelId: model.engineModelId,
+            requestId,
+          },
+        })
+      );
+    }
   }, [
     canExpand,
+    expanded,
     model.spatialTree,
     model.id,
     model.engineModelId,

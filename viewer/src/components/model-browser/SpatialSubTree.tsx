@@ -152,55 +152,52 @@ function SpatialNodeItem({ node, depth, engineModelId }: SpatialNodeProps) {
   const isSelected = selectedElementId === node.globalId;
 
   const handleToggle = useCallback(() => {
-    setExpanded((prev) => {
-      const willExpand = !prev;
+    const willExpand = !expanded;
+    setExpanded(willExpand);
 
-      // Lazy-load contained elements on first expand if this node has elements
-      if (
-        willExpand &&
-        node.elementCount > 0 &&
-        elementGroups === null &&
-        !loadingElements
-      ) {
-        setLoadingElements(true);
-        const requestId = `elements-${node.globalId}-${Date.now()}`;
+    // Lazy-load contained elements on first expand if this node has elements
+    if (
+      willExpand &&
+      node.elementCount > 0 &&
+      elementGroups === null &&
+      !loadingElements
+    ) {
+      setLoadingElements(true);
+      const requestId = `elements-${node.globalId}-${Date.now()}`;
 
-        const handleResponse = (e: Event) => {
-          const detail = (
-            e as CustomEvent<{
-              requestId: string;
-              groups: ElementTypeGroup[];
-              error: string | null;
-            }>
-          ).detail;
-          if (detail.requestId !== requestId) return;
+      const handleResponse = (e: Event) => {
+        const detail = (
+          e as CustomEvent<{
+            requestId: string;
+            groups: ElementTypeGroup[];
+            error: string | null;
+          }>
+        ).detail;
+        if (detail.requestId !== requestId) return;
 
-          window.removeEventListener(
-            "contained-elements-response",
-            handleResponse
-          );
-          setElementGroups(detail.groups ?? []);
-          setLoadingElements(false);
-        };
-
-        window.addEventListener(
+        window.removeEventListener(
           "contained-elements-response",
           handleResponse
         );
-        window.dispatchEvent(
-          new CustomEvent("contained-elements-request", {
-            detail: {
-              engineModelId,
-              spatialGlobalId: node.globalId,
-              requestId,
-            },
-          })
-        );
-      }
+        setElementGroups(detail.groups ?? []);
+        setLoadingElements(false);
+      };
 
-      return willExpand;
-    });
-  }, [node.globalId, node.elementCount, engineModelId, elementGroups, loadingElements]);
+      window.addEventListener(
+        "contained-elements-response",
+        handleResponse
+      );
+      window.dispatchEvent(
+        new CustomEvent("contained-elements-request", {
+          detail: {
+            engineModelId,
+            spatialGlobalId: node.globalId,
+            requestId,
+          },
+        })
+      );
+    }
+  }, [expanded, node.globalId, node.elementCount, engineModelId, elementGroups, loadingElements]);
 
   const handleSelect = useCallback(() => {
     selectElement(node.globalId);
