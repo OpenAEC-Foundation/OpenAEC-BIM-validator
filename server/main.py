@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Query, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -168,6 +168,28 @@ async def detailed_health_check():
         "processed_dir": str(PROCESSED_DIR),
         "files_tracked": len(uploaded_files),
         "processor_capabilities": ifc_processor.get_capabilities(),
+    }
+
+
+# ── Auth (Authentik Proxy) ───────────────────────────────────
+
+@app.get("/api/auth/me")
+async def get_current_user(request: Request):
+    """Return user info from Authentik proxy headers.
+
+    When behind an Authentik Forward Auth outpost, the proxy sets
+    X-authentik-* headers on every forwarded request.  This endpoint
+    exposes that information to the frontend.
+    """
+    username = request.headers.get("X-authentik-username")
+    if not username:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    return {
+        "username": username,
+        "display_name": request.headers.get("X-authentik-name", username),
+        "email": request.headers.get("X-authentik-email", ""),
+        "groups": request.headers.get("X-authentik-groups", ""),
     }
 
 
