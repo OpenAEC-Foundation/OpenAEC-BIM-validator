@@ -28,13 +28,13 @@
 
 /* Expand/collapse chevron */
 .model-item__expand {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   border: none;
   background: none;
   color: var(--color-text-secondary);
   cursor: pointer;
-  font-size: 10px;
+  font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -56,7 +56,7 @@
 }
 
 .model-item__name {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--color-text);
   white-space: nowrap;
@@ -65,7 +65,7 @@
 }
 
 .model-item__size {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--color-text-secondary);
 }
 
@@ -131,7 +131,7 @@
   align-items: center;
   gap: var(--spacing-xs);
   padding: 4px 4px 4px 36px;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--color-text-secondary);
 }
 
@@ -148,8 +148,8 @@
 .spatial-node__row {
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 2px 4px;
+  gap: 4px;
+  padding: 3px 4px;
   border-radius: var(--radius-sm);
   cursor: default;
   transition: background-color var(--transition-fast);
@@ -169,13 +169,13 @@
 
 /* Toggle button (chevron) */
 .spatial-node__toggle {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   border: none;
   background: none;
   color: var(--color-text-secondary);
   cursor: pointer;
-  font-size: 10px;
+  font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -206,21 +206,21 @@
 }
 
 .spatial-node__type {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--color-primary);
   font-weight: 600;
   flex-shrink: 0;
 }
 
 .spatial-node__type-name {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--color-primary);
   font-weight: 500;
   flex-shrink: 0;
 }
 
 .spatial-node__name {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
@@ -228,7 +228,7 @@
 }
 
 .spatial-node__count {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--color-text-secondary);
   flex-shrink: 0;
 }
@@ -248,19 +248,19 @@
   align-items: center;
   gap: var(--spacing-xs);
   padding: 4px;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--color-text-secondary);
 }
 
 .spatial-node__loading-text {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--color-text-secondary);
 }
 
 /* Spinner */
 .spatial-node__spinner {
-  width: 10px;
-  height: 10px;
+  width: 14px;
+  height: 14px;
   border: 2px solid var(--color-border);
   border-top-color: var(--color-primary);
   border-radius: 50%;
@@ -281,7 +281,7 @@
   border: none;
   background: none;
   color: var(--color-primary);
-  font-size: 10px;
+  font-size: 12px;
   cursor: pointer;
   padding: 2px 4px;
   border-radius: var(--radius-sm);
