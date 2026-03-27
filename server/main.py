@@ -136,7 +136,10 @@ async def root():
     """Serve frontend SPA at root, or API info if no frontend build exists."""
     index = Path(__file__).resolve().parent.parent / "viewer" / "dist" / "index.html"
     if index.is_file():
-        return FileResponse(index)
+        return FileResponse(
+            index,
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        )
     return {
         "status": "healthy",
         "service": "IFC Validation API",
@@ -1226,7 +1229,16 @@ if _frontend_dist.is_dir():
         """Serve the React SPA. API routes are matched first by FastAPI."""
         file_path = _frontend_dist / full_path
         if full_path and file_path.is_file():
+            # Hashed assets (JS/CSS) get long cache; everything else no-cache
+            if "/assets/" in full_path:
+                return FileResponse(
+                    file_path,
+                    headers={"Cache-Control": "public, max-age=31536000, immutable"},
+                )
             return FileResponse(file_path)
-        return FileResponse(_frontend_dist / "index.html")
+        return FileResponse(
+            _frontend_dist / "index.html",
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        )
 
     logger.info("Serving frontend from %s", _frontend_dist)
