@@ -154,6 +154,15 @@ function UserBadge() {
             className="titlebar-user-menu-item"
             onClick={() => {
               setMenuOpen(false);
+              window.open("https://auth.open-aec.com/if/user/", "_blank");
+            }}
+          >
+            SSO
+          </button>
+          <button
+            className="titlebar-user-menu-item"
+            onClick={() => {
+              setMenuOpen(false);
               logout();
             }}
           >
