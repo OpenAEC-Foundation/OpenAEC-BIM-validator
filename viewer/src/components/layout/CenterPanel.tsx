@@ -56,6 +56,37 @@ export function CenterPanel() {
     };
   }, []);
 
+  // Store→Engine bridge: sync model visibility to the 3D engine
+  useEffect(() => {
+    let prevModels: Array<{ engineModelId?: string; visible: boolean }> = [];
+
+    const unsubscribe = useStore.subscribe((state) => {
+      const models = state.project?.models ?? [];
+      const currentEngine = engineRef.current;
+      if (!currentEngine || !isReadyRef.current) return;
+
+      for (const model of models) {
+        if (!model.engineModelId) continue;
+        const prev = prevModels.find(
+          (p) => p.engineModelId === model.engineModelId
+        );
+        if (!prev || prev.visible !== model.visible) {
+          currentEngine.setModelVisibility(
+            model.engineModelId,
+            model.visible
+          );
+        }
+      }
+
+      prevModels = models.map((m) => ({
+        engineModelId: m.engineModelId,
+        visible: m.visible,
+      }));
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   // Store→Engine bridge: sync highlightGroups to the 3D engine
   useEffect(() => {
     let prevGroups: HighlightGroup[] = [];

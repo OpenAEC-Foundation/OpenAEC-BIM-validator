@@ -461,6 +461,16 @@ export class ViewerEngine {
     return extractor.getContainedElements(spatialGlobalId);
   }
 
+  /**
+   * Set visibility of a loaded model.
+   */
+  setModelVisibility(modelId: string, visible: boolean): void {
+    const obj = this.modelObjects.get(modelId);
+    if (obj) {
+      obj.visible = visible;
+    }
+  }
+
   // -- BCF Viewpoint Methods --
 
   /**
