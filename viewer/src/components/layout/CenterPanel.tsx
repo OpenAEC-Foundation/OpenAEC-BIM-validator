@@ -56,6 +56,28 @@ export function CenterPanel() {
     };
   }, []);
 
+  // Store→Engine bridge: isolate selected element (ghost all others)
+  useEffect(() => {
+    let prevSelectedId: string | null = null;
+
+    const unsubscribe = useStore.subscribe((state) => {
+      const selectedId = state.selectedElementId;
+      if (selectedId === prevSelectedId) return;
+      prevSelectedId = selectedId;
+
+      const currentEngine = engineRef.current;
+      if (!currentEngine || !isReadyRef.current) return;
+
+      if (selectedId) {
+        currentEngine.isolateElement(selectedId);
+      } else {
+        currentEngine.clearIsolation();
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   // Store→Engine bridge: sync model visibility to the 3D engine
   useEffect(() => {
     let prevModels: Array<{ engineModelId?: string; visible: boolean }> = [];

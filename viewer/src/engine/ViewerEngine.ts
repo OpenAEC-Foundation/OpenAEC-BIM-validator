@@ -30,6 +30,19 @@ const DEFAULT_BACKGROUND = "#1a1a2e";
 /** Default highlight opacity */
 const HIGHLIGHT_OPACITY = 0.6;
 
+/** Ghost mode: opacity for non-selected elements */
+const GHOST_OPACITY = 0.12;
+
+/** Ghost mode: color for non-selected elements */
+const GHOST_COLOR = 0xcccccc;
+
+/** Saved material state for ghost mode restore */
+interface SavedMaterialState {
+  opacity: number;
+  transparent: boolean;
+  color: THREE.Color;
+}
+
 /** Callbacks for engine events */
 export interface ViewerEngineCallbacks {
   /** Progress messages during init/load */
@@ -94,6 +107,9 @@ export class ViewerEngine {
 
   /** Property extractors per model, keyed by modelId. Lazy initialized. */
   private propertyExtractors = new Map<string, PropertyExtractor>();
+
+  /** Saved material states for ghost mode, keyed by material uuid. */
+  private ghostedMaterials = new Map<string, { material: THREE.Material; state: SavedMaterialState }>();
 
   constructor(
     container: HTMLElement,
@@ -471,6 +487,77 @@ export class ViewerEngine {
     }
   }
 
+  /**
+   * Isolate an element: ghost all geometry to transparent grey,
+   * then highlight the selected element with an opaque overlay.
+   */
+  async isolateElement(globalId: string): Promise<void> {
+    // 1. Ghost all model meshes
+    for (const obj of this.modelObjects.values()) {
+      obj.traverse((child) => {
+        if (!(child as THREE.Mesh).isMesh) return;
+        const mesh = child as THREE.Mesh;
+        const materials = Array.isArray(mesh.material)
+          ? mesh.material
+          : [mesh.material];
+
+        for (const mat of materials) {
+          if (this.ghostedMaterials.has(mat.uuid)) continue;
+
+          const colorMat = mat as THREE.Material & { color?: THREE.Color };
+          this.ghostedMaterials.set(mat.uuid, {
+            material: mat,
+            state: {
+              opacity: mat.opacity,
+              transparent: mat.transparent,
+              color: colorMat.color ? colorMat.color.clone() : new THREE.Color(0xffffff),
+            },
+          });
+
+          mat.opacity = GHOST_OPACITY;
+          mat.transparent = true;
+          if (colorMat.color) colorMat.color.setHex(GHOST_COLOR);
+          mat.needsUpdate = true;
+        }
+      });
+    }
+
+    // 2. Highlight the selected element opaquely on top of the ghost
+    if (this.fragments) {
+      await this.fragments.resetHighlight();
+      const modelIdMap = await this.fragments.guidsToModelIdMap([globalId]);
+      if (Object.keys(modelIdMap).length > 0) {
+        await this.fragments.highlight(
+          {
+            color: new THREE.Color("#44B6A8"),
+            renderedFaces: FRAGS.RenderedFaces.TWO,
+            opacity: 1.0,
+            transparent: false,
+          },
+          modelIdMap
+        );
+      }
+    }
+  }
+
+  /**
+   * Clear isolation: restore all ghosted materials to their original state.
+   */
+  async clearIsolation(): Promise<void> {
+    for (const { material, state } of this.ghostedMaterials.values()) {
+      material.opacity = state.opacity;
+      material.transparent = state.transparent;
+      const colorMat = material as THREE.Material & { color?: THREE.Color };
+      if (colorMat.color) colorMat.color.copy(state.color);
+      material.needsUpdate = true;
+    }
+    this.ghostedMaterials.clear();
+
+    if (this.fragments) {
+      await this.fragments.resetHighlight();
+    }
+  }
+
   // -- BCF Viewpoint Methods --
 
   /**
@@ -612,6 +699,7 @@ export class ViewerEngine {
     this.modelObjects.clear();
     this.modelBoxes.clear();
     this.modelBytes.clear();
+    this.ghostedMaterials.clear();
 
     for (const extractor of this.propertyExtractors.values()) {
       extractor.dispose();
