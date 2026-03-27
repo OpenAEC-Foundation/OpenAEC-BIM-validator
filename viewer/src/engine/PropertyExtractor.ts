@@ -9,6 +9,8 @@
 
 import * as WebIfc from "web-ifc";
 
+import type { SpatialNode, ElementTypeGroup, ElementSummary } from "../types/project";
+
 const WASM_PATH = "https://unpkg.com/web-ifc@0.0.77/";
 
 /** Material layer/constituent with optional details */
@@ -788,6 +790,227 @@ export class PropertyExtractor {
     if (Array.isArray(val)) return val;
     if (val == null) return [];
     return [val];
+  }
+
+  /**
+   * Extract the full spatial tree from the IFC model.
+   *
+   * Builds: IfcProject → IfcSite → IfcBuilding → IfcBuildingStorey → IfcSpace
+   * using IfcRelAggregates for spatial hierarchy and
+   * IfcRelContainedInSpatialStructure for element counts.
+   */
+  async extractSpatialTree(): Promise<SpatialNode | null> {
+    await this.ensureInit();
+    if (!this.ifcApi) return null;
+
+    try {
+      // Build aggregation index: parent expressId → child expressId[]
+      const aggregationMap = new Map<number, number[]>();
+      const aggLines = this.ifcApi.GetLineIDsWithType(
+        this.modelId,
+        WebIfc.IFCRELAGGREGATES
+      );
+      for (let i = 0; i < aggLines.size(); i++) {
+        const rel = this.ifcApi.GetLine(this.modelId, aggLines.get(i), false);
+        if (!rel?.RelatingObject?.value || !rel?.RelatedObjects) continue;
+        const parentId = rel.RelatingObject.value as number;
+        const children = this.toArray(rel.RelatedObjects)
+          .filter((c: { value?: number }) => c?.value != null)
+          .map((c: { value: number }) => c.value);
+        const existing = aggregationMap.get(parentId) ?? [];
+        aggregationMap.set(parentId, [...existing, ...children]);
+      }
+
+      // Build containment index: spatial expressId → contained element count
+      const containmentCounts = new Map<number, number>();
+      const contLines = this.ifcApi.GetLineIDsWithType(
+        this.modelId,
+        WebIfc.IFCRELCONTAINEDINSPATIALSTRUCTURE
+      );
+      for (let i = 0; i < contLines.size(); i++) {
+        const rel = this.ifcApi.GetLine(this.modelId, contLines.get(i), false);
+        if (!rel?.RelatingStructure?.value || !rel?.RelatedElements) continue;
+        const spatialId = rel.RelatingStructure.value as number;
+        const count = this.toArray(rel.RelatedElements).length;
+        containmentCounts.set(
+          spatialId,
+          (containmentCounts.get(spatialId) ?? 0) + count
+        );
+      }
+
+      // Find IfcProject root
+      const projectLines = this.ifcApi.GetLineIDsWithType(
+        this.modelId,
+        WebIfc.IFCPROJECT
+      );
+      if (projectLines.size() === 0) return null;
+
+      const rootId = projectLines.get(0);
+      return this.buildSpatialNode(
+        rootId,
+        aggregationMap,
+        containmentCounts
+      );
+    } catch (err) {
+      console.warn("[PropertyExtractor] Error extracting spatial tree:", err);
+      return null;
+    }
+  }
+
+  /**
+   * Get contained elements for a spatial element, grouped by IFC type.
+   *
+   * @param spatialGlobalId - GlobalId of the spatial element (e.g., a storey)
+   * @returns ElementTypeGroup[] sorted alphabetically by displayName
+   */
+  async getContainedElements(
+    spatialGlobalId: string
+  ): Promise<ElementTypeGroup[]> {
+    await this.ensureInit();
+    if (!this.ifcApi) return [];
+
+    const spatialExpressId = this.globalIdIndex.get(spatialGlobalId);
+    if (spatialExpressId === undefined) return [];
+
+    try {
+      // Collect elements directly contained in this spatial element
+      const elements: Array<{
+        expressId: number;
+        typeCode: number;
+      }> = [];
+
+      const contLines = this.ifcApi.GetLineIDsWithType(
+        this.modelId,
+        WebIfc.IFCRELCONTAINEDINSPATIALSTRUCTURE
+      );
+      for (let i = 0; i < contLines.size(); i++) {
+        const rel = this.ifcApi.GetLine(
+          this.modelId,
+          contLines.get(i),
+          false
+        );
+        if (!rel?.RelatingStructure?.value || !rel?.RelatedElements) continue;
+        if (rel.RelatingStructure.value !== spatialExpressId) continue;
+
+        const related = this.toArray(rel.RelatedElements);
+        for (const ref of related) {
+          if (!ref?.value) continue;
+          try {
+            const el = this.ifcApi.GetLine(this.modelId, ref.value, false);
+            if (el) {
+              elements.push({
+                expressId: ref.value as number,
+                typeCode: el.type as number,
+              });
+            }
+          } catch {
+            // Skip unreadable elements
+          }
+        }
+      }
+
+      // Group by IFC type
+      const groupMap = new Map<
+        number,
+        { summaries: ElementSummary[]; typeName: string }
+      >();
+
+      for (const { expressId, typeCode } of elements) {
+        if (!groupMap.has(typeCode)) {
+          groupMap.set(typeCode, {
+            summaries: [],
+            typeName: this.getEntityTypeName(typeCode),
+          });
+        }
+        const group = groupMap.get(typeCode)!;
+
+        // Get element name and globalId
+        try {
+          const el = this.ifcApi!.GetLine(this.modelId, expressId, false);
+          const globalId = el?.GlobalId?.value ?? "";
+          const name = this.extractStringValue(el?.Name) ?? `#${expressId}`;
+          group.summaries.push({ globalId, name, expressId });
+        } catch {
+          group.summaries.push({
+            globalId: "",
+            name: `#${expressId}`,
+            expressId,
+          });
+        }
+      }
+
+      // Convert to ElementTypeGroup[], sorted alphabetically
+      const result: ElementTypeGroup[] = [];
+      for (const [, { summaries, typeName }] of groupMap) {
+        const displayName = typeName
+          .replace(/^IFC/, "")
+          .replace(/([A-Z])/g, " $1")
+          .trim();
+        result.push({
+          type: typeName,
+          displayName,
+          elements: summaries.sort((a, b) => a.name.localeCompare(b.name)),
+          count: summaries.length,
+        });
+      }
+
+      return result.sort((a, b) => a.displayName.localeCompare(b.displayName));
+    } catch (err) {
+      console.warn(
+        "[PropertyExtractor] Error extracting contained elements:",
+        err
+      );
+      return [];
+    }
+  }
+
+  /**
+   * Recursively build a SpatialNode from an expressId.
+   */
+  private buildSpatialNode(
+    expressId: number,
+    aggregationMap: Map<number, number[]>,
+    containmentCounts: Map<number, number>
+  ): SpatialNode | null {
+    if (!this.ifcApi) return null;
+
+    try {
+      const entity = this.ifcApi.GetLine(this.modelId, expressId, false);
+      if (!entity) return null;
+
+      const globalId = entity.GlobalId?.value ?? "";
+      const name = this.extractStringValue(entity.Name) ?? "?";
+      const type = this.getEntityTypeName(entity.type);
+
+      // Build children recursively
+      const childIds = aggregationMap.get(expressId) ?? [];
+      const children: SpatialNode[] = [];
+      for (const childId of childIds) {
+        const childNode = this.buildSpatialNode(
+          childId,
+          aggregationMap,
+          containmentCounts
+        );
+        if (childNode) children.push(childNode);
+      }
+
+      // Element count: direct containment + sum of children
+      const directCount = containmentCounts.get(expressId) ?? 0;
+      const childCount = children.reduce(
+        (sum, c) => sum + c.elementCount,
+        0
+      );
+
+      return {
+        globalId,
+        name,
+        type,
+        children,
+        elementCount: directCount + childCount,
+      };
+    } catch {
+      return null;
+    }
   }
 
   /**

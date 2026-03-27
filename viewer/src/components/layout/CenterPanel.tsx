@@ -216,6 +216,109 @@ export function CenterPanel() {
     };
   }, []);
 
+  // Spatial tree request handler: ModelBrowser dispatches this to extract
+  // the spatial hierarchy from a loaded model via the engine.
+  useEffect(() => {
+    const handleSpatialTreeRequest = async (e: Event) => {
+      const { engineModelId, requestId } = (
+        e as CustomEvent<{ engineModelId: string; requestId: string }>
+      ).detail;
+      const currentEngine = engineRef.current;
+
+      if (!currentEngine || !isReadyRef.current || !engineModelId) {
+        window.dispatchEvent(
+          new CustomEvent("spatial-tree-response", {
+            detail: { requestId, tree: null, error: "Engine niet gereed" },
+          })
+        );
+        return;
+      }
+
+      try {
+        const tree = await currentEngine.extractSpatialTree(engineModelId);
+        window.dispatchEvent(
+          new CustomEvent("spatial-tree-response", {
+            detail: { requestId, tree, error: null },
+          })
+        );
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Extractie mislukt";
+        window.dispatchEvent(
+          new CustomEvent("spatial-tree-response", {
+            detail: { requestId, tree: null, error: msg },
+          })
+        );
+      }
+    };
+
+    window.addEventListener("spatial-tree-request", handleSpatialTreeRequest);
+    return () => {
+      window.removeEventListener(
+        "spatial-tree-request",
+        handleSpatialTreeRequest
+      );
+    };
+  }, []);
+
+  // Contained elements request handler: SpatialSubTree dispatches this to
+  // get elements grouped by type for a spatial node.
+  useEffect(() => {
+    const handleContainedElementsRequest = async (e: Event) => {
+      const { engineModelId, spatialGlobalId, requestId } = (
+        e as CustomEvent<{
+          engineModelId: string;
+          spatialGlobalId: string;
+          requestId: string;
+        }>
+      ).detail;
+      const currentEngine = engineRef.current;
+
+      if (
+        !currentEngine ||
+        !isReadyRef.current ||
+        !engineModelId ||
+        !spatialGlobalId
+      ) {
+        window.dispatchEvent(
+          new CustomEvent("contained-elements-response", {
+            detail: { requestId, groups: [], error: "Engine niet gereed" },
+          })
+        );
+        return;
+      }
+
+      try {
+        const groups = await currentEngine.getContainedElements(
+          engineModelId,
+          spatialGlobalId
+        );
+        window.dispatchEvent(
+          new CustomEvent("contained-elements-response", {
+            detail: { requestId, groups, error: null },
+          })
+        );
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Ophalen mislukt";
+        window.dispatchEvent(
+          new CustomEvent("contained-elements-response", {
+            detail: { requestId, groups: [], error: msg },
+          })
+        );
+      }
+    };
+
+    window.addEventListener(
+      "contained-elements-request",
+      handleContainedElementsRequest
+    );
+    return () => {
+      window.removeEventListener(
+        "contained-elements-request",
+        handleContainedElementsRequest
+      );
+    };
+  }, []);
+
   // Reload persisted models from IndexedDB when engine becomes ready.
   // On page refresh, the Zustand persist middleware restores the project
   // with all models in "pending" state. This effect picks them up and

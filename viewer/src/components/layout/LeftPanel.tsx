@@ -9,7 +9,6 @@ import { Panel, Group, Separator } from "react-resizable-panels";
 
 import { useStore } from "../../store";
 import { ModelBrowser } from "../model-browser/ModelBrowser";
-import { SpatialTree } from "../model-browser/SpatialTree";
 import { PropertiesPanel } from "../properties/PropertiesPanel";
 
 export function LeftPanel() {
@@ -26,10 +25,7 @@ export function LeftPanel() {
             </div>
             <div className="panel__content">
               {project ? (
-                <>
-                  <ModelBrowser />
-                  <SpatialTree />
-                </>
+                <ModelBrowser />
               ) : (
                 <div className="empty-state empty-state--compact">
                   <p className="empty-state__text">

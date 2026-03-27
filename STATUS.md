@@ -13,12 +13,14 @@
 - **Fase 6: Nextcloud Cloud Storage** — WebDAV, save/open dialog
 
 ### Gedaan in deze sessie
-- Auth omgebouwd van in-app OIDC naar Authentik proxy headers
-  - Backend: `/api/auth/me` endpoint (leest X-authentik-* headers)
-  - Frontend: authStore gebruikt `/api/auth/me` i.p.v. oidc-client-ts flow
-  - Login = page reload (proxy vangt af), logout = Authentik end-session redirect
-- Oorzaak gevonden: site zit achter Authentik Forward Auth outpost,
-  maar in-app OIDC redirect URI was niet geregistreerd → 400 error
+- Uitklapbare IFC ruimtelijke structuur in ModelBrowser
+  - PropertyExtractor: `extractSpatialTree()` + `getContainedElements()` via web-ifc
+  - ViewerEngine: bridge methoden voor spatial tree extractie
+  - CenterPanel: event handlers (spatial-tree-request/response, contained-elements-request/response)
+  - SpatialSubTree component: inline boom per model met lazy-loaded element groepen
+  - ModelBrowser: expand chevron per geladen model, lazy tree loading
+  - Oude standalone SpatialTree component verwijderd
+  - 100% client-side, geen backend dependency
 
 ### Nog te doen
 - Deploy naar productie (git pull + docker compose build)

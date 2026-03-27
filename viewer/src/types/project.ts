@@ -93,6 +93,28 @@ export interface ElementProperties {
   material?: string;
 }
 
+/** Summary of a single IFC element in a spatial container */
+export interface ElementSummary {
+  /** IFC GlobalId */
+  globalId: string;
+  /** Display name (e.g., "Standard Wall:200mm") */
+  name: string;
+  /** web-ifc express ID for fast lookups */
+  expressId: number;
+}
+
+/** A group of elements of the same IFC type within a spatial container */
+export interface ElementTypeGroup {
+  /** IFC type key (e.g., "IFCWALL") */
+  type: string;
+  /** Human-readable display name (e.g., "Wall") */
+  displayName: string;
+  /** Elements in this group */
+  elements: ElementSummary[];
+  /** Total element count */
+  count: number;
+}
+
 /** Right panel tab options */
 export type RightPanelTab =
   | "validation"

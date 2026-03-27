@@ -1,11 +1,16 @@
 /**
- * ModelBrowser styles.
+ * ModelBrowser + SpatialSubTree styles.
  */
 
 .model-browser {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.model-item-wrapper {
+  display: flex;
+  flex-direction: column;
 }
 
 .model-item {
@@ -19,6 +24,28 @@
 
 .model-item:hover {
   background-color: var(--color-hover);
+}
+
+/* Expand/collapse chevron */
+.model-item__expand {
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 2px;
+  padding: 0;
+}
+
+.model-item__expand:hover {
+  background-color: var(--color-hover);
+  color: var(--color-text);
 }
 
 .model-item__info {
@@ -96,4 +123,171 @@
 
 .model-item__visibility--hidden {
   opacity: 0.4;
+}
+
+/* Tree loading spinner in model row */
+.model-item__tree-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 4px 4px 4px 36px;
+  font-size: 10px;
+  color: var(--color-text-secondary);
+}
+
+/* ========================
+   SpatialSubTree styles
+   ======================== */
+
+.spatial-subtree {
+  border-left: 1px solid var(--color-border);
+  margin-left: 11px;
+}
+
+/* Tree node row */
+.spatial-node__row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  cursor: default;
+  transition: background-color var(--transition-fast);
+}
+
+.spatial-node__row:hover {
+  background-color: var(--color-hover);
+}
+
+.spatial-node__row--selected {
+  background-color: var(--color-active);
+}
+
+.spatial-node__row--element {
+  cursor: pointer;
+}
+
+/* Toggle button (chevron) */
+.spatial-node__toggle {
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 2px;
+  padding: 0;
+}
+
+.spatial-node__toggle:hover {
+  background-color: var(--color-hover);
+}
+
+/* Node label */
+.spatial-node__label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  min-width: 0;
+  flex: 1;
+}
+
+.spatial-node__label--type-group {
+  cursor: default;
+}
+
+.spatial-node__type {
+  font-size: 10px;
+  color: var(--color-primary);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.spatial-node__type-name {
+  font-size: 10px;
+  color: var(--color-primary);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.spatial-node__name {
+  font-size: 11px;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spatial-node__count {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+/* Element type group row */
+.spatial-node__row--type-group {
+  opacity: 0.9;
+}
+
+.spatial-node__row--type-group:hover {
+  opacity: 1;
+}
+
+/* Loading indicator */
+.spatial-node__loading {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 4px;
+  font-size: 10px;
+  color: var(--color-text-secondary);
+}
+
+.spatial-node__loading-text {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+}
+
+/* Spinner */
+.spatial-node__spinner {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Show all button */
+.spatial-node__show-all {
+  padding: 2px 4px;
+}
+
+.spatial-node__show-all-btn {
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+}
+
+.spatial-node__show-all-btn:hover {
+  background-color: var(--color-hover);
+  text-decoration: underline;
 }

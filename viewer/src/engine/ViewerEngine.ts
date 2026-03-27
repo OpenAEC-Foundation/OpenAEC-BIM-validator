@@ -14,6 +14,7 @@ import * as THREE from "three";
 
 import { PropertyExtractor } from "./PropertyExtractor";
 import type { IfcElementProperties } from "./PropertyExtractor";
+import type { SpatialNode, ElementTypeGroup } from "../types/project";
 import type { BcfCameraState } from "../types/bcf";
 
 const WORKER_URL =
@@ -404,6 +405,21 @@ export class ViewerEngine {
   }
 
   /**
+   * Get or lazily create a PropertyExtractor for a model.
+   */
+  private getOrCreateExtractor(modelId: string): PropertyExtractor | null {
+    const existing = this.propertyExtractors.get(modelId);
+    if (existing) return existing;
+
+    const bytes = this.modelBytes.get(modelId);
+    if (!bytes) return null;
+
+    const extractor = new PropertyExtractor(bytes);
+    this.propertyExtractors.set(modelId, extractor);
+    return extractor;
+  }
+
+  /**
    * Get all properties for an element by GlobalId.
    *
    * Uses client-side web-ifc extraction — no backend needed.
@@ -413,18 +429,36 @@ export class ViewerEngine {
     globalId: string
   ): Promise<IfcElementProperties | null> {
     // Try each model until we find the element
-    for (const [modelId, bytes] of this.modelBytes) {
-      let extractor = this.propertyExtractors.get(modelId);
-      if (!extractor) {
-        extractor = new PropertyExtractor(bytes);
-        this.propertyExtractors.set(modelId, extractor);
-      }
+    for (const modelId of this.modelBytes.keys()) {
+      const extractor = this.getOrCreateExtractor(modelId);
+      if (!extractor) continue;
 
       const props = await extractor.getProperties(globalId);
       if (props) return props;
     }
 
     return null;
+  }
+
+  /**
+   * Extract the spatial tree for a specific model.
+   */
+  async extractSpatialTree(modelId: string): Promise<SpatialNode | null> {
+    const extractor = this.getOrCreateExtractor(modelId);
+    if (!extractor) return null;
+    return extractor.extractSpatialTree();
+  }
+
+  /**
+   * Get contained elements for a spatial element within a specific model.
+   */
+  async getContainedElements(
+    modelId: string,
+    spatialGlobalId: string
+  ): Promise<ElementTypeGroup[]> {
+    const extractor = this.getOrCreateExtractor(modelId);
+    if (!extractor) return [];
+    return extractor.getContainedElements(spatialGlobalId);
   }
 
   // -- BCF Viewpoint Methods --
