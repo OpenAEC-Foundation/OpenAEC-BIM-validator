@@ -31,8 +31,8 @@ const DEFAULT_BACKGROUND = "#1a1a2e";
 const HIGHLIGHT_OPACITY = 0.6;
 
 
-/** Ghost mode: high opacity to wash out non-selected elements */
-const GHOST_OPACITY = 0.85;
+/** Ghost mode: low opacity makes non-selected elements nearly invisible */
+const GHOST_OPACITY = 0.15;
 
 /** Callbacks for engine events */
 export interface ViewerEngineCallbacks {
@@ -526,7 +526,7 @@ export class ViewerEngine {
       }
     }
 
-    // Ghost ALL meshes, then un-ghost selected ones
+    // Ghost ALL meshes
     for (const obj of this.modelObjects.values()) {
       obj.traverse((child) => {
         if (!(child instanceof THREE.Mesh)) return;
@@ -546,6 +546,23 @@ export class ViewerEngine {
           mat.needsUpdate = true;
         }
       });
+    }
+
+    // Un-ghost selected element: restore to full opacity
+    for (const mesh of selectedMeshes) {
+      const child = mesh as THREE.Mesh;
+      const materials = Array.isArray(child.material)
+        ? child.material
+        : [child.material];
+      for (const mat of materials) {
+        if (!mat) continue;
+        const saved = this.savedMaterials.get(mat);
+        if (saved) {
+          mat.opacity = saved.opacity || 1.0;
+          mat.transparent = saved.transparent;
+          mat.needsUpdate = true;
+        }
+      }
     }
 
     this._isolated = true;
