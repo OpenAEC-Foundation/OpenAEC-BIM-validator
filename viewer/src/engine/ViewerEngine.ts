@@ -105,6 +105,9 @@ export class ViewerEngine {
   /** Whether isolation mode is active. */
   private _isolated = false;
 
+  /** Suppress highlighter callbacks during programmatic operations. */
+  private _suppressCallbacks = false;
+
   /** Active section planes. */
   private sectionPlanes: THREE.Plane[] = [];
 
@@ -328,12 +331,14 @@ export class ViewerEngine {
    * Clear all highlights (both programmatic and selection-based).
    */
   async clearHighlights(): Promise<void> {
+    this._suppressCallbacks = true;
     if (this.fragments) {
       await this.fragments.resetHighlight();
     }
     if (this.highlighter) {
       await this.highlighter.clear();
     }
+    this._suppressCallbacks = false;
   }
 
   /**
@@ -495,6 +500,8 @@ export class ViewerEngine {
   async isolateElement(globalId: string): Promise<void> {
     if (!this.fragments) return;
 
+    this._suppressCallbacks = true;
+
     // Collect all GUIDs across all models (cached after first call)
     const otherGuids: string[] = [];
     for (const modelId of this.modelBytes.keys()) {
@@ -533,6 +540,7 @@ export class ViewerEngine {
     // Selected element keeps its original materials — no overlay needed.
 
     this._isolated = true;
+    this._suppressCallbacks = false;
   }
 
   /**
@@ -540,6 +548,8 @@ export class ViewerEngine {
    */
   async clearIsolation(): Promise<void> {
     if (!this._isolated) return;
+
+    this._suppressCallbacks = true;
 
     if (this.fragments) {
       await this.fragments.resetHighlight();
@@ -549,6 +559,7 @@ export class ViewerEngine {
     }
 
     this._isolated = false;
+    this._suppressCallbacks = false;
   }
 
   // -- Section Plane Methods --
@@ -894,6 +905,7 @@ export class ViewerEngine {
       if (selectEvents) {
         selectEvents.onHighlight.add(
           async (data: OBC.ModelIdMap) => {
+            if (this._suppressCallbacks) return;
             const globalId =
               await this.extractGlobalIdFromSelection(data);
             this.callbacks.onElementSelected?.(globalId);
@@ -901,6 +913,7 @@ export class ViewerEngine {
         );
 
         selectEvents.onClear.add(() => {
+          if (this._suppressCallbacks) return;
           this.callbacks.onElementSelected?.(null);
         });
       }
