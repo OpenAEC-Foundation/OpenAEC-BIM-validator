@@ -87,12 +87,13 @@ export function CenterPanel() {
     };
   }, []);
 
-  // Store→Engine bridge: isolate selected element (ghost all others)
+  // Store→Engine bridge: highlight or isolate selected element
   useEffect(() => {
     let prevSelectedId: string | null = null;
 
     const unsubscribe = useStore.subscribe((state) => {
       const selectedId = state.selectedElementId;
+      const isolate = state.isolateOnSelect;
       if (selectedId === prevSelectedId) return;
       prevSelectedId = selectedId;
 
@@ -100,9 +101,17 @@ export function CenterPanel() {
       if (!currentEngine || !isReadyRef.current) return;
 
       if (selectedId) {
-        currentEngine.isolateElement(selectedId);
+        if (isolate) {
+          // From browser/validation: ghost everything else
+          currentEngine.isolateElement(selectedId);
+        } else {
+          // From 3D click: just highlight in verdigris
+          currentEngine.clearIsolation();
+          currentEngine.highlightByGlobalIds([selectedId], "#44B6A8");
+        }
       } else {
         currentEngine.clearIsolation();
+        currentEngine.clearHighlights();
       }
     });
 

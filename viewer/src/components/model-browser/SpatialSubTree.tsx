@@ -51,7 +51,7 @@ function ElementItem({
   const isSelected = selectedElementId === globalId;
 
   const handleClick = useCallback(() => {
-    selectElement(globalId);
+    selectElement(globalId, true);
     window.dispatchEvent(
       new CustomEvent("zoom-to-element", { detail: { globalId } })
     );
@@ -200,7 +200,7 @@ function SpatialNodeItem({ node, depth, engineModelId }: SpatialNodeProps) {
   }, [expanded, node.globalId, node.elementCount, engineModelId, elementGroups, loadingElements]);
 
   const handleSelect = useCallback(() => {
-    selectElement(node.globalId);
+    selectElement(node.globalId, true);
   }, [selectElement, node.globalId]);
 
   return (

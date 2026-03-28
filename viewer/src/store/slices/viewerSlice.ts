@@ -21,6 +21,9 @@ export interface ViewerSlice {
   /** Currently selected element GlobalId (single selection) */
   selectedElementId: string | null;
 
+  /** Whether selection should isolate (ghost other elements) */
+  isolateOnSelect: boolean;
+
   /** Currently hovered element GlobalId */
   hoveredElementId: string | null;
 
@@ -33,8 +36,8 @@ export interface ViewerSlice {
   /** Whether the viewer engine is initialized */
   viewerReady: boolean;
 
-  /** Select an element by GlobalId */
-  selectElement: (globalId: string | null) => void;
+  /** Select an element by GlobalId. isolate=true ghosts all other elements. */
+  selectElement: (globalId: string | null, isolate?: boolean) => void;
 
   /** Set hovered element */
   setHoveredElement: (globalId: string | null) => void;
@@ -60,13 +63,14 @@ export interface ViewerSlice {
 
 export const createViewerSlice: StateCreator<ViewerSlice> = (set) => ({
   selectedElementId: null,
+  isolateOnSelect: false,
   hoveredElementId: null,
   highlightGroups: [],
   hiddenElementIds: new Set<string>(),
   viewerReady: false,
 
-  selectElement: (globalId: string | null) => {
-    set({ selectedElementId: globalId });
+  selectElement: (globalId: string | null, isolate?: boolean) => {
+    set({ selectedElementId: globalId, isolateOnSelect: isolate ?? false });
   },
 
   setHoveredElement: (globalId: string | null) => {

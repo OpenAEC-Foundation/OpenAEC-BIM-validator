@@ -145,7 +145,7 @@ export function ValidationPanel() {
 
       // Auto-select and zoom for elements with GlobalId
       if (item.kind === "element" && item.el.global_id) {
-        selectElement(item.el.global_id);
+        selectElement(item.el.global_id, true);
         setHighlightGroup({
           id: "element-selection",
           color: "#44B6A8",
@@ -164,7 +164,7 @@ export function ValidationPanel() {
   /** Zoom from detail pane */
   const handleElementZoom = useCallback(
     (globalId: string) => {
-      selectElement(globalId);
+      selectElement(globalId, true);
       setHighlightGroup({
         id: "element-selection",
         color: "#44B6A8",
