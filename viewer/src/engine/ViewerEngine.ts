@@ -80,7 +80,9 @@ export class ViewerEngine {
   > | null = null;
   private fragments: OBC.FragmentsManager | null = null;
   private importer: FRAGS.IfcImporter | null = null;
-  private highlighter: OBCF.Highlighter | null = null;
+  /** Highlighter instance — kept alive for its event subscriptions (3D click → selectElement).
+   *  Read in dispose() to check if cleanup is needed. */
+  private _hl: OBCF.Highlighter | null = null;
   private _isInitialized = false;
   private _disposed = false;
 
@@ -105,8 +107,6 @@ export class ViewerEngine {
   /** Whether isolation mode is active. */
   private _isolated = false;
 
-  /** Suppress highlighter callbacks during programmatic operations. */
-  private _suppressCallbacks = false;
 
   /** Active section planes. */
   private sectionPlanes: THREE.Plane[] = [];
@@ -331,14 +331,9 @@ export class ViewerEngine {
    * Clear all highlights (both programmatic and selection-based).
    */
   async clearHighlights(): Promise<void> {
-    this._suppressCallbacks = true;
     if (this.fragments) {
       await this.fragments.resetHighlight();
     }
-    if (this.highlighter) {
-      await this.highlighter.clear();
-    }
-    this._suppressCallbacks = false;
   }
 
   /**
@@ -500,8 +495,6 @@ export class ViewerEngine {
   async isolateElement(globalId: string): Promise<void> {
     if (!this.fragments) return;
 
-    this._suppressCallbacks = true;
-
     // Collect all GUIDs across all models (cached after first call)
     const otherGuids: string[] = [];
     for (const modelId of this.modelBytes.keys()) {
@@ -517,9 +510,9 @@ export class ViewerEngine {
       }
     }
 
-    // Clear existing highlights
+    // Clear programmatic highlights only — do NOT touch highlighter
+    // (highlighter.clear() fires onClear → selectElement(null) → clears isolation)
     await this.fragments.resetHighlight();
-    if (this.highlighter) await this.highlighter.clear();
 
     // Ghost all other elements
     if (otherGuids.length > 0) {
@@ -537,10 +530,7 @@ export class ViewerEngine {
       }
     }
 
-    // Selected element keeps its original materials — no overlay needed.
-
     this._isolated = true;
-    this._suppressCallbacks = false;
   }
 
   /**
@@ -549,17 +539,11 @@ export class ViewerEngine {
   async clearIsolation(): Promise<void> {
     if (!this._isolated) return;
 
-    this._suppressCallbacks = true;
-
     if (this.fragments) {
       await this.fragments.resetHighlight();
     }
-    if (this.highlighter) {
-      await this.highlighter.clear();
-    }
 
     this._isolated = false;
-    this._suppressCallbacks = false;
   }
 
   // -- Section Plane Methods --
@@ -859,13 +843,17 @@ export class ViewerEngine {
     }
     this.propertyExtractors.clear();
 
+    // Dispose highlighter if it was created
+    if (this._hl) {
+      this._hl = null;
+    }
+
     if (this.components) {
       this.components.dispose();
       this.components = null;
       this.world = null;
       this.fragments = null;
       this.importer = null;
-      this.highlighter = null;
     }
   }
 
@@ -905,7 +893,6 @@ export class ViewerEngine {
       if (selectEvents) {
         selectEvents.onHighlight.add(
           async (data: OBC.ModelIdMap) => {
-            if (this._suppressCallbacks) return;
             const globalId =
               await this.extractGlobalIdFromSelection(data);
             this.callbacks.onElementSelected?.(globalId);
@@ -913,14 +900,13 @@ export class ViewerEngine {
         );
 
         selectEvents.onClear.add(() => {
-          if (this._suppressCallbacks) return;
           this.callbacks.onElementSelected?.(null);
         });
       }
 
-      this.highlighter = hl;
+      this._hl = hl;
     } catch {
-      this.highlighter = null;
+      this._hl = null;
     }
   }
 
