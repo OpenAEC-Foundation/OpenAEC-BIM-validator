@@ -6,7 +6,6 @@ import {
   panelLeftIcon,
   panelRightIcon,
   zoomFitIcon,
-  resetCameraIcon,
   resetViewIcon,
   sectionPlaneIcon,
   removeSectionIcon,
@@ -18,7 +17,6 @@ interface ViewTabProps {
   onToggleLeftPanel?: () => void;
   onToggleRightPanel?: () => void;
   onZoomFit?: () => void;
-  onResetCamera?: () => void;
   onResetView?: () => void;
   onAddSectionX?: () => void;
   onAddSectionY?: () => void;
@@ -32,7 +30,6 @@ export default function ViewTab({
   onToggleLeftPanel,
   onToggleRightPanel,
   onZoomFit,
-  onResetCamera,
   onResetView,
   onAddSectionX,
   onAddSectionY,
@@ -69,20 +66,11 @@ export default function ViewTab({
             label={t("view.zoomFit")}
             onClick={onZoomFit}
           />
-          <RibbonButtonStack>
-            <RibbonButton
-              icon={resetCameraIcon}
-              label={t("view.resetCamera")}
-              size="small"
-              onClick={onResetCamera}
-            />
-            <RibbonButton
-              icon={resetViewIcon}
-              label={t("view.resetView")}
-              size="small"
-              onClick={onResetView}
-            />
-          </RibbonButtonStack>
+          <RibbonButton
+            icon={resetViewIcon}
+            label={t("view.resetView")}
+            onClick={onResetView}
+          />
         </RibbonGroup>
 
         <RibbonGroup label={t("view.sections")}>

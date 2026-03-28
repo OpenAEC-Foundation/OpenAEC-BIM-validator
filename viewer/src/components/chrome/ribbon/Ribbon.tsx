@@ -21,7 +21,6 @@ interface RibbonProps {
   onCloudSave?: () => void;
   onCloudOpen?: () => void;
   onZoomFit?: () => void;
-  onResetCamera?: () => void;
   onResetView?: () => void;
   onAddSectionX?: () => void;
   onAddSectionY?: () => void;
@@ -51,7 +50,6 @@ export default function Ribbon({
   onCloudSave,
   onCloudOpen,
   onZoomFit,
-  onResetCamera,
   onResetView,
   onAddSectionX,
   onAddSectionY,
@@ -166,7 +164,6 @@ export default function Ribbon({
             onToggleLeftPanel={onToggleLeftPanel}
             onToggleRightPanel={onToggleRightPanel}
             onZoomFit={onZoomFit}
-            onResetCamera={onResetCamera}
             onResetView={onResetView}
             onAddSectionX={onAddSectionX}
             onAddSectionY={onAddSectionY}

@@ -104,14 +104,19 @@ export function CenterPanel() {
 
       if (selectedId) {
         if (isolate) {
-          // From browser/validation: ghost everything else
-          currentEngine.isolateElement(selectedId);
+          console.log("[bridge] isolateElement", selectedId);
+          currentEngine.isolateElement(selectedId).then(() => {
+            console.log("[bridge] isolateElement done");
+          }).catch((err) => {
+            console.error("[bridge] isolateElement error", err);
+          });
         } else {
-          // From 3D click: just highlight in verdigris
+          console.log("[bridge] highlight", selectedId);
           currentEngine.clearIsolation();
           currentEngine.highlightByGlobalIds([selectedId], "#44B6A8");
         }
       } else {
+        console.log("[bridge] clear all");
         currentEngine.clearIsolation();
         currentEngine.clearHighlights();
       }

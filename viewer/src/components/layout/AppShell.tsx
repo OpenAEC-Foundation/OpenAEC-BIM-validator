@@ -266,7 +266,6 @@ export function AppShell() {
         onToggleLeftPanel={toggleLeftPanel}
         onToggleRightPanel={toggleRightPanel}
         onZoomFit={() => window.dispatchEvent(new CustomEvent("zoom-fit-all"))}
-        onResetCamera={() => window.dispatchEvent(new CustomEvent("reset-camera"))}
         onResetView={() => {
           useStore.getState().selectElement(null);
           window.dispatchEvent(new CustomEvent("reset-view"));

@@ -493,7 +493,12 @@ export class ViewerEngine {
    * Base materials are NOT modified — only highlight overlays are used.
    */
   async isolateElement(globalId: string): Promise<void> {
-    if (!this.fragments) return;
+    if (!this.fragments) {
+      console.warn("[isolate] no fragments");
+      return;
+    }
+
+    console.log("[isolate] start", globalId, "models:", this.modelBytes.size);
 
     // Collect all GUIDs across all models (cached after first call)
     const otherGuids: string[] = [];
@@ -501,23 +506,30 @@ export class ViewerEngine {
       let guids = this.allGuidsCache.get(modelId);
       if (!guids) {
         const extractor = this.getOrCreateExtractor(modelId);
-        if (!extractor) continue;
+        if (!extractor) {
+          console.warn("[isolate] no extractor for", modelId);
+          continue;
+        }
         guids = await extractor.getAllGlobalIds();
         this.allGuidsCache.set(modelId, guids);
+        console.log("[isolate] extracted", guids.length, "guids from", modelId);
       }
       for (const guid of guids) {
         if (guid !== globalId) otherGuids.push(guid);
       }
     }
 
-    // Clear programmatic highlights only — do NOT touch highlighter
-    // (highlighter.clear() fires onClear → selectElement(null) → clears isolation)
+    console.log("[isolate] otherGuids:", otherGuids.length);
+
+    // Clear programmatic highlights only
     await this.fragments.resetHighlight();
 
     // Ghost all other elements
     if (otherGuids.length > 0) {
       const otherMap = await this.fragments.guidsToModelIdMap(otherGuids);
-      if (Object.keys(otherMap).length > 0) {
+      const mapKeys = Object.keys(otherMap).length;
+      console.log("[isolate] otherMap models:", mapKeys);
+      if (mapKeys > 0) {
         await this.fragments.highlight(
           {
             color: new THREE.Color(0xcccccc),
@@ -527,10 +539,14 @@ export class ViewerEngine {
           },
           otherMap
         );
+        console.log("[isolate] highlight applied");
       }
+    } else {
+      console.warn("[isolate] no other guids to ghost");
     }
 
     this._isolated = true;
+    console.log("[isolate] done");
   }
 
   /**
