@@ -1,82 +1,159 @@
+/* ── ViewCube: Revit-style, top-right ── */
+
 .viewcube-container {
   position: absolute;
   top: 12px;
-  left: 12px;
+  right: 12px;
   z-index: 10;
+  width: 120px;
+  height: 120px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Compass ring ── */
+.viewcube-compass {
+  position: absolute;
+  inset: 0;
   pointer-events: none;
 }
 
+.viewcube-compass-ring {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  position: relative;
+  transform-style: preserve-3d;
+  /* flat ring — rotated to horizontal plane via rotateX, yaw applied via JS */
+  transform: rotateX(90deg) rotateZ(0deg);
+}
+
+.vc-dir {
+  position: absolute;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  pointer-events: none;
+  user-select: none;
+}
+
+.vc-n {
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%) rotateX(-90deg);
+}
+.vc-s {
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%) rotateX(-90deg) rotateZ(180deg);
+}
+.vc-e {
+  right: -2px;
+  top: 50%;
+  transform: translateY(-50%) rotateX(-90deg) rotateZ(-90deg);
+}
+.vc-w {
+  left: -2px;
+  top: 50%;
+  transform: translateY(-50%) rotateX(-90deg) rotateZ(90deg);
+}
+
+/* ── 3D Scene ── */
 .viewcube-scene {
-  width: 90px;
-  height: 90px;
-  perspective: 300px;
+  width: 80px;
+  height: 80px;
+  perspective: 250px;
   pointer-events: auto;
 }
 
 .viewcube {
-  width: 90px;
-  height: 90px;
+  width: 80px;
+  height: 80px;
   position: relative;
   transform-style: preserve-3d;
-  transition: transform 0.1s ease-out;
-  /* Default isometric-ish view */
-  transform: rotateX(-25deg) rotateY(45deg);
+  transition: transform 0.08s ease-out;
 }
 
-.viewcube-face {
+/* ── Faces ── */
+.vc-face {
   position: absolute;
-  width: 90px;
-  height: 90px;
+  width: 80px;
+  height: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
-
-  font-family: "Segoe UI", system-ui, sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: #e0e0e0;
   cursor: pointer;
   user-select: none;
+  backface-visibility: hidden;
 
-  background: rgba(53, 14, 53, 0.75);
-  border: 1px solid rgba(68, 182, 168, 0.3);
-  backdrop-filter: blur(4px);
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  /* Revit-style: light grey with subtle gradient */
+  background: linear-gradient(
+    135deg,
+    rgba(200, 200, 210, 0.92) 0%,
+    rgba(160, 160, 175, 0.92) 100%
+  );
+  border: 1px solid rgba(120, 120, 140, 0.5);
+  transition: background 0.12s, border-color 0.12s;
 }
 
-.viewcube-face:hover {
-  background: rgba(68, 182, 168, 0.5);
-  color: #ffffff;
+.vc-face:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(68, 182, 168, 0.6) 0%,
+    rgba(68, 182, 168, 0.4) 100%
+  );
   border-color: rgba(68, 182, 168, 0.8);
 }
 
-.viewcube-face:active {
-  background: rgba(68, 182, 168, 0.7);
+.vc-label {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(40, 40, 50, 0.85);
+  text-transform: uppercase;
+  pointer-events: none;
 }
 
-/* Face positioning — half of 90px = 45px */
-.viewcube-front {
-  transform: translateZ(45px);
+.vc-face:hover .vc-label {
+  color: #ffffff;
 }
 
-.viewcube-back {
-  transform: rotateY(180deg) translateZ(45px);
+/* Face transforms — half of 80px = 40px */
+.vc-front  { transform: translateZ(40px); }
+.vc-back   { transform: rotateY(180deg) translateZ(40px); }
+.vc-top    { transform: rotateX(90deg) translateZ(40px); }
+.vc-bottom { transform: rotateX(-90deg) translateZ(40px); }
+.vc-left   { transform: rotateY(-90deg) translateZ(40px); }
+.vc-right  { transform: rotateY(90deg) translateZ(40px); }
+
+/* ── Edge hit zones ── */
+.vc-edge {
+  position: absolute;
+  cursor: pointer;
+  z-index: 2;
+  border-radius: 1px;
+  transition: background 0.12s;
 }
 
-.viewcube-top {
-  transform: rotateX(90deg) translateZ(45px);
+.vc-edge:hover {
+  background: rgba(68, 182, 168, 0.5);
 }
 
-.viewcube-bottom {
-  transform: rotateX(-90deg) translateZ(45px);
+/* ── Corner hit zones ── */
+.vc-corner {
+  position: absolute;
+  cursor: pointer;
+  z-index: 3;
+  border-radius: 2px;
+  transition: background 0.12s;
 }
 
-.viewcube-left {
-  transform: rotateY(-90deg) translateZ(45px);
-}
-
-.viewcube-right {
-  transform: rotateY(90deg) translateZ(45px);
+.vc-corner:hover {
+  background: rgba(239, 189, 117, 0.6);
 }

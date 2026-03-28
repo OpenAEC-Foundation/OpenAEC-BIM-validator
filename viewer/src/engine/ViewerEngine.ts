@@ -637,15 +637,13 @@ export class ViewerEngine {
   }
 
   /**
-   * Navigate camera to a named view face (for ViewCube).
+   * Navigate camera to a named view target (for ViewCube).
+   * Supports faces, edges (e.g. "front-top"), and corners (e.g. "front-top-right").
    * Keeps the camera pointed at the center of all loaded models.
    */
-  async navigateToFace(
-    face: "front" | "back" | "top" | "bottom" | "left" | "right"
-  ): Promise<void> {
+  async navigateToFace(target: string): Promise<void> {
     if (!this.world) return;
 
-    // Compute center and size of all models
     const center = new THREE.Vector3();
     let dist = 15;
     if (this.modelBoxes.size > 0) {
@@ -656,40 +654,44 @@ export class ViewerEngine {
       dist = Math.max(size.x, size.y, size.z) * CAMERA_FIT_PADDING;
     }
 
+    // Build direction vector from target components
+    const parts = target.split("-");
+    const dir = new THREE.Vector3(0, 0, 0);
+    let needsCustomUp = false;
+    let up: [number, number, number] = [0, 1, 0];
+
+    for (const part of parts) {
+      switch (part) {
+        case "front":  dir.z += 1; break;
+        case "back":   dir.z -= 1; break;
+        case "right":  dir.x += 1; break;
+        case "left":   dir.x -= 1; break;
+        case "top":    dir.y += 1; break;
+        case "bottom": dir.y -= 1; break;
+      }
+    }
+
+    // Pure top/bottom views need a custom up vector
+    if (dir.x === 0 && dir.z === 0 && dir.y !== 0) {
+      needsCustomUp = true;
+      up = dir.y > 0 ? [0, 0, -1] : [0, 0, 1];
+    }
+
+    if (dir.lengthSq() === 0) return;
+    dir.normalize().multiplyScalar(dist);
+
     const cam = this.world.camera as OBC.OrthoPerspectiveCamera;
 
-    const positions: Record<
-      string,
-      { eye: [number, number, number]; up?: [number, number, number] }
-    > = {
-      front: { eye: [center.x, center.y, center.z + dist] },
-      back: { eye: [center.x, center.y, center.z - dist] },
-      right: { eye: [center.x + dist, center.y, center.z] },
-      left: { eye: [center.x - dist, center.y, center.z] },
-      top: {
-        eye: [center.x, center.y + dist, center.z],
-        up: [0, 0, -1],
-      },
-      bottom: {
-        eye: [center.x, center.y - dist, center.z],
-        up: [0, 0, 1],
-      },
-    };
-
-    const pos = positions[face];
-    if (!pos) return;
-
-    // Set up vector for top/bottom views
-    if (pos.up) {
-      cam.three.up.set(pos.up[0], pos.up[1], pos.up[2]);
+    if (needsCustomUp) {
+      cam.three.up.set(up[0], up[1], up[2]);
     } else {
       cam.three.up.set(0, 1, 0);
     }
 
     await cam.controls.setLookAt(
-      pos.eye[0],
-      pos.eye[1],
-      pos.eye[2],
+      center.x + dir.x,
+      center.y + dir.y,
+      center.z + dir.z,
       center.x,
       center.y,
       center.z

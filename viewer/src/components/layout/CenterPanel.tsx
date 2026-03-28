@@ -16,7 +16,7 @@ import type { HighlightGroup } from "../../store";
 import type { BcfCameraState } from "../../types/bcf";
 import { getModelBytes, setCachedFile } from "../../engine/modelCache";
 import { ViewCube } from "../viewcube/ViewCube";
-import type { CubeFace } from "../viewcube/ViewCube";
+import type { CubeTarget } from "../viewcube/ViewCube";
 
 export function CenterPanel() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -33,11 +33,11 @@ export function CenterPanel() {
     [number, number, number, number] | undefined
   >(undefined);
 
-  const handleFaceClick = useCallback(
-    (face: CubeFace) => {
+  const handleNavigate = useCallback(
+    (target: CubeTarget) => {
       const currentEngine = engineRef.current;
       if (currentEngine && isReadyRef.current) {
-        currentEngine.navigateToFace(face);
+        currentEngine.navigateToFace(target);
       }
     },
     []
@@ -535,7 +535,7 @@ export function CenterPanel() {
 
       {isReady && (
         <ViewCube
-          onFaceClick={handleFaceClick}
+          onNavigate={handleNavigate}
           cameraQuaternion={cameraQuaternion}
         />
       )}
