@@ -523,19 +523,7 @@ export class ViewerEngine {
       }
     }
 
-    // Highlight selected element opaquely
-    const selectedMap = await this.fragments.guidsToModelIdMap([globalId]);
-    if (Object.keys(selectedMap).length > 0) {
-      await this.fragments.highlight(
-        {
-          color: new THREE.Color("#44B6A8"),
-          renderedFaces: FRAGS.RenderedFaces.TWO,
-          opacity: 1.0,
-          transparent: false,
-        },
-        selectedMap
-      );
-    }
+    // Selected element keeps its original materials — no overlay needed.
 
     this._isolated = true;
   }

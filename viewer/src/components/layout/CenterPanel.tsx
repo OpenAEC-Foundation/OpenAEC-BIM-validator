@@ -189,6 +189,8 @@ export function CenterPanel() {
     const handleResetView = async () => {
       const currentEngine = engineRef.current;
       if (currentEngine && isReadyRef.current) {
+        // Clear store selection first so the subscribe bridge doesn't re-trigger isolation
+        useStore.getState().selectElement(null);
         await currentEngine.clearIsolation();
         await currentEngine.clearHighlights();
         currentEngine.fitToAllModels();
