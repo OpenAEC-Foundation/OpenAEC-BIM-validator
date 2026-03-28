@@ -90,12 +90,14 @@ export function CenterPanel() {
   // Store→Engine bridge: highlight or isolate selected element
   useEffect(() => {
     let prevSelectedId: string | null = null;
+    let prevIsolate = false;
 
     const unsubscribe = useStore.subscribe((state) => {
       const selectedId = state.selectedElementId;
       const isolate = state.isolateOnSelect;
-      if (selectedId === prevSelectedId) return;
+      if (selectedId === prevSelectedId && isolate === prevIsolate) return;
       prevSelectedId = selectedId;
+      prevIsolate = isolate;
 
       const currentEngine = engineRef.current;
       if (!currentEngine || !isReadyRef.current) return;
