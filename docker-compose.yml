@@ -24,10 +24,9 @@ services:
       - CORS_ORIGINS=*
       - DATABASE_URL=postgresql+asyncpg://bimvalidator:${POSTGRES_PASSWORD:-changeme}@db:5432/bimvalidator
       - PROJECT_FILES_DIR=/data/projects
-      # Nextcloud cloud storage (opt-in — leave empty to disable)
-      - NEXTCLOUD_URL=
-      - NEXTCLOUD_SERVICE_USER=
-      - NEXTCLOUD_SERVICE_PASS=
+      # Multi-tenant cloud storage (Nextcloud hybrid I/O)
+      - TENANTS_CONFIG=/etc/openaec/tenants.json
+      - NC_SERVICE_PASS_3BM=${NC_SERVICE_PASS_3BM:-}
     volumes:
       # Persist uploaded files across restarts
       - bim-uploads:/tmp/ifc_uploads
@@ -35,6 +34,10 @@ services:
       - bim-jobs:/tmp/ids_validation_jobs
       # Persistent project file storage
       - bim-projects:/data/projects
+      # Tenant config
+      - ./config/tenants.json:/etc/openaec/tenants.json:ro
+      # Nextcloud data volume (read-only, direct filesystem access)
+      - tenant-3bm_nc-3bm-data:/nc-data-3bm:ro
     networks:
       - default
       - openaec_platform
@@ -49,6 +52,8 @@ volumes:
   bim-processed:
   bim-jobs:
   bim-projects:
+  tenant-3bm_nc-3bm-data:
+    external: true
 
 networks:
   openaec_platform:

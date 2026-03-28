@@ -3,7 +3,7 @@ Nextcloud WebDAV client for cloud storage integration.
 
 Provides async file operations (list, upload, download, delete) against
 a Nextcloud instance using WebDAV. Authentication uses Basic auth with
-a service account.
+a service account. Multi-tenant: one client instance per tenant.
 
 Usage:
     client = NextcloudClient(
@@ -12,13 +12,20 @@ Usage:
         password="secret",
     )
     projects = await client.list_projects()
+
+    # Or from tenant config:
+    client = NextcloudClient.from_tenant(tenant_config)
 """
+
+from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from urllib.parse import quote, unquote
 
 import httpx
+
+from server.tenant_config import TenantConfig
 
 DAV_NS = {"d": "DAV:"}
 TOOL_SLUG = "bim-validator"
@@ -66,6 +73,15 @@ class NextcloudClient:
         self._client = httpx.AsyncClient(
             auth=httpx.BasicAuth(username, password),
             timeout=timeout,
+        )
+
+    @classmethod
+    def from_tenant(cls, tenant: TenantConfig) -> NextcloudClient:
+        """Create a client from a TenantConfig."""
+        return cls(
+            base_url=tenant.nextcloud_url,
+            username=tenant.service_user,
+            password=tenant.service_pass,
         )
 
     async def close(self) -> None:
@@ -344,3 +360,22 @@ class NextcloudClient:
             )
 
         return items
+
+
+# ── Multi-tenant client registry ───────────────────────────────
+
+_clients: dict[str, NextcloudClient] = {}
+
+
+def get_nc_client(tenant: TenantConfig) -> NextcloudClient:
+    """Get or create a NextcloudClient for the given tenant."""
+    if tenant.slug not in _clients:
+        _clients[tenant.slug] = NextcloudClient.from_tenant(tenant)
+    return _clients[tenant.slug]
+
+
+async def close_all_clients() -> None:
+    """Close all cached clients. Call on app shutdown."""
+    for client in _clients.values():
+        await client.close()
+    _clients.clear()
