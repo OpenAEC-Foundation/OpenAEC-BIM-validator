@@ -8,13 +8,15 @@
  * - Property requests from the PropertiesPanel
  */
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 
 import { useViewer } from "../../engine/useViewer";
 import { useStore } from "../../store";
 import type { HighlightGroup } from "../../store";
 import type { BcfCameraState } from "../../types/bcf";
 import { getModelBytes, setCachedFile } from "../../engine/modelCache";
+import { ViewCube } from "../viewcube/ViewCube";
+import type { CubeFace } from "../viewcube/ViewCube";
 
 export function CenterPanel() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -25,6 +27,35 @@ export function CenterPanel() {
   const isReadyRef = useRef(isReady);
   engineRef.current = engine;
   isReadyRef.current = isReady;
+
+  // ViewCube camera sync
+  const [cameraQuaternion, setCameraQuaternion] = useState<
+    [number, number, number, number] | undefined
+  >(undefined);
+
+  const handleFaceClick = useCallback(
+    (face: CubeFace) => {
+      const currentEngine = engineRef.current;
+      if (currentEngine && isReadyRef.current) {
+        currentEngine.navigateToFace(face);
+      }
+    },
+    []
+  );
+
+  // Sync camera quaternion to ViewCube via animation frame loop
+  useEffect(() => {
+    if (!isReady || !engine) return;
+
+    let rafId: number;
+    const syncQuaternion = () => {
+      const q = engine.getCameraQuaternion();
+      if (q) setCameraQuaternion(q);
+      rafId = requestAnimationFrame(syncQuaternion);
+    };
+    rafId = requestAnimationFrame(syncQuaternion);
+    return () => cancelAnimationFrame(rafId);
+  }, [isReady, engine]);
 
   // Model file loading handler
   useEffect(() => {
@@ -197,13 +228,35 @@ export function CenterPanel() {
       }
     };
 
+    const handleAddSectionPlane = (e: Event) => {
+      const detail = (e as CustomEvent<{ axis: "x" | "y" | "z" }>).detail;
+      const currentEngine = engineRef.current;
+      if (currentEngine && isReadyRef.current) {
+        currentEngine.addSectionPlane(detail.axis);
+      }
+    };
+
+    const handleRemoveSectionPlanes = () => {
+      const currentEngine = engineRef.current;
+      if (currentEngine && isReadyRef.current) {
+        currentEngine.removeAllSectionPlanes();
+      }
+    };
+
     window.addEventListener("zoom-fit-all", handleZoomFitAll);
     window.addEventListener("reset-camera", handleResetCamera);
     window.addEventListener("reset-view", handleResetView);
+    window.addEventListener("add-section-plane", handleAddSectionPlane);
+    window.addEventListener("remove-section-planes", handleRemoveSectionPlanes);
     return () => {
       window.removeEventListener("zoom-fit-all", handleZoomFitAll);
       window.removeEventListener("reset-camera", handleResetCamera);
       window.removeEventListener("reset-view", handleResetView);
+      window.removeEventListener("add-section-plane", handleAddSectionPlane);
+      window.removeEventListener(
+        "remove-section-planes",
+        handleRemoveSectionPlanes
+      );
     };
   }, []);
 
@@ -479,6 +532,13 @@ export function CenterPanel() {
   return (
     <div className="viewer-container">
       <div ref={containerRef} className="viewer-container__canvas" />
+
+      {isReady && (
+        <ViewCube
+          onFaceClick={handleFaceClick}
+          cameraQuaternion={cameraQuaternion}
+        />
+      )}
 
       {error && (
         <div

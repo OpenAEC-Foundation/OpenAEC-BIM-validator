@@ -1,0 +1,82 @@
+.viewcube-container {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.viewcube-scene {
+  width: 90px;
+  height: 90px;
+  perspective: 300px;
+  pointer-events: auto;
+}
+
+.viewcube {
+  width: 90px;
+  height: 90px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.1s ease-out;
+  /* Default isometric-ish view */
+  transform: rotateX(-25deg) rotateY(45deg);
+}
+
+.viewcube-face {
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #e0e0e0;
+  cursor: pointer;
+  user-select: none;
+
+  background: rgba(53, 14, 53, 0.75);
+  border: 1px solid rgba(68, 182, 168, 0.3);
+  backdrop-filter: blur(4px);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.viewcube-face:hover {
+  background: rgba(68, 182, 168, 0.5);
+  color: #ffffff;
+  border-color: rgba(68, 182, 168, 0.8);
+}
+
+.viewcube-face:active {
+  background: rgba(68, 182, 168, 0.7);
+}
+
+/* Face positioning — half of 90px = 45px */
+.viewcube-front {
+  transform: translateZ(45px);
+}
+
+.viewcube-back {
+  transform: rotateY(180deg) translateZ(45px);
+}
+
+.viewcube-top {
+  transform: rotateX(90deg) translateZ(45px);
+}
+
+.viewcube-bottom {
+  transform: rotateX(-90deg) translateZ(45px);
+}
+
+.viewcube-left {
+  transform: rotateY(-90deg) translateZ(45px);
+}
+
+.viewcube-right {
+  transform: rotateY(90deg) translateZ(45px);
+}

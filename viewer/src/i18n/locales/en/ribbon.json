@@ -28,6 +28,11 @@
     "viewer": "3D View",
     "zoomFit": "Zoom Fit",
     "resetCamera": "Reset",
-    "resetView": "Reset View"
+    "resetView": "Reset View",
+    "sections": "Sections",
+    "sectionX": "Section X",
+    "sectionY": "Section Y",
+    "sectionZ": "Section Z",
+    "removeSections": "Clear sections"
   }
 }

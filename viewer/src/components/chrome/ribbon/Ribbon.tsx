@@ -23,6 +23,10 @@ interface RibbonProps {
   onZoomFit?: () => void;
   onResetCamera?: () => void;
   onResetView?: () => void;
+  onAddSectionX?: () => void;
+  onAddSectionY?: () => void;
+  onAddSectionZ?: () => void;
+  onRemoveSections?: () => void;
   hasModel?: boolean;
   isValidating?: boolean;
   bcfConnected?: boolean;
@@ -49,6 +53,10 @@ export default function Ribbon({
   onZoomFit,
   onResetCamera,
   onResetView,
+  onAddSectionX,
+  onAddSectionY,
+  onAddSectionZ,
+  onRemoveSections,
   hasModel,
   isValidating,
   bcfConnected,
@@ -160,6 +168,10 @@ export default function Ribbon({
             onZoomFit={onZoomFit}
             onResetCamera={onResetCamera}
             onResetView={onResetView}
+            onAddSectionX={onAddSectionX}
+            onAddSectionY={onAddSectionY}
+            onAddSectionZ={onAddSectionZ}
+            onRemoveSections={onRemoveSections}
           />
         );
     }

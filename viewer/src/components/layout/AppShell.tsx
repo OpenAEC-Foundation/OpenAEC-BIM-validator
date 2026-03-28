@@ -271,6 +271,10 @@ export function AppShell() {
           useStore.getState().selectElement(null);
           window.dispatchEvent(new CustomEvent("reset-view"));
         }}
+        onAddSectionX={() => window.dispatchEvent(new CustomEvent("add-section-plane", { detail: { axis: "x" } }))}
+        onAddSectionY={() => window.dispatchEvent(new CustomEvent("add-section-plane", { detail: { axis: "y" } }))}
+        onAddSectionZ={() => window.dispatchEvent(new CustomEvent("add-section-plane", { detail: { axis: "z" } }))}
+        onRemoveSections={() => window.dispatchEvent(new CustomEvent("remove-section-planes"))}
       />
 
       <div className="app-shell__panels">

@@ -29,3 +29,7 @@ export const pushIcon = '<svg width="24" height="24" viewBox="0 0 24 24" fill="n
 export const resetViewIcon = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 2v6h6"/><path d="M2.5 13a10 10 0 108-11"/><path d="M2.5 8l0-6"/></svg>';
 
 export const loginIcon = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>';
+
+export const sectionPlaneIcon = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M6 4l-4 8 4 8"/><path d="M18 4l4 8-4 8"/><line x1="12" y1="2" x2="12" y2="22" stroke-dasharray="2 2" opacity="0.5"/></svg>';
+
+export const removeSectionIcon = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor"/><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor"/></svg>';

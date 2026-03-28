@@ -8,6 +8,8 @@ import {
   zoomFitIcon,
   resetCameraIcon,
   resetViewIcon,
+  sectionPlaneIcon,
+  removeSectionIcon,
 } from "./icons";
 
 interface ViewTabProps {
@@ -18,6 +20,10 @@ interface ViewTabProps {
   onZoomFit?: () => void;
   onResetCamera?: () => void;
   onResetView?: () => void;
+  onAddSectionX?: () => void;
+  onAddSectionY?: () => void;
+  onAddSectionZ?: () => void;
+  onRemoveSections?: () => void;
 }
 
 export default function ViewTab({
@@ -28,6 +34,10 @@ export default function ViewTab({
   onZoomFit,
   onResetCamera,
   onResetView,
+  onAddSectionX,
+  onAddSectionY,
+  onAddSectionZ,
+  onRemoveSections,
 }: ViewTabProps) {
   const { t } = useTranslation("ribbon");
 
@@ -73,6 +83,34 @@ export default function ViewTab({
               onClick={onResetView}
             />
           </RibbonButtonStack>
+        </RibbonGroup>
+
+        <RibbonGroup label={t("view.sections")}>
+          <RibbonButtonStack>
+            <RibbonButton
+              icon={sectionPlaneIcon}
+              label={t("view.sectionX")}
+              size="small"
+              onClick={onAddSectionX}
+            />
+            <RibbonButton
+              icon={sectionPlaneIcon}
+              label={t("view.sectionY")}
+              size="small"
+              onClick={onAddSectionY}
+            />
+            <RibbonButton
+              icon={sectionPlaneIcon}
+              label={t("view.sectionZ")}
+              size="small"
+              onClick={onAddSectionZ}
+            />
+          </RibbonButtonStack>
+          <RibbonButton
+            icon={removeSectionIcon}
+            label={t("view.removeSections")}
+            onClick={onRemoveSections}
+          />
         </RibbonGroup>
       </div>
     </div>

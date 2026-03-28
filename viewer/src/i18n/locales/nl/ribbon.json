@@ -28,6 +28,11 @@
     "viewer": "3D Beeld",
     "zoomFit": "Passend",
     "resetCamera": "Herstel",
-    "resetView": "Reset"
+    "resetView": "Reset",
+    "sections": "Doorsnede",
+    "sectionX": "Snijvlak X",
+    "sectionY": "Snijvlak Y",
+    "sectionZ": "Snijvlak Z",
+    "removeSections": "Wis snijvlakken"
   }
 }

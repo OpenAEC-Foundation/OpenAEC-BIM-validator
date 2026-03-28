@@ -30,6 +30,7 @@ const DEFAULT_BACKGROUND = "#1a1a2e";
 /** Default highlight opacity */
 const HIGHLIGHT_OPACITY = 0.6;
 
+
 /** Ghost mode: opacity for non-selected elements */
 const GHOST_OPACITY = 0.15;
 
@@ -103,6 +104,12 @@ export class ViewerEngine {
 
   /** Whether isolation mode is active. */
   private _isolated = false;
+
+  /** Active section planes. */
+  private sectionPlanes: THREE.Plane[] = [];
+
+  /** Clipping plane helpers for visualization. */
+  private planeHelpers: THREE.PlaneHelper[] = [];
 
   constructor(
     container: HTMLElement,
@@ -544,6 +551,151 @@ export class ViewerEngine {
     this._isolated = false;
   }
 
+  // -- Section Plane Methods --
+
+  /**
+   * Add a section plane along a given axis.
+   * The plane is positioned at the center of all loaded models.
+   */
+  addSectionPlane(axis: "x" | "y" | "z"): void {
+    if (!this.world?.renderer?.three || !this.world?.scene?.three) return;
+
+    const renderer = this.world.renderer.three;
+    const scene = this.world.scene.three;
+
+    // Compute center of all models
+    const center = new THREE.Vector3();
+    if (this.modelBoxes.size > 0) {
+      const box = new THREE.Box3();
+      for (const b of this.modelBoxes.values()) box.union(b);
+      box.getCenter(center);
+    }
+
+    // Create plane normal along the given axis
+    const normal = new THREE.Vector3(
+      axis === "x" ? -1 : 0,
+      axis === "y" ? -1 : 0,
+      axis === "z" ? -1 : 0
+    );
+
+    const constant = -normal.dot(center);
+    const plane = new THREE.Plane(normal, constant);
+
+    this.sectionPlanes.push(plane);
+
+    // Add visual helper
+    const size = 50;
+    const helper = new THREE.PlaneHelper(plane, size, 0x44b6a8);
+    scene.add(helper);
+    this.planeHelpers.push(helper);
+
+    // Apply all clipping planes to renderer
+    renderer.clippingPlanes = [...this.sectionPlanes];
+    renderer.localClippingEnabled = true;
+  }
+
+  /**
+   * Remove all section planes.
+   */
+  removeAllSectionPlanes(): void {
+    if (!this.world?.renderer?.three || !this.world?.scene?.three) return;
+
+    const renderer = this.world.renderer.three;
+    const scene = this.world.scene.three;
+
+    for (const helper of this.planeHelpers) {
+      scene.remove(helper);
+      helper.dispose();
+    }
+
+    this.sectionPlanes = [];
+    this.planeHelpers = [];
+
+    renderer.clippingPlanes = [];
+    renderer.localClippingEnabled = false;
+  }
+
+  /**
+   * Get the number of active section planes.
+   */
+  get sectionPlaneCount(): number {
+    return this.sectionPlanes.length;
+  }
+
+  // -- Camera Utility Methods --
+
+  /**
+   * Get camera quaternion for ViewCube synchronization.
+   * Returns [x, y, z, w] or null if camera not available.
+   */
+  getCameraQuaternion(): [number, number, number, number] | null {
+    if (!this.world) return null;
+
+    const cam = this.world.camera.three;
+    const q = cam.quaternion;
+    return [q.x, q.y, q.z, q.w];
+  }
+
+  /**
+   * Navigate camera to a named view face (for ViewCube).
+   * Keeps the camera pointed at the center of all loaded models.
+   */
+  async navigateToFace(
+    face: "front" | "back" | "top" | "bottom" | "left" | "right"
+  ): Promise<void> {
+    if (!this.world) return;
+
+    // Compute center and size of all models
+    const center = new THREE.Vector3();
+    let dist = 15;
+    if (this.modelBoxes.size > 0) {
+      const box = new THREE.Box3();
+      for (const b of this.modelBoxes.values()) box.union(b);
+      box.getCenter(center);
+      const size = box.getSize(new THREE.Vector3());
+      dist = Math.max(size.x, size.y, size.z) * CAMERA_FIT_PADDING;
+    }
+
+    const cam = this.world.camera as OBC.OrthoPerspectiveCamera;
+
+    const positions: Record<
+      string,
+      { eye: [number, number, number]; up?: [number, number, number] }
+    > = {
+      front: { eye: [center.x, center.y, center.z + dist] },
+      back: { eye: [center.x, center.y, center.z - dist] },
+      right: { eye: [center.x + dist, center.y, center.z] },
+      left: { eye: [center.x - dist, center.y, center.z] },
+      top: {
+        eye: [center.x, center.y + dist, center.z],
+        up: [0, 0, -1],
+      },
+      bottom: {
+        eye: [center.x, center.y - dist, center.z],
+        up: [0, 0, 1],
+      },
+    };
+
+    const pos = positions[face];
+    if (!pos) return;
+
+    // Set up vector for top/bottom views
+    if (pos.up) {
+      cam.three.up.set(pos.up[0], pos.up[1], pos.up[2]);
+    } else {
+      cam.three.up.set(0, 1, 0);
+    }
+
+    await cam.controls.setLookAt(
+      pos.eye[0],
+      pos.eye[1],
+      pos.eye[2],
+      center.x,
+      center.y,
+      center.z
+    );
+  }
+
   // -- BCF Viewpoint Methods --
 
   /**
@@ -682,6 +834,7 @@ export class ViewerEngine {
   dispose(): void {
     this._disposed = true;
     this._isInitialized = false;
+    this.removeAllSectionPlanes();
     this.modelObjects.clear();
     this.modelBoxes.clear();
     this.modelBytes.clear();
