@@ -494,39 +494,20 @@ export class ViewerEngine {
   }
 
   /**
-   * Isolate an element: highlight everything else grey/transparent,
-   * highlight the selected element with an opaque colored overlay.
-   * Base materials are NOT modified — only highlight overlays are used.
+   * Isolate an element: ghost everything transparent,
+   * then highlight the selected element with an opaque overlay.
+   *
+   * Material-level opacity ghosts all geometry (fast).
+   * Fragment-level highlight renders the selected element on top (per-element accurate).
    */
   async isolateElement(globalId: string): Promise<void> {
     if (!this.world) return;
 
     // Restore any previous isolation first
     this.restoreMaterials();
+    await this.clearHighlights();
 
-    // Find which meshes belong to the selected element
-    const selectedMeshes = new Set<THREE.Object3D>();
-    if (this.fragments) {
-      try {
-        const selectedMap = await this.fragments.guidsToModelIdMap([globalId]);
-        // Walk the scene to find meshes that match the selected fragments
-        for (const obj of this.modelObjects.values()) {
-          obj.traverse((child) => {
-            if (child instanceof THREE.Mesh) {
-              // Check if this mesh's fragment contains the selected element
-              const frag = (child as unknown as { fragment?: { id: string } }).fragment;
-              if (frag && selectedMap[frag.id]) {
-                selectedMeshes.add(child);
-              }
-            }
-          });
-        }
-      } catch {
-        // If GUID lookup fails, just ghost everything
-      }
-    }
-
-    // Ghost ALL meshes
+    // Ghost ALL meshes at the material level
     for (const obj of this.modelObjects.values()) {
       obj.traverse((child) => {
         if (!(child instanceof THREE.Mesh)) return;
@@ -535,12 +516,10 @@ export class ViewerEngine {
           : [child.material];
         for (const mat of materials) {
           if (!mat || this.savedMaterials.has(mat)) continue;
-          // Save original state
           this.savedMaterials.set(mat, {
             opacity: mat.opacity,
             transparent: mat.transparent,
           });
-          // Ghost it
           mat.transparent = true;
           mat.opacity = GHOST_OPACITY;
           mat.needsUpdate = true;
@@ -548,20 +527,21 @@ export class ViewerEngine {
       });
     }
 
-    // Un-ghost selected element: restore to full opacity
-    for (const mesh of selectedMeshes) {
-      const child = mesh as THREE.Mesh;
-      const materials = Array.isArray(child.material)
-        ? child.material
-        : [child.material];
-      for (const mat of materials) {
-        if (!mat) continue;
-        const saved = this.savedMaterials.get(mat);
-        if (saved) {
-          mat.opacity = saved.opacity || 1.0;
-          mat.transparent = saved.transparent;
-          mat.needsUpdate = true;
+    // Highlight selected element with opaque overlay (fragment-level, per-element)
+    if (this.fragments) {
+      try {
+        const modelIdMap = await this.fragments.guidsToModelIdMap([globalId]);
+        if (Object.keys(modelIdMap).length > 0) {
+          const style: FRAGS.MaterialDefinition = {
+            color: new THREE.Color("#44B6A8"),  // Verdigris
+            renderedFaces: FRAGS.RenderedFaces.TWO,
+            opacity: 1.0,
+            transparent: false,
+          };
+          await this.fragments.highlight(style, modelIdMap);
         }
+      } catch {
+        // Highlight failed — ghost-only mode still works
       }
     }
 
@@ -581,11 +561,12 @@ export class ViewerEngine {
   }
 
   /**
-   * Clear isolation: restore all materials.
+   * Clear isolation: restore all materials and remove highlight overlay.
    */
   async clearIsolation(): Promise<void> {
     if (!this._isolated) return;
     this.restoreMaterials();
+    await this.clearHighlights();
     this._isolated = false;
   }
 
