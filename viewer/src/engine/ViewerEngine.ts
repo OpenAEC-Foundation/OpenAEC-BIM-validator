@@ -31,8 +31,8 @@ const DEFAULT_BACKGROUND = "#1a1a2e";
 const HIGHLIGHT_OPACITY = 0.6;
 
 
-/** Ghost mode: opacity for non-selected elements */
-const GHOST_OPACITY = 0.15;
+/** Ghost mode: high opacity to wash out non-selected elements */
+const GHOST_OPACITY = 0.85;
 
 /** Callbacks for engine events */
 export interface ViewerEngineCallbacks {
@@ -532,8 +532,8 @@ export class ViewerEngine {
       if (mapKeys > 0) {
         await this.fragments.highlight(
           {
-            color: new THREE.Color(0xcccccc),
-            renderedFaces: FRAGS.RenderedFaces.ONE,
+            color: new THREE.Color(0xffffff),
+            renderedFaces: FRAGS.RenderedFaces.TWO,
             opacity: GHOST_OPACITY,
             transparent: true,
           },
