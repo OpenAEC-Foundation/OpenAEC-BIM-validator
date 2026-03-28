@@ -108,6 +108,12 @@ export class ViewerEngine {
   private _isolated = false;
 
 
+  /** Saved material state for isolation restore. */
+  private savedMaterials = new Map<
+    THREE.Material,
+    { opacity: number; transparent: boolean }
+  >();
+
   /** Active section planes. */
   private sectionPlanes: THREE.Plane[] = [];
 
@@ -493,72 +499,76 @@ export class ViewerEngine {
    * Base materials are NOT modified — only highlight overlays are used.
    */
   async isolateElement(globalId: string): Promise<void> {
-    if (!this.fragments) {
-      console.warn("[isolate] no fragments");
-      return;
-    }
+    if (!this.world) return;
 
-    console.log("[isolate] start", globalId, "models:", this.modelBytes.size);
+    // Restore any previous isolation first
+    this.restoreMaterials();
 
-    // Collect all GUIDs across all models (cached after first call)
-    const otherGuids: string[] = [];
-    for (const modelId of this.modelBytes.keys()) {
-      let guids = this.allGuidsCache.get(modelId);
-      if (!guids) {
-        const extractor = this.getOrCreateExtractor(modelId);
-        if (!extractor) {
-          console.warn("[isolate] no extractor for", modelId);
-          continue;
+    // Find which meshes belong to the selected element
+    const selectedMeshes = new Set<THREE.Object3D>();
+    if (this.fragments) {
+      try {
+        const selectedMap = await this.fragments.guidsToModelIdMap([globalId]);
+        // Walk the scene to find meshes that match the selected fragments
+        for (const obj of this.modelObjects.values()) {
+          obj.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+              // Check if this mesh's fragment contains the selected element
+              const frag = (child as unknown as { fragment?: { id: string } }).fragment;
+              if (frag && selectedMap[frag.id]) {
+                selectedMeshes.add(child);
+              }
+            }
+          });
         }
-        guids = await extractor.getAllGlobalIds();
-        this.allGuidsCache.set(modelId, guids);
-        console.log("[isolate] extracted", guids.length, "guids from", modelId);
-      }
-      for (const guid of guids) {
-        if (guid !== globalId) otherGuids.push(guid);
+      } catch {
+        // If GUID lookup fails, just ghost everything
       }
     }
 
-    console.log("[isolate] otherGuids:", otherGuids.length);
-
-    // Clear programmatic highlights only
-    await this.fragments.resetHighlight();
-
-    // Ghost all other elements
-    if (otherGuids.length > 0) {
-      const otherMap = await this.fragments.guidsToModelIdMap(otherGuids);
-      const mapKeys = Object.keys(otherMap).length;
-      console.log("[isolate] otherMap models:", mapKeys);
-      if (mapKeys > 0) {
-        await this.fragments.highlight(
-          {
-            color: new THREE.Color(0xffffff),
-            renderedFaces: FRAGS.RenderedFaces.TWO,
-            opacity: GHOST_OPACITY,
-            transparent: true,
-          },
-          otherMap
-        );
-        console.log("[isolate] highlight applied");
-      }
-    } else {
-      console.warn("[isolate] no other guids to ghost");
+    // Ghost ALL meshes, then un-ghost selected ones
+    for (const obj of this.modelObjects.values()) {
+      obj.traverse((child) => {
+        if (!(child instanceof THREE.Mesh)) return;
+        const materials = Array.isArray(child.material)
+          ? child.material
+          : [child.material];
+        for (const mat of materials) {
+          if (!mat || this.savedMaterials.has(mat)) continue;
+          // Save original state
+          this.savedMaterials.set(mat, {
+            opacity: mat.opacity,
+            transparent: mat.transparent,
+          });
+          // Ghost it
+          mat.transparent = true;
+          mat.opacity = GHOST_OPACITY;
+          mat.needsUpdate = true;
+        }
+      });
     }
 
     this._isolated = true;
-    console.log("[isolate] done");
   }
 
   /**
-   * Clear isolation: remove all highlight overlays.
+   * Restore all materials to their original state.
+   */
+  private restoreMaterials(): void {
+    for (const [mat, saved] of this.savedMaterials) {
+      mat.opacity = saved.opacity;
+      mat.transparent = saved.transparent;
+      mat.needsUpdate = true;
+    }
+    this.savedMaterials.clear();
+  }
+
+  /**
+   * Clear isolation: restore all materials.
    */
   async clearIsolation(): Promise<void> {
     if (!this._isolated) return;
-
-    if (this.fragments) {
-      await this.fragments.resetHighlight();
-    }
-
+    this.restoreMaterials();
     this._isolated = false;
   }
 
