@@ -2,9 +2,12 @@ import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../../stores/authStore";
 import { useStore } from "../../../store";
+import type { IProjectStorage } from "../../../services/ProjectStorage";
+import ProjectList from "../../projects/ProjectList";
 import "./Backstage.css";
 
 const ICONS = {
+  projects: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>',
   open: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>',
   exportBcf: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>',
   preferences: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>',
@@ -60,6 +63,8 @@ interface BackstageProps {
   onOpenSettings: () => void;
   onOpenFeedback: () => void;
   cloudEnabled?: boolean;
+  projectStorage?: IProjectStorage;
+  onOpenProject?: (projectId: string) => void;
 }
 
 export default function Backstage({
@@ -72,6 +77,8 @@ export default function Backstage({
   onOpenSettings,
   onOpenFeedback,
   cloudEnabled,
+  projectStorage,
+  onOpenProject,
 }: BackstageProps) {
   const { t } = useTranslation("backstage");
   const [activePanel, setActivePanel] = useState<string>("none");
@@ -127,6 +134,15 @@ export default function Backstage({
           <span>{t("file")}</span>
         </button>
         <div className="backstage-items">
+          {projectStorage && (
+            <MenuItem
+              icon={ICONS.projects}
+              label={t("projects", "Projecten")}
+              active={activePanel === "projects"}
+              onClick={() => setActivePanel("projects")}
+            />
+          )}
+
           <MenuItem
             icon={ICONS.open}
             label={t("open")}
@@ -203,6 +219,15 @@ export default function Backstage({
         </div>
       </div>
       <div className="backstage-content" onClick={handleContentClick}>
+        {activePanel === "projects" && projectStorage && onOpenProject && (
+          <ProjectList
+            storage={projectStorage}
+            onOpenProject={(id) => {
+              onClose();
+              onOpenProject(id);
+            }}
+          />
+        )}
         {activePanel === "about" && <AboutPanel />}
         {activePanel === "bcf-platform" && <BcfPlatformPanel />}
       </div>

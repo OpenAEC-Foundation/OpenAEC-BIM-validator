@@ -27,6 +27,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from server.bcf_export import generate_bcf_zip
+from server.database import close_db, init_db
 from server.ids_validator import IDSValidator, ValidationReport, report_to_dict
 from server.ifc_processor import GLTF_AVAILABLE, IFCProcessor
 from server.job_manager import JobManager, JobStatusResponse
@@ -39,6 +40,7 @@ from server.models.validation_results import (
     ValidationStatus,
 )
 from server.project_manager import ProjectManager
+from server.routers.projects import router as projects_router
 from ifc_validator.standards.resolver import get_bundled_ids
 
 
@@ -74,6 +76,22 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+# Include persistent project router (PostgreSQL-backed)
+app.include_router(projects_router)
+
+
+@app.on_event("startup")
+async def startup():
+    """Initialize database tables on startup."""
+    await init_db()
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    """Clean up database connections on shutdown."""
+    await close_db()
+
 
 # Configure CORS for browser access
 # In production, set CORS_ORIGINS env var (comma-separated)

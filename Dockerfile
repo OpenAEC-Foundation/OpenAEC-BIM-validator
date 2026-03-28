@@ -46,8 +46,8 @@ COPY ids-bestanden/ ./ids-bestanden/
 # Copy built frontend from stage 1
 COPY --from=frontend-build /app/viewer/dist ./viewer/dist
 
-# Create temp directories
-RUN mkdir -p /tmp/ifc_uploads /tmp/ifc_processed /tmp/ids_validation_jobs
+# Create temp directories and persistent project storage
+RUN mkdir -p /tmp/ifc_uploads /tmp/ifc_processed /tmp/ids_validation_jobs /data/projects
 
 EXPOSE 8000
 

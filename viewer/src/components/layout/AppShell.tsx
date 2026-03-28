@@ -5,7 +5,7 @@
  * TitleBar + Ribbon + Panels + StatusBar + Backstage + Dialogs.
  */
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import {
   Panel,
   Group,
@@ -35,6 +35,8 @@ import { LeftPanel } from "./LeftPanel";
 import { CenterPanel } from "./CenterPanel";
 import { RightPanel } from "./RightPanel";
 import { ToastContainer } from "../Toast";
+
+import { ServerProjectStorage } from "../../services/ServerProjectStorage";
 
 import "./AppShell.css";
 
@@ -89,6 +91,43 @@ export function AppShell() {
   const [theme, setTheme] = useState(() => getSetting("theme", "light"));
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Project storage (server-backed)
+  const projectStorage = useMemo(() => new ServerProjectStorage(), []);
+
+  // Open a server project: load its files into the viewer
+  const handleOpenProject = useCallback(
+    async (projectId: string) => {
+      try {
+        const detail = await projectStorage.getProject(projectId);
+
+        // Create project in store
+        if (!project || project.id !== detail.id) {
+          createProject(detail.name);
+        }
+
+        // Load IFC files
+        const ifcFiles = detail.files.filter((f) => f.fileType === "ifc");
+        for (const fileInfo of ifcFiles) {
+          const blob = await projectStorage.getFileBlob(projectId, fileInfo.id);
+          const file = new File([blob], fileInfo.fileName, {
+            type: "application/octet-stream",
+          });
+
+          setCachedFile(file.name, file);
+          const bytes = await file.arrayBuffer();
+          await saveModelBytes(file.name, bytes);
+          addModel(file);
+          window.dispatchEvent(
+            new CustomEvent("model-file-added", { detail: { file } })
+          );
+        }
+      } catch (err) {
+        console.error("Failed to open project:", err);
+      }
+    },
+    [projectStorage, project, createProject, addModel]
+  );
 
   // Apply theme on mount
   useEffect(() => {
@@ -337,6 +376,8 @@ export function AppShell() {
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenFeedback={() => setFeedbackOpen(true)}
         cloudEnabled={cloudEnabled}
+        projectStorage={projectStorage}
+        onOpenProject={handleOpenProject}
       />
 
       <SettingsDialog

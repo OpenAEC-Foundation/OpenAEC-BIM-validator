@@ -8,6 +8,20 @@
   "feedback": "Feedback",
   "about": "Over",
   "logout": "Uitloggen",
+  "projects": "Projecten",
+  "projectsPanel": {
+    "title": "Projecten",
+    "description": "Beheer je BIM validatie projecten.",
+    "newProject": "Nieuw project",
+    "refresh": "Vernieuwen",
+    "projectName": "Naam",
+    "projectDesc": "Beschrijving",
+    "creating": "Aanmaken...",
+    "create": "Aanmaken",
+    "cancel": "Annuleren",
+    "loading": "Laden...",
+    "noProjects": "Nog geen projecten."
+  },
   "bcfPlatformPanel": {
     "title": "BCF Platform",
     "description": "Verbind met het OpenAEC BCF Platform om issues op te slaan en te delen met je team.",

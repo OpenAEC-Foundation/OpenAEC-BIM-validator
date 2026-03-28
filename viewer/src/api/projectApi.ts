@@ -1,7 +1,7 @@
 /**
  * Project API client — v2 endpoints for multi-model BIM platform.
  *
- * Provides functions for project management, model upload,
+ * Provides functions for project management, file upload/download,
  * spatial tree retrieval, and element property queries.
  */
 
@@ -36,15 +36,40 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return response.json();
 }
 
-/** Project response from API */
-export interface ProjectResponse {
+// ── Types ──────────────────────────────────────────────────────
+
+/** Project summary from list endpoint */
+export interface ProjectSummary {
   id: string;
   name: string;
+  description: string | null;
   createdAt: string;
-  models: ModelResponse[];
+  updatedAt: string;
+  fileCount: number;
 }
 
-/** Model response from API */
+/** File record from API */
+export interface ProjectFileResponse {
+  id: string;
+  projectId: string;
+  fileType: "ifc" | "bcf" | "ids";
+  fileName: string;
+  fileSize: number;
+  uploadedAt: string;
+  metadata: Record<string, unknown> | null;
+}
+
+/** Full project detail from API */
+export interface ProjectDetailResponse {
+  id: string;
+  name: string;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+  files: ProjectFileResponse[];
+}
+
+/** Model response from API (legacy compatibility) */
 export interface ModelResponse {
   id: string;
   fileName: string;
@@ -54,22 +79,151 @@ export interface ModelResponse {
   hasSpatialTree: boolean;
 }
 
+// ── Project CRUD ──────────────────────────────────────────────
+
+/**
+ * List all projects.
+ */
+export async function listProjects(): Promise<ProjectSummary[]> {
+  const response = await fetch(`${API_V2}/projects`);
+  const data = await handleResponse<{ projects: ProjectSummary[] }>(response);
+  return data.projects;
+}
+
 /**
  * Create a new project.
  */
-export async function createProject(name: string): Promise<ProjectResponse> {
+export async function createProject(
+  name: string,
+  description?: string
+): Promise<ProjectDetailResponse> {
   const formData = new FormData();
   formData.append("name", name);
+  if (description) {
+    formData.append("description", description);
+  }
 
   const response = await fetch(`${API_V2}/projects`, {
     method: "POST",
     body: formData,
   });
-  return handleResponse<ProjectResponse>(response);
+  return handleResponse<ProjectDetailResponse>(response);
 }
 
 /**
- * Upload an IFC model to a project.
+ * Get project details including files.
+ */
+export async function getProject(
+  projectId: string
+): Promise<ProjectDetailResponse> {
+  const response = await fetch(`${API_V2}/projects/${projectId}`);
+  return handleResponse<ProjectDetailResponse>(response);
+}
+
+/**
+ * Update project name and/or description.
+ */
+export async function updateProject(
+  projectId: string,
+  data: { name?: string; description?: string }
+): Promise<ProjectDetailResponse> {
+  const formData = new FormData();
+  if (data.name !== undefined) formData.append("name", data.name);
+  if (data.description !== undefined)
+    formData.append("description", data.description);
+
+  const response = await fetch(`${API_V2}/projects/${projectId}`, {
+    method: "PUT",
+    body: formData,
+  });
+  return handleResponse<ProjectDetailResponse>(response);
+}
+
+/**
+ * Delete a project and all its files.
+ */
+export async function deleteProject(projectId: string): Promise<void> {
+  const response = await fetch(`${API_V2}/projects/${projectId}`, {
+    method: "DELETE",
+  });
+  await handleResponse(response);
+}
+
+// ── File Management ───────────────────────────────────────────
+
+/**
+ * Upload a file to a project.
+ */
+export async function uploadFile(
+  projectId: string,
+  file: File,
+  fileType: "ifc" | "bcf" | "ids"
+): Promise<ProjectFileResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("file_type", fileType);
+
+  const response = await fetch(`${API_V2}/projects/${projectId}/files`, {
+    method: "POST",
+    body: formData,
+  });
+  return handleResponse<ProjectFileResponse>(response);
+}
+
+/**
+ * List files in a project.
+ */
+export async function listFiles(
+  projectId: string,
+  fileType?: "ifc" | "bcf" | "ids"
+): Promise<ProjectFileResponse[]> {
+  const params = fileType ? `?file_type=${fileType}` : "";
+  const response = await fetch(
+    `${API_V2}/projects/${projectId}/files${params}`
+  );
+  const data = await handleResponse<{ files: ProjectFileResponse[] }>(
+    response
+  );
+  return data.files;
+}
+
+/**
+ * Download a file from a project. Returns raw bytes as a Blob.
+ */
+export async function downloadFile(
+  projectId: string,
+  fileId: string
+): Promise<Blob> {
+  const response = await fetch(
+    `${API_V2}/projects/${projectId}/files/${fileId}`
+  );
+  if (!response.ok) {
+    throw new ProjectApiError(
+      `Download failed: ${response.status}`,
+      response.status
+    );
+  }
+  return response.blob();
+}
+
+/**
+ * Delete a file from a project.
+ */
+export async function deleteFile(
+  projectId: string,
+  fileId: string
+): Promise<void> {
+  const response = await fetch(
+    `${API_V2}/projects/${projectId}/files/${fileId}`,
+    { method: "DELETE" }
+  );
+  await handleResponse(response);
+}
+
+// ── Legacy v2 endpoints (model-based, still used for spatial tree) ──
+
+/**
+ * Upload an IFC model to a project (legacy).
  */
 export async function uploadModel(
   projectId: string,
@@ -86,7 +240,7 @@ export async function uploadModel(
 }
 
 /**
- * List all models in a project.
+ * List all models in a project (legacy).
  */
 export async function listModels(
   projectId: string
@@ -96,7 +250,7 @@ export async function listModels(
 }
 
 /**
- * Remove a model from a project.
+ * Remove a model from a project (legacy).
  */
 export async function removeModel(
   projectId: string,
@@ -112,9 +266,7 @@ export async function removeModel(
 /**
  * Get the spatial tree for a model.
  */
-export async function getSpatialTree(
-  modelId: string
-): Promise<SpatialNode> {
+export async function getSpatialTree(modelId: string): Promise<SpatialNode> {
   const response = await fetch(`${API_V2}/models/${modelId}/spatial-tree`);
   return handleResponse<SpatialNode>(response);
 }

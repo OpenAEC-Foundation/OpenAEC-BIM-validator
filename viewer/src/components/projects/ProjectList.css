@@ -1,0 +1,209 @@
+/* ProjectList — Backstage panel styling */
+
+.project-list {
+  max-width: 560px;
+  padding: 32px 40px;
+}
+
+.project-list__title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--theme-text);
+  margin: 0 0 6px;
+}
+
+.project-list__desc {
+  font-size: 13px;
+  color: var(--theme-text-muted);
+  margin: 0 0 20px;
+}
+
+.project-list__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+/* Buttons */
+.project-list__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 4px;
+  border: 1px solid var(--theme-border);
+  background: var(--theme-bg-lighter);
+  color: var(--theme-text);
+  font-size: 13px;
+  cursor: default;
+  transition: background 0.15s;
+}
+
+.project-list__btn:hover:not(:disabled) {
+  background: var(--theme-bg-hover);
+}
+
+.project-list__btn:disabled {
+  opacity: 0.5;
+}
+
+.project-list__btn--primary {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+  border-color: var(--theme-accent);
+}
+
+.project-list__btn--primary:hover:not(:disabled) {
+  background: var(--theme-accent-hover);
+}
+
+.project-list__btn--secondary {
+  background: transparent;
+}
+
+.project-list__btn--danger {
+  color: #e55;
+  border-color: transparent;
+  background: transparent;
+}
+
+.project-list__btn--danger:hover:not(:disabled) {
+  background: rgba(238, 85, 85, 0.1);
+}
+
+.project-list__btn--small {
+  padding: 4px 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.project-list__btn--icon {
+  padding: 7px;
+}
+
+/* Create form */
+.project-list__create-form {
+  background: var(--theme-bg-lighter);
+  border: 1px solid var(--theme-border);
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.project-list__field {
+  margin-bottom: 10px;
+}
+
+.project-list__label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--theme-text-muted);
+  margin-bottom: 4px;
+}
+
+.project-list__input {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--theme-border);
+  border-radius: 4px;
+  background: var(--theme-bg);
+  color: var(--theme-text);
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.project-list__input:focus {
+  outline: none;
+  border-color: var(--theme-accent);
+}
+
+.project-list__form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* Error */
+.project-list__error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(238, 85, 85, 0.08);
+  border-radius: 4px;
+  color: #e55;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.project-list__error-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e55;
+  flex-shrink: 0;
+}
+
+/* Project items */
+.project-list__items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.project-list__notice {
+  color: var(--theme-text-muted);
+  font-size: 13px;
+  padding: 16px 0;
+}
+
+.project-list__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.1s;
+}
+
+.project-list__item:hover {
+  background: var(--theme-bg-hover);
+}
+
+.project-list__item-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  padding: 8px;
+  cursor: default;
+  min-width: 0;
+}
+
+.project-list__item-icon {
+  color: var(--theme-accent);
+  flex-shrink: 0;
+}
+
+.project-list__item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.project-list__item-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--theme-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.project-list__item-meta {
+  font-size: 12px;
+  color: var(--theme-text-muted);
+}

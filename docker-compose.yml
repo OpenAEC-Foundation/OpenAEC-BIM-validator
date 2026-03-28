@@ -1,12 +1,29 @@
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: bim-validator-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bimvalidator
+      POSTGRES_USER: bimvalidator
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - default
+
   app:
     build: .
     container_name: bim-validator
     restart: unless-stopped
+    depends_on:
+      - db
     ports:
       - "127.0.0.1:8000:8000"
     environment:
       - CORS_ORIGINS=*
+      - DATABASE_URL=postgresql+asyncpg://bimvalidator:${POSTGRES_PASSWORD:-changeme}@db:5432/bimvalidator
+      - PROJECT_FILES_DIR=/data/projects
       # Nextcloud cloud storage (opt-in — leave empty to disable)
       - NEXTCLOUD_URL=
       - NEXTCLOUD_SERVICE_USER=
@@ -16,6 +33,8 @@ services:
       - bim-uploads:/tmp/ifc_uploads
       - bim-processed:/tmp/ifc_processed
       - bim-jobs:/tmp/ids_validation_jobs
+      # Persistent project file storage
+      - bim-projects:/data/projects
     networks:
       - default
       - openaec_platform
@@ -25,9 +44,11 @@ services:
           memory: 4G
 
 volumes:
+  pgdata:
   bim-uploads:
   bim-processed:
   bim-jobs:
+  bim-projects:
 
 networks:
   openaec_platform:

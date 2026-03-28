@@ -8,6 +8,20 @@
   "feedback": "Feedback",
   "about": "About",
   "logout": "Logout",
+  "projects": "Projects",
+  "projectsPanel": {
+    "title": "Projects",
+    "description": "Manage your BIM validation projects.",
+    "newProject": "New project",
+    "refresh": "Refresh",
+    "projectName": "Name",
+    "projectDesc": "Description",
+    "creating": "Creating...",
+    "create": "Create",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "noProjects": "No projects yet."
+  },
   "bcfPlatformPanel": {
     "title": "BCF Platform",
     "description": "Connect to the OpenAEC BCF Platform to store and share issues with your team.",
