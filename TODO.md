@@ -3,8 +3,19 @@
 ## Bug: Ghost mode — geselecteerd element niet opaque
 - [x] Oorzaak: material-level opacity beïnvloedt alle elementen in shared meshes (IFC batching)
 - [x] Fragment highlight overlay werkt niet omdat transparante materials erover heen renderen
-- [x] Fix: FragmentsModel.setOpacity() / resetOpacity() / setColor() per element (fragment-level)
-- [x] Verwijderd: savedMaterials map, allGuidsCache, restoreMaterials(), material traversal
+- **Geprobeerde fixes die NIET werkten:**
+  - Poging 1: mesh-level material restore → werkt niet (shared meshes)
+  - Poging 2: fragment highlight overlay (opacity 1.0, RenderedFaces.TWO) → overlay niet zichtbaar
+  - Poging 3: FragmentsModel.setOpacity()/resetOpacity()/setColor() → niets transparant (tile streaming?)
+  - Poging 4: material ghost + depthWrite=false + highlight overlay → highlight nog steeds niet opaque
+- **Nog te onderzoeken:**
+  - [ ] Controleer of `fragments.highlight()` überhaupt iets rendert (console log de modelIdMap)
+  - [ ] Test of `fragments.highlight()` een apart mesh aanmaakt of iets anders doet
+  - [ ] Alternatief: OBC.Hider.isolate(modelIdMap) — verbergt alles behalve selected element
+  - [ ] Alternatief: twee render passes — eerst ghost scene, dan selected element apart renderen
+  - [ ] Alternatief: kloon de geometry van het geselecteerde element als apart THREE.Mesh met opaque material
+  - [ ] Check browser console op errors tijdens isolateElement()
+- Relevante code: `viewer/src/engine/ViewerEngine.ts` → `isolateElement()`
 
 ## Blocker: NC service account
 - [ ] NC_SERVICE_PASS_3BM instellen in `/opt/openaec/bim-validator/.env` op server

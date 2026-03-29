@@ -40,12 +40,15 @@
 - Deployed naar Hetzner (commits a2d3b11, 5c8ba74, d12678f, 3674eb5)
 
 ### Gedaan in deze sessie (2026-03-29)
-- **Ghost mode bug opgelost:**
-  - Oorzaak: material-level opacity (`mat.opacity = 0.15`) beïnvloedt alle elementen in shared meshes door IFC batching
-  - Fragment highlight overlay werd door transparante materials heen gerenderd (Three.js render order: opaque → transparent)
-  - Fix: vervangen door `FragmentsModel.setOpacity()` / `resetOpacity()` / `setColor()` — fragment-level per-element controle
-  - Verwijderd: `savedMaterials` map, `allGuidsCache`, `restoreMaterials()` methode
-  - Geselecteerd element krijgt nu correct volle opacity + Verdigris kleur (#44B6A8)
+- **Ghost mode debug (nog niet opgelost):**
+  - Poging 3: `FragmentsModel.setOpacity()` / `resetOpacity()` / `setColor()` → deployed maar werkt niet (niets werd transparant, vermoedelijk incompatibel met tile streaming)
+  - Poging 4: material-level ghost + `depthWrite=false` + fragment highlight overlay → deployed maar highlight overlay rendert nog steeds niet opaque over de ghosted materials
+  - Huidige deployed state (commit b4ae89a): material-level ghost met depthWrite=false, highlight overlay niet zichtbaar als opaque
+
+### Volgende sessie: ghost mode debug
+- Browser console openen en kijken of `fragments.highlight()` errors geeft
+- Checken of `guidsToModelIdMap` daadwerkelijk data teruggeeft
+- Alternatieve aanpak overwegen (Hider.isolate, kloon geometry, twee render passes)
 
 ### Nog te doen
 - NC_SERVICE_PASS_3BM instellen in .env op server → cloud wordt actief
