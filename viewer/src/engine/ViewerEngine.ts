@@ -101,18 +101,8 @@ export class ViewerEngine {
   /** Property extractors per model, keyed by modelId. Lazy initialized. */
   private propertyExtractors = new Map<string, PropertyExtractor>();
 
-  /** Cached all-GlobalIds per model for isolation mode. */
-  private allGuidsCache = new Map<string, string[]>();
-
   /** Whether isolation mode is active. */
   private _isolated = false;
-
-
-  /** Saved material state for isolation restore. */
-  private savedMaterials = new Map<
-    THREE.Material,
-    { opacity: number; transparent: boolean }
-  >();
 
   /** Active section planes. */
   private sectionPlanes: THREE.Plane[] = [];
@@ -494,54 +484,32 @@ export class ViewerEngine {
   }
 
   /**
-   * Isolate an element: ghost everything transparent,
-   * then highlight the selected element with an opaque overlay.
+   * Isolate an element: ghost everything at fragment level,
+   * then restore the selected element to full opacity with accent color.
    *
-   * Material-level opacity ghosts all geometry (fast).
-   * Fragment-level highlight renders the selected element on top (per-element accurate).
+   * Uses FragmentsModel.setOpacity() for per-element control (works correctly
+   * even when elements share meshes in batched IFC geometry).
    */
   async isolateElement(globalId: string): Promise<void> {
-    if (!this.world) return;
+    if (!this.world || !this.fragments) return;
 
     // Restore any previous isolation first
-    this.restoreMaterials();
-    await this.clearHighlights();
+    await this.clearIsolation();
 
-    // Ghost ALL meshes at the material level
-    for (const obj of this.modelObjects.values()) {
-      obj.traverse((child) => {
-        if (!(child instanceof THREE.Mesh)) return;
-        const materials = Array.isArray(child.material)
-          ? child.material
-          : [child.material];
-        for (const mat of materials) {
-          if (!mat || this.savedMaterials.has(mat)) continue;
-          this.savedMaterials.set(mat, {
-            opacity: mat.opacity,
-            transparent: mat.transparent,
-          });
-          mat.transparent = true;
-          mat.opacity = GHOST_OPACITY;
-          mat.needsUpdate = true;
-        }
-      });
-    }
+    // Get the selected element's model ID map
+    const selectedMap = await this.fragments.guidsToModelIdMap([globalId]);
 
-    // Highlight selected element with opaque overlay (fragment-level, per-element)
-    if (this.fragments) {
-      try {
-        const modelIdMap = await this.fragments.guidsToModelIdMap([globalId]);
-        if (Object.keys(modelIdMap).length > 0) {
-          const style: FRAGS.MaterialDefinition = {
-            color: new THREE.Color("#44B6A8"),  // Verdigris
-            renderedFaces: FRAGS.RenderedFaces.TWO,
-            opacity: 1.0,
-            transparent: false,
-          };
-          await this.fragments.highlight(style, modelIdMap);
-        }
-      } catch {
-        // Highlight failed — ghost-only mode still works
+    // Ghost all elements, then restore + colorize the selected one
+    for (const [modelId, model] of this.fragments.list) {
+      // Ghost ALL items in this model at fragment level
+      await model.setOpacity(undefined, GHOST_OPACITY);
+
+      // If this model contains the selected element, restore it
+      const selectedIds = selectedMap[modelId];
+      if (selectedIds && selectedIds.size > 0) {
+        const ids = [...selectedIds];
+        await model.resetOpacity(ids);
+        await model.setColor(ids, new THREE.Color("#44B6A8")); // Verdigris accent
       }
     }
 
@@ -549,24 +517,16 @@ export class ViewerEngine {
   }
 
   /**
-   * Restore all materials to their original state.
-   */
-  private restoreMaterials(): void {
-    for (const [mat, saved] of this.savedMaterials) {
-      mat.opacity = saved.opacity;
-      mat.transparent = saved.transparent;
-      mat.needsUpdate = true;
-    }
-    this.savedMaterials.clear();
-  }
-
-  /**
-   * Clear isolation: restore all materials and remove highlight overlay.
+   * Clear isolation: reset all fragment opacities and colors.
    */
   async clearIsolation(): Promise<void> {
-    if (!this._isolated) return;
-    this.restoreMaterials();
-    await this.clearHighlights();
+    if (!this._isolated || !this.fragments) return;
+
+    for (const [, model] of this.fragments.list) {
+      await model.resetOpacity(undefined);
+      await model.resetColor(undefined);
+    }
+
     this._isolated = false;
   }
 
@@ -859,7 +819,6 @@ export class ViewerEngine {
     this.modelObjects.clear();
     this.modelBoxes.clear();
     this.modelBytes.clear();
-    this.allGuidsCache.clear();
     this._isolated = false;
 
     for (const extractor of this.propertyExtractors.values()) {
