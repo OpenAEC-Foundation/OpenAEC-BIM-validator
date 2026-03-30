@@ -476,11 +476,9 @@ export function AppShell() {
         onOpenLocal={handleOpenLocal}
         onOpenCloud={handleOpenCloudDirect}
         onExportBcf={handleExportBcf}
-        onCloudOpen={handleCloudOpen}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenFeedback={() => setFeedbackOpen(true)}
         cloudEnabled={cloudEnabled}
-        hasModel={hasLoadedModel}
         projectStorage={projectStorage}
         onOpenProject={handleOpenProject}
       />

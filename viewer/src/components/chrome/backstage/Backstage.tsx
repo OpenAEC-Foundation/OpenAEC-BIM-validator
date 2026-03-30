@@ -101,11 +101,9 @@ interface BackstageProps {
   onOpenLocal: () => void;
   onOpenCloud?: () => void;
   onExportBcf: () => void;
-  onCloudOpen?: () => void;
   onOpenSettings: () => void;
   onOpenFeedback: () => void;
   cloudEnabled?: boolean;
-  hasModel?: boolean;
   projectStorage?: IProjectStorage;
   onOpenProject?: (projectId: string) => void;
 }
@@ -120,11 +118,9 @@ export default function Backstage({
   onOpenLocal,
   onOpenCloud,
   onExportBcf,
-  onCloudOpen,
   onOpenSettings,
   onOpenFeedback,
   cloudEnabled,
-  hasModel,
   projectStorage,
   onOpenProject,
 }: BackstageProps) {
