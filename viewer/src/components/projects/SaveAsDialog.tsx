@@ -38,7 +38,9 @@ export default function SaveAsDialog({
   const cloudError = useStore((s) => s.cloudError);
   const cloudLoadProjects = useStore((s) => s.cloudLoadProjects);
   const cloudUpload = useStore((s) => s.cloudUpload);
+  const cloudSaveManifest = useStore((s) => s.cloudSaveManifest);
   const validationResult = useStore((s) => s.validationResult);
+  const bcfIssues = useStore((s) => s.bcfIssues);
   const setSaveInfo = useStore((s) => s.setSaveInfo);
   const markClean = useStore((s) => s.markClean);
 
@@ -148,6 +150,9 @@ export default function SaveAsDialog({
     setError(null);
 
     try {
+      const now = new Date().toISOString();
+      const manifestData: Record<string, unknown>[] = [];
+
       // Upload IFC files to models/ directory
       const { getModelBytes } = await import("../../engine/modelCache");
       for (const model of project.models) {
@@ -157,6 +162,17 @@ export default function SaveAsDialog({
             type: "application/octet-stream",
           });
           await cloudUpload(selectedCloudProject, model.fileName, blob, "bim");
+          manifestData.push({
+            type: "WefcModel",
+            guid: model.id,
+            name: model.fileName,
+            path: `models/${model.fileName}`,
+            format: model.format ?? "ifc",
+            fileSize: model.fileSize,
+            status: "active",
+            created: now,
+            modified: now,
+          });
         }
       }
 
@@ -172,7 +188,50 @@ export default function SaveAsDialog({
           resultBlob,
           "output",
         );
+        manifestData.push({
+          type: "WefcValidation",
+          guid: crypto.randomUUID(),
+          name: `BIM Validatie - ${now.slice(0, 10)}`,
+          path: "validation/validation-result.json",
+          status: "active",
+          created: now,
+          modified: now,
+        });
       }
+
+      // Upload BCF issues as .bcf zip to validation/ directory
+      if (bcfIssues.length > 0) {
+        const { generateBcfZip } = await import("../../lib/bcfZipGenerator");
+        const bcfBlob = await generateBcfZip(bcfIssues);
+        const bcfFilename = `${project.name ?? "issues"}.bcf`;
+        await cloudUpload(
+          selectedCloudProject,
+          bcfFilename,
+          bcfBlob,
+          "output",
+        );
+        manifestData.push({
+          type: "WefcBcf",
+          guid: crypto.randomUUID(),
+          name: `BCF Issues - ${now.slice(0, 10)}`,
+          path: `validation/${bcfFilename}`,
+          issueCount: bcfIssues.length,
+          status: "active",
+          created: now,
+          modified: now,
+        });
+      }
+
+      // Save project.wefc manifest
+      await cloudSaveManifest(selectedCloudProject, {
+        header: {
+          schema: "WeFC",
+          schema_version: "1.0.0",
+          timestamp: now,
+          application: "bim-validator",
+        },
+        data: manifestData,
+      });
 
       setSaveInfo({
         source: "cloud",
@@ -191,7 +250,9 @@ export default function SaveAsDialog({
     project,
     selectedCloudProject,
     validationResult,
+    bcfIssues,
     cloudUpload,
+    cloudSaveManifest,
     setSaveInfo,
     markClean,
     onSaveComplete,

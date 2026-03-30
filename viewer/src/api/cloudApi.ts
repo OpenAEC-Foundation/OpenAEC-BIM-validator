@@ -166,6 +166,35 @@ export async function cloudUploadFile(
   }
 }
 
+/** Save a project.wefc manifest to the cloud. */
+export async function cloudSaveManifest(
+  project: string,
+  manifest: Record<string, unknown>,
+): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(
+      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/manifest`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(manifest),
+      },
+    );
+  } catch (error) {
+    throw new ApiError(
+      "Network error: unable to save manifest.",
+      undefined,
+      error instanceof Error ? error.message : "Unknown network error",
+    );
+  }
+
+  if (!response.ok) {
+    const msg = await parseError(response);
+    throw new ApiError(msg, response.status, msg);
+  }
+}
+
 /** Delete a file from the cloud. */
 export async function cloudDeleteFile(
   project: string,

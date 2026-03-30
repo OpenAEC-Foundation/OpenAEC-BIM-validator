@@ -437,3 +437,37 @@ async def cloud_get_manifest(
         )
 
     return JSONResponse(content=manifest)
+
+
+@router.put("/projects/{project}/manifest")
+async def cloud_put_manifest(
+    project: str,
+    manifest: dict[str, Any],
+    tenant: str | None = Query(None),
+):
+    """Write a full project.wefc manifest.
+
+    Accepts a complete manifest JSON body and writes it to the project
+    root as project.wefc via WebDAV.
+
+    Args:
+        project: Project folder name.
+        manifest: Full manifest dict with header and data.
+        tenant: Tenant slug (optional).
+    """
+    config = _resolve_tenant(tenant)
+    client = get_nc_client(config)
+
+    # Ensure header timestamp is current
+    if "header" in manifest:
+        manifest["header"]["timestamp"] = (
+            datetime.now(timezone.utc).isoformat()
+        )
+        manifest["header"]["application"] = "bim-validator"
+
+    try:
+        await client.write_manifest(project, manifest)
+    except Exception as exc:
+        raise _nc_error_to_http(exc) from exc
+
+    return {"success": True, "project": project}

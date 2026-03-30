@@ -14,6 +14,7 @@ import {
   cloudUploadFile as apiUploadFile,
   cloudDownloadFile as apiDownloadFile,
   cloudDeleteFile as apiDeleteFile,
+  cloudSaveManifest as apiSaveManifest,
 } from "../../api/cloudApi";
 
 type CloudPhase =
@@ -43,6 +44,7 @@ export interface CloudSlice {
   cloudUpload: (project: string, filename: string, blob: Blob, category?: "bim" | "output") => Promise<boolean>;
   cloudDownload: (project: string, filename: string) => Promise<Blob | null>;
   cloudDelete: (project: string, filename: string) => Promise<boolean>;
+  cloudSaveManifest: (project: string, manifest: Record<string, unknown>) => Promise<boolean>;
   cloudReset: () => void;
 }
 
@@ -139,6 +141,17 @@ export const createCloudSlice: StateCreator<CloudSlice> = (set, get) => ({
     } catch (err) {
       const message = err instanceof Error ? err.message : "Delete failed";
       set({ cloudPhase: "error", cloudError: message });
+      return false;
+    }
+  },
+
+  cloudSaveManifest: async (project: string, manifest: Record<string, unknown>) => {
+    try {
+      await apiSaveManifest(project, manifest);
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Manifest save failed";
+      set({ cloudError: message });
       return false;
     }
   },
