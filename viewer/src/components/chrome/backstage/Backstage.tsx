@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../../stores/authStore";
-import { useStore } from "../../../store";
 import type { IProjectStorage } from "../../../services/ProjectStorage";
 import ProjectList from "../../projects/ProjectList";
 import "./Backstage.css";
@@ -15,7 +14,6 @@ const ICONS = {
   about: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
   account: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
   logout: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
-  bcfPlatform: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
   cloud: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/></svg>',
 };
 
@@ -168,15 +166,6 @@ export default function Backstage({
           <Divider />
 
           <MenuItem
-            icon={ICONS.bcfPlatform}
-            label={t("bcfPlatform")}
-            active={activePanel === "bcf-platform"}
-            onClick={() => setActivePanel("bcf-platform")}
-          />
-
-          <Divider />
-
-          <MenuItem
             icon={ICONS.preferences}
             label={t("preferences")}
             shortcut="Ctrl+,"
@@ -229,256 +218,7 @@ export default function Backstage({
           />
         )}
         {activePanel === "about" && <AboutPanel />}
-        {activePanel === "bcf-platform" && <BcfPlatformPanel />}
       </div>
-    </div>
-  );
-}
-
-// ── BCF Platform Panel ─────────────────────────────────────
-
-function BcfPlatformPanel() {
-  const { t } = useTranslation("backstage");
-  const bcfAuth = useStore((s) => s.bcfAuth);
-  const bcfPhase = useStore((s) => s.bcfPhase);
-  const bcfPlatformUrl = useStore((s) => s.bcfPlatformUrl);
-  const bcfProjects = useStore((s) => s.bcfProjects);
-  const bcfSelectedProjectId = useStore((s) => s.bcfSelectedProjectId);
-  const bcfError = useStore((s) => s.bcfError);
-  const bcfOidcAvailable = useStore((s) => s.bcfOidcAvailable);
-  const bcfSetPlatformUrl = useStore((s) => s.bcfSetPlatformUrl);
-  const bcfLoginOidc = useStore((s) => s.bcfLoginOidc);
-  const bcfConnectApiKey = useStore((s) => s.bcfConnectApiKey);
-  const bcfLogout = useStore((s) => s.bcfLogout);
-  const bcfRefreshProjects = useStore((s) => s.bcfRefreshProjects);
-  const bcfSelectProject = useStore((s) => s.bcfSelectProject);
-  const bcfCreateProject = useStore((s) => s.bcfCreateProject);
-
-  const isAuthenticated = bcfAuth.method !== "none";
-  const isConnecting = bcfPhase === "connecting";
-
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [apiKeyUrl, setApiKeyUrl] = useState(bcfPlatformUrl || "");
-  const [apiKey, setApiKey] = useState("");
-  const [showCreateProject, setShowCreateProject] = useState(false);
-  const [newProjectName, setNewProjectName] = useState("");
-  const [newProjectDesc, setNewProjectDesc] = useState("");
-  const [creating, setCreating] = useState(false);
-
-  const handleApiKeyConnect = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (apiKeyUrl.trim() && apiKey.trim()) {
-      void bcfConnectApiKey(apiKeyUrl.trim(), apiKey.trim());
-    }
-  };
-
-  const handleCreateProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProjectName.trim()) return;
-    setCreating(true);
-    const project = await bcfCreateProject({
-      name: newProjectName.trim(),
-      description: newProjectDesc.trim() || undefined,
-    });
-    setCreating(false);
-    if (project) {
-      setNewProjectName("");
-      setNewProjectDesc("");
-      setShowCreateProject(false);
-    }
-  };
-
-  return (
-    <div className="bs-platform-panel">
-      <h2 className="bs-platform-title">{t("bcfPlatformPanel.title")}</h2>
-      <p className="bs-platform-desc">{t("bcfPlatformPanel.description")}</p>
-
-      {/* Connection status */}
-      {isAuthenticated && (
-        <div className="bs-platform-status bs-platform-status--connected">
-          <span className="bs-platform-status-dot" />
-          {bcfAuth.user
-            ? `${t("bcfPlatformPanel.loggedInAs")} ${bcfAuth.user.name}`
-            : t("bcfPlatformPanel.connectedApiKey")}
-        </div>
-      )}
-
-      {/* Not authenticated: login options */}
-      {!isAuthenticated && (
-        <div className="bs-platform-section">
-          <div className="bs-platform-field">
-            <label className="bs-platform-label">Platform URL</label>
-            <input
-              className="bs-platform-input"
-              type="url"
-              placeholder="https://bcf.openaec.com"
-              value={apiKeyUrl}
-              onChange={(e) => {
-                setApiKeyUrl(e.target.value);
-                bcfSetPlatformUrl(e.target.value);
-              }}
-              disabled={isConnecting}
-            />
-          </div>
-
-          {bcfOidcAvailable && (
-            <button
-              className="bs-platform-btn bs-platform-btn--primary"
-              onClick={() => void bcfLoginOidc()}
-              disabled={isConnecting}
-            >
-              {t("bcfPlatformPanel.loginOidc")}
-            </button>
-          )}
-
-          {!showApiKey ? (
-            <button
-              className="bs-platform-btn bs-platform-btn--secondary"
-              onClick={() => setShowApiKey(true)}
-            >
-              {bcfOidcAvailable
-                ? t("bcfPlatformPanel.orApiKey")
-                : t("bcfPlatformPanel.connectApiKey")}
-            </button>
-          ) : (
-            <form onSubmit={handleApiKeyConnect} className="bs-platform-section">
-              <div className="bs-platform-field">
-                <label className="bs-platform-label">API Key</label>
-                <input
-                  className="bs-platform-input"
-                  type="password"
-                  placeholder="bcfk_..."
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  disabled={isConnecting}
-                />
-              </div>
-              <button
-                type="submit"
-                className="bs-platform-btn bs-platform-btn--primary"
-                disabled={!apiKeyUrl.trim() || !apiKey.trim() || isConnecting}
-              >
-                {isConnecting ? t("bcfPlatformPanel.connecting") : t("bcfPlatformPanel.connect")}
-              </button>
-            </form>
-          )}
-        </div>
-      )}
-
-      {/* Authenticated: project selector */}
-      {isAuthenticated && (
-        <div className="bs-platform-section">
-          <h3 className="bs-platform-subtitle">{t("bcfPlatformPanel.project")}</h3>
-          <div className="bs-platform-row">
-            <select
-              className="bs-platform-select"
-              value={bcfSelectedProjectId ?? ""}
-              onChange={(e) => bcfSelectProject(e.target.value || null)}
-            >
-              <option value="">{t("bcfPlatformPanel.selectProject")}</option>
-              {bcfProjects.map((p) => (
-                <option key={p.project_id} value={p.project_id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-            <button
-              className="bs-platform-btn bs-platform-btn--icon"
-              onClick={() => void bcfRefreshProjects()}
-              title={t("bcfPlatformPanel.refresh")}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="23 4 23 10 17 10" />
-                <polyline points="1 20 1 14 7 14" />
-                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Create project */}
-          {!showCreateProject ? (
-            <button
-              className="bs-platform-btn bs-platform-btn--secondary"
-              onClick={() => setShowCreateProject(true)}
-            >
-              + {t("bcfPlatformPanel.newProject")}
-            </button>
-          ) : (
-            <form onSubmit={handleCreateProject} className="bs-platform-create-form">
-              <div className="bs-platform-field">
-                <label className="bs-platform-label">{t("bcfPlatformPanel.projectName")}</label>
-                <input
-                  className="bs-platform-input"
-                  type="text"
-                  placeholder="Mijn BIM project"
-                  value={newProjectName}
-                  onChange={(e) => setNewProjectName(e.target.value)}
-                  disabled={creating}
-                  autoFocus
-                />
-              </div>
-              <div className="bs-platform-field">
-                <label className="bs-platform-label">{t("bcfPlatformPanel.projectDesc")}</label>
-                <input
-                  className="bs-platform-input"
-                  type="text"
-                  placeholder="IDS validatie resultaten"
-                  value={newProjectDesc}
-                  onChange={(e) => setNewProjectDesc(e.target.value)}
-                  disabled={creating}
-                />
-              </div>
-              <div className="bs-platform-row">
-                <button
-                  type="submit"
-                  className="bs-platform-btn bs-platform-btn--primary"
-                  disabled={!newProjectName.trim() || creating}
-                >
-                  {creating ? t("bcfPlatformPanel.creating") : t("bcfPlatformPanel.create")}
-                </button>
-                <button
-                  type="button"
-                  className="bs-platform-btn bs-platform-btn--secondary"
-                  onClick={() => setShowCreateProject(false)}
-                  disabled={creating}
-                >
-                  {t("bcfPlatformPanel.cancel")}
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* Platform link */}
-          {bcfSelectedProjectId && bcfPlatformUrl && (
-            <a
-              className="bs-platform-link"
-              href={`${bcfPlatformUrl}/projects/${bcfSelectedProjectId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {t("bcfPlatformPanel.openOnPlatform")} →
-            </a>
-          )}
-
-          {/* Logout */}
-          <button
-            className="bs-platform-btn bs-platform-btn--danger"
-            onClick={() => void bcfLogout()}
-          >
-            {bcfAuth.method === "oidc"
-              ? t("bcfPlatformPanel.logout")
-              : t("bcfPlatformPanel.disconnect")}
-          </button>
-        </div>
-      )}
-
-      {/* Error */}
-      {bcfError && (
-        <div className="bs-platform-status bs-platform-status--error">
-          <span className="bs-platform-status-dot" />
-          {bcfError}
-        </div>
-      )}
     </div>
   );
 }
