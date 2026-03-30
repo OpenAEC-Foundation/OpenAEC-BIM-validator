@@ -20,6 +20,9 @@ interface RibbonProps {
   onBcfPush?: () => void;
   onCloudSave?: () => void;
   onCloudOpen?: () => void;
+  onSave?: () => void;
+  onSaveAs?: () => void;
+  onOpen?: () => void;
   onZoomFit?: () => void;
   onResetView?: () => void;
   onAddSectionX?: () => void;
@@ -49,6 +52,9 @@ export default function Ribbon({
   onBcfPush,
   onCloudSave,
   onCloudOpen,
+  onSave,
+  onSaveAs,
+  onOpen,
   onZoomFit,
   onResetView,
   onAddSectionX,
@@ -149,6 +155,9 @@ export default function Ribbon({
             onBcfPush={onBcfPush}
             onCloudSave={onCloudSave}
             onCloudOpen={onCloudOpen}
+            onSave={onSave}
+            onSaveAs={onSaveAs}
+            onOpen={onOpen}
             hasModel={hasModel}
             isValidating={isValidating}
             bcfConnected={bcfConnected}

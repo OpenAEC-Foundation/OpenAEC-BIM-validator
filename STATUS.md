@@ -1,6 +1,6 @@
 # Project Status — 2026-03-30
 
-## Huidige fase: Fase 7 (Hybrid Cloud + Multi-tenant + Project Container) — in progress
+## Huidige fase: Fase 7 (Hybrid Cloud + Multi-tenant + Project Container + Save/Open) — in progress
 
 ### Wat is af
 - Fase 0: Research & validatie
@@ -20,6 +20,17 @@
   - Fix: vervangen door `FragmentsModel.setOpacity()` / `resetOpacity()` / `setColor()` — fragment-level per-element controle
 
 ### Gedaan in deze sessie (2026-03-30)
+- **Save / Save As / Open functionaliteit (Fase 7d):**
+  - Nieuwe projectIoSlice in Zustand store: tracked save source (local/cloud), dirty state, project naam
+  - Ribbon Home tab: nieuwe "Project" groep met Opslaan (Ctrl+S), Opslaan als (Ctrl+Shift+S), Openen (Ctrl+O) knoppen
+  - SaveAsDialog: tweestaps modal met keuze lokaal/cloud, lokaal genereert .zip met IFC + validatieresultaten
+  - OpenDialog: tweestaps modal met keuze lokaal/cloud, lokaal accepteert .ifc/.ids/.zip bestanden
+  - Keyboard shortcuts uitgebreid met Ctrl+S, Ctrl+Shift+S, Ctrl+O
+  - Save icon, SaveAs icon, Open icon toegevoegd aan ribbon icon set
+  - i18n projectIo namespace aangemaakt (NL + EN) met alle dialoogteksten
+  - AppShell geintegreerd met beide dialogen + escape handler
+  - Build slaagt (npm run build)
+
 - **Project container model migratie:**
   - nextcloud_client.py: nieuwe constanten (DIR_MODELS, DIR_VALIDATION, MANIFEST_FILENAME)
   - nextcloud_client.py: _tool_path schrijft nu naar validation/ i.p.v. 99_overige_documenten/bim-validator/

@@ -48,6 +48,17 @@
 - [ ] OIDC tenant claim koppelen aan tenant selectie (nu hardcoded "3bm")
 - [ ] Frontend: tenant-aware API calls (tenant query param)
 
+## Save / Save As / Open (Fase 7d)
+- [x] Zustand projectIoSlice: save info tracking (source, dirty, cloudProject)
+- [x] Ribbon: Project groep met Save, Save As, Open knoppen
+- [x] Keyboard shortcuts: Ctrl+S (Save), Ctrl+Shift+S (Save As), Ctrl+O (Open)
+- [x] SaveAsDialog: keuze lokaal/cloud, lokaal = .zip download, cloud = Nextcloud upload
+- [x] OpenDialog: keuze lokaal/cloud, lokaal = file picker (.ifc/.ids/.zip), cloud = project browser
+- [x] Zip support: JSZip voor lokaal opslaan (IFC + validatieresultaten) en openen (.zip extractie)
+- [x] i18n: projectIo namespace (NL + EN) voor alle dialoogteksten
+- [x] Icons: save, saveAs, open SVG icons in ribbon icon set
+- [x] Build slaagt (npm run build)
+
 ## Fase 8: Polish & Launch
 - [ ] 3BM branding
 - [ ] Landing page

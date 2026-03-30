@@ -18,7 +18,11 @@
     "pushPlatform": "Push",
     "bcfLogin": "Inloggen",
     "cloudSave": "Cloud Opslaan",
-    "cloudOpen": "Cloud Openen"
+    "cloudOpen": "Cloud Openen",
+    "project": "Project",
+    "save": "Opslaan",
+    "saveAs": "Opslaan als",
+    "open": "Openen"
   },
   "view": {
     "panels": "Panelen",

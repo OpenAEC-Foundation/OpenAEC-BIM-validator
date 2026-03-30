@@ -14,6 +14,9 @@ import {
   loginIcon,
   cloudSaveIcon,
   cloudOpenIcon,
+  saveIcon,
+  saveAsIcon,
+  openIcon,
 } from "./icons";
 
 interface HomeTabProps {
@@ -27,6 +30,9 @@ interface HomeTabProps {
   onBcfPush?: () => void;
   onCloudSave?: () => void;
   onCloudOpen?: () => void;
+  onSave?: () => void;
+  onSaveAs?: () => void;
+  onOpen?: () => void;
   hasModel?: boolean;
   isValidating?: boolean;
   bcfConnected?: boolean;
@@ -45,6 +51,9 @@ export default function HomeTab({
   onBcfPush,
   onCloudSave,
   onCloudOpen,
+  onSave,
+  onSaveAs,
+  onOpen,
   hasModel,
   isValidating,
   bcfConnected,
@@ -56,6 +65,33 @@ export default function HomeTab({
   return (
     <div className="ribbon-content">
       <div className="ribbon-groups">
+        <RibbonGroup label={t("home.project")}>
+          <RibbonButton
+            icon={saveIcon}
+            label={t("home.save")}
+            title={`${t("home.save")} (Ctrl+S)`}
+            onClick={onSave}
+            disabled={!hasModel}
+          />
+          <RibbonButtonStack>
+            <RibbonButton
+              icon={saveAsIcon}
+              label={t("home.saveAs")}
+              title={`${t("home.saveAs")} (Ctrl+Shift+S)`}
+              size="small"
+              onClick={onSaveAs}
+              disabled={!hasModel}
+            />
+            <RibbonButton
+              icon={openIcon}
+              label={t("home.open")}
+              title={`${t("home.open")} (Ctrl+O)`}
+              size="small"
+              onClick={onOpen}
+            />
+          </RibbonButtonStack>
+        </RibbonGroup>
+
         <RibbonGroup label={t("home.models")}>
           <RibbonButton
             icon={uploadIcon}

@@ -61,6 +61,10 @@ Check ROADMAP.md for current phase and specs.
 - Warm Magenta: #A01C48
 - Flaming Peach: #DB4C40
 
+### Agent Broker
+
+_Gebruikt de registratie van het parent project (`bim-validator`). Geen aparte registratie nodig._
+
 ### Important Notes
 - IFC files can be 1GB+, memory management critical
 - 10x file size in RAM during processing
