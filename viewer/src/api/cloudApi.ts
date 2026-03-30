@@ -83,11 +83,14 @@ export async function cloudListProjects(): Promise<CloudProject[]> {
 }
 
 /** List files in a project's tool subdirectory. */
-export async function cloudListFiles(project: string): Promise<CloudFile[]> {
+export async function cloudListFiles(
+  project: string,
+  category: "bim" | "output" = "bim",
+): Promise<CloudFile[]> {
   let response: Response;
   try {
     response = await fetch(
-      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/files`,
+      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/files?category=${category}`,
     );
   } catch (error) {
     throw new ApiError(
@@ -110,11 +113,12 @@ export async function cloudListFiles(project: string): Promise<CloudFile[]> {
 export async function cloudDownloadFile(
   project: string,
   filename: string,
+  category: "bim" | "output" = "bim",
 ): Promise<Blob> {
   let response: Response;
   try {
     response = await fetch(
-      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/files/${encodeURIComponent(filename)}`,
+      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/files/${encodeURIComponent(filename)}?category=${category}`,
     );
   } catch (error) {
     throw new ApiError(
