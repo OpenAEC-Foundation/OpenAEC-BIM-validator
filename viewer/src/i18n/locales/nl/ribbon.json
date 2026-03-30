@@ -6,7 +6,7 @@
   },
   "home": {
     "models": "Modellen",
-    "upload": "Upload IFC",
+    "upload": "Toevoegen IFC",
     "removeModel": "Verwijder",
     "validation": "Validatie",
     "validate": "Valideer",

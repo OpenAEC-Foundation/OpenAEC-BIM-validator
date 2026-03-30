@@ -6,7 +6,7 @@
   },
   "home": {
     "models": "Models",
-    "upload": "Upload IFC",
+    "upload": "Add IFC",
     "removeModel": "Remove",
     "validation": "Validation",
     "validate": "Validate",
