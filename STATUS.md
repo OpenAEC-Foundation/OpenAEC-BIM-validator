@@ -1,6 +1,6 @@
-# Project Status — 2026-03-29
+# Project Status — 2026-03-30
 
-## Huidige fase: Fase 7 (Hybrid Cloud + Multi-tenant) — deployed
+## Huidige fase: Fase 7 (Hybrid Cloud + Multi-tenant + Project Container) — in progress
 
 ### Wat is af
 - Fase 0: Research & validatie
@@ -13,41 +13,36 @@
 - Fase 6: Nextcloud Cloud Storage — WebDAV, save/open dialog
 - **Fase 7a: Project Management** — PostgreSQL backend, REST API, frontend UI
 - **Fase 7b: Hybrid Nextcloud I/O** — volume mount reads, WebDAV writes, multi-tenant
+- **Fase 7c: Project Container Model** — migratie naar models/validation/ structuur met project.wefc manifest
 
-### Gedaan in vorige sessie (2026-03-28)
-- Project management systeem gebouwd (full-stack):
-  - Backend: async SQLAlchemy 2.0 + PostgreSQL (SQLite fallback)
-  - ORM models: Project + ProjectFile
-  - REST API: /api/v2/projects CRUD + file upload/download/delete
-  - Frontend: IProjectStorage interface + ServerProjectStorage + LocalProjectStorage
-  - .bvp bestandsformaat voor lokale projecten (File System Access API)
-  - ProjectList component in Backstage + i18n (NL + EN)
-  - AppShell integratie met handleOpenProject
-- Hybrid Nextcloud I/O migratie:
-  - server/tenant_config.py: multi-tenant config loader (tenants.json)
-  - server/volume_reader.py: directe filesystem reads van NC volume mount
-  - server/routers/cloud.py: refactored cloud router (was inline in main.py)
-  - NextcloudClient: multi-tenant factory (from_tenant) + client registry
-  - docker-compose.yml: NC data volume (ro), tenant config mount
-  - config/tenants.json: 3BM tenant configuratie
-- Ghost mode pogingen (nog niet werkend):
-  - Opacity 0.85→0.15: transparantie zelf werkt nu
-  - Reset knop werkt
-  - Geselecteerd element wordt nog NIET opaque getoond
-  - Poging 1: mesh-level material restore → werkt niet (IFC batcht elementen in shared meshes)
-  - Poging 2: fragment highlight overlay met opacity 1.0 → werkt ook niet
-  - Moet dieper onderzocht worden hoe That Open Engine fragment highlights werken
-- Deployed naar Hetzner (commits a2d3b11, 5c8ba74, d12678f, 3674eb5)
-
-### Gedaan in deze sessie (2026-03-29)
+### Gedaan in vorige sessie (2026-03-29)
 - **Ghost mode bug opgelost:**
-  - Oorzaak: material-level opacity (`mat.opacity = 0.15`) beïnvloedt alle elementen in shared meshes door IFC batching
-  - Fragment highlight overlay werd door transparante materials heen gerenderd (Three.js render order: opaque → transparent)
   - Fix: vervangen door `FragmentsModel.setOpacity()` / `resetOpacity()` / `setColor()` — fragment-level per-element controle
-  - Verwijderd: `savedMaterials` map, `allGuidsCache`, `restoreMaterials()` methode
-  - Geselecteerd element krijgt nu correct volle opacity + Verdigris kleur (#44B6A8)
+
+### Gedaan in deze sessie (2026-03-30)
+- **Project container model migratie:**
+  - nextcloud_client.py: nieuwe constanten (DIR_MODELS, DIR_VALIDATION, MANIFEST_FILENAME)
+  - nextcloud_client.py: _tool_path schrijft nu naar validation/ i.p.v. 99_overige_documenten/bim-validator/
+  - nextcloud_client.py: list_models() met fallback models/ → 70_BIM/
+  - nextcloud_client.py: list_validation_files() met fallback validation/ → 99_overige_documenten/bim-validator/
+  - nextcloud_client.py: download_file() met fallback new → legacy
+  - nextcloud_client.py: upload_to_validation() — altijd naar validation/
+  - nextcloud_client.py: manifest CRUD — read_manifest(), write_manifest(), upsert_manifest_object()
+  - volume_reader.py: list_bim_files() met fallback models/ → 70_BIM/
+  - volume_reader.py: list_output_files() met fallback validation/ → 99_overige_documenten/bim-validator/
+  - volume_reader.py: get_file_path() met automatic legacy fallback
+  - volume_reader.py: read_manifest() voor volume mount reads
+  - routers/cloud.py: file listing gebruikt list_models/list_validation_files (met fallback)
+  - routers/cloud.py: upload gaat naar validation/ directory
+  - routers/cloud.py: save endpoint schrijft WefcValidation object naar manifest
+  - routers/cloud.py: nieuw GET /api/cloud/projects/{project}/manifest endpoint
+  - models/cloud.py: ManifestHeader + ManifestResponse Pydantic models
+  - tests: 19 tests voor nextcloud_client (constanten, paths, fallback, manifest CRUD)
+  - tests: 7 tests voor cloud endpoints (manifest, category routing, volume mount)
+  - Alle 26 tests slagen
 
 ### Nog te doen
 - NC_SERVICE_PASS_3BM instellen in .env op server → cloud wordt actief
 - Cloud status testen na wachtwoord configuratie
 - OIDC tenant claim koppelen aan tenant selectie (nu hardcoded default "3bm")
+- Frontend: ProjectList component updaten voor manifest-aware weergave
