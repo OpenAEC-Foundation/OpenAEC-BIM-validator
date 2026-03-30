@@ -1,6 +1,10 @@
 {
   "file": "File",
+  "save": "Save",
+  "saveAs": "Save As",
   "open": "Open",
+  "local": "Local",
+  "cloudStorage": "Cloud",
   "exportBcf": "Export BCF",
   "cloud": "Cloud",
   "preferences": "Settings",

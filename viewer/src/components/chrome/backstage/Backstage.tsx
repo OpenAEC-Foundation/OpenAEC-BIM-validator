@@ -7,7 +7,10 @@ import "./Backstage.css";
 
 const ICONS = {
   projects: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>',
+  save: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>',
+  saveAs: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v6"/><polyline points="15 21 15 13 7 13 7 21"/><polyline points="7 3 7 8 13 8"/><path d="M19 16v6"/><path d="M16 19h6"/></svg>',
   open: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>',
+  local: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
   exportBcf: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>',
   preferences: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>',
   feedback: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
@@ -23,26 +26,63 @@ function MenuItem({
   shortcut,
   active,
   onClick,
+  expanded,
+  children,
 }: {
   icon: string;
   label: string;
   shortcut?: string;
   active?: boolean;
   onClick: () => void;
+  expanded?: boolean;
+  children?: React.ReactNode;
+}) {
+  const hasChildren = !!children;
+  return (
+    <>
+      <button
+        className={`backstage-item${active ? " active" : ""}${hasChildren ? " has-submenu" : ""}${expanded ? " expanded" : ""}`}
+        onClick={onClick}
+      >
+        <span
+          className="backstage-item-icon"
+          dangerouslySetInnerHTML={{ __html: icon }}
+        />
+        <span className="backstage-item-label">{label}</span>
+        {shortcut && (
+          <span className="backstage-item-shortcut">{shortcut}</span>
+        )}
+        {hasChildren && (
+          <span className="backstage-item-chevron">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points={expanded ? "6 9 12 15 18 9" : "9 6 15 12 9 18"} />
+            </svg>
+          </span>
+        )}
+      </button>
+      {expanded && children && (
+        <div className="backstage-submenu">{children}</div>
+      )}
+    </>
+  );
+}
+
+function SubMenuItem({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: string;
+  label: string;
+  onClick: () => void;
 }) {
   return (
-    <button
-      className={`backstage-item${active ? " active" : ""}`}
-      onClick={onClick}
-    >
+    <button className="backstage-subitem" onClick={onClick}>
       <span
-        className="backstage-item-icon"
+        className="backstage-subitem-icon"
         dangerouslySetInnerHTML={{ __html: icon }}
       />
-      <span className="backstage-item-label">{label}</span>
-      {shortcut && (
-        <span className="backstage-item-shortcut">{shortcut}</span>
-      )}
+      <span className="backstage-subitem-label">{label}</span>
     </button>
   );
 }
@@ -55,12 +95,17 @@ interface BackstageProps {
   open: boolean;
   initialPanel?: string;
   onClose: () => void;
+  onSave?: () => void;
+  onSaveAsLocal?: () => void;
+  onSaveAsCloud?: () => void;
   onOpenLocal: () => void;
+  onOpenCloud?: () => void;
   onExportBcf: () => void;
   onCloudOpen?: () => void;
   onOpenSettings: () => void;
   onOpenFeedback: () => void;
   cloudEnabled?: boolean;
+  hasModel?: boolean;
   projectStorage?: IProjectStorage;
   onOpenProject?: (projectId: string) => void;
 }
@@ -69,17 +114,23 @@ export default function Backstage({
   open,
   initialPanel,
   onClose,
+  onSave,
+  onSaveAsLocal,
+  onSaveAsCloud,
   onOpenLocal,
+  onOpenCloud,
   onExportBcf,
   onCloudOpen,
   onOpenSettings,
   onOpenFeedback,
   cloudEnabled,
+  hasModel,
   projectStorage,
   onOpenProject,
 }: BackstageProps) {
   const { t } = useTranslation("backstage");
   const [activePanel, setActivePanel] = useState<string>("none");
+  const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
 
@@ -94,6 +145,7 @@ export default function Backstage({
   useEffect(() => {
     if (!open) {
       setActivePanel("none");
+      setExpandedMenu(null);
       return;
     }
     // Open to specific panel if requested
@@ -142,11 +194,57 @@ export default function Backstage({
           )}
 
           <MenuItem
+            icon={ICONS.save}
+            label={t("save")}
+            shortcut="Ctrl+S"
+            onClick={() => actionAndClose(onSave)}
+          />
+
+          <MenuItem
+            icon={ICONS.saveAs}
+            label={t("saveAs")}
+            shortcut="Ctrl+Shift+S"
+            expanded={expandedMenu === "saveAs"}
+            onClick={() =>
+              setExpandedMenu(expandedMenu === "saveAs" ? null : "saveAs")
+            }
+          >
+            <SubMenuItem
+              icon={ICONS.local}
+              label={t("local")}
+              onClick={() => actionAndClose(onSaveAsLocal)}
+            />
+            {cloudEnabled && (
+              <SubMenuItem
+                icon={ICONS.cloud}
+                label={t("cloudStorage")}
+                onClick={() => actionAndClose(onSaveAsCloud)}
+              />
+            )}
+          </MenuItem>
+
+          <MenuItem
             icon={ICONS.open}
             label={t("open")}
             shortcut="Ctrl+O"
-            onClick={() => actionAndClose(onOpenLocal)}
-          />
+            expanded={expandedMenu === "open"}
+            onClick={() =>
+              setExpandedMenu(expandedMenu === "open" ? null : "open")
+            }
+          >
+            <SubMenuItem
+              icon={ICONS.local}
+              label={t("local")}
+              onClick={() => actionAndClose(onOpenLocal)}
+            />
+            {cloudEnabled && (
+              <SubMenuItem
+                icon={ICONS.cloud}
+                label={t("cloudStorage")}
+                onClick={() => actionAndClose(onOpenCloud)}
+              />
+            )}
+          </MenuItem>
 
           <MenuItem
             icon={ICONS.exportBcf}
@@ -154,14 +252,6 @@ export default function Backstage({
             shortcut="Ctrl+B"
             onClick={() => actionAndClose(onExportBcf)}
           />
-
-          {cloudEnabled && (
-            <MenuItem
-              icon={ICONS.cloud}
-              label={t("cloud")}
-              onClick={() => actionAndClose(onCloudOpen)}
-            />
-          )}
 
           <Divider />
 

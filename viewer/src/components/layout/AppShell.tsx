@@ -95,7 +95,9 @@ export function AppShell() {
   const [cloudDialogMode, setCloudDialogMode] = useState<"save" | "open">("save");
   const [cloudBcfBlob, setCloudBcfBlob] = useState<Blob | undefined>();
   const [saveAsDialogOpen, setSaveAsDialogOpen] = useState(false);
+  const [saveAsDirectTarget, setSaveAsDirectTarget] = useState<"local" | "cloud" | undefined>();
   const [openDialogOpen, setOpenDialogOpen] = useState(false);
+  const [openDirectTarget, setOpenDirectTarget] = useState<"local" | "cloud" | undefined>();
   const [theme, setTheme] = useState(() => getSetting("theme", "light"));
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -292,10 +294,34 @@ export function AppShell() {
 
   const handleSaveAs = useCallback(() => {
     if (!project) return;
+    setSaveAsDirectTarget(undefined);
+    setSaveAsDialogOpen(true);
+  }, [project]);
+
+  const handleSaveAsLocal = useCallback(() => {
+    if (!project) return;
+    setSaveAsDirectTarget("local");
+    setSaveAsDialogOpen(true);
+  }, [project]);
+
+  const handleSaveAsCloud = useCallback(() => {
+    if (!project) return;
+    setSaveAsDirectTarget("cloud");
     setSaveAsDialogOpen(true);
   }, [project]);
 
   const handleOpen = useCallback(() => {
+    setOpenDirectTarget(undefined);
+    setOpenDialogOpen(true);
+  }, []);
+
+  const handleOpenLocal = useCallback(() => {
+    setOpenDirectTarget("local");
+    setOpenDialogOpen(true);
+  }, []);
+
+  const handleOpenCloudDirect = useCallback(() => {
+    setOpenDirectTarget("cloud");
     setOpenDialogOpen(true);
   }, []);
 
@@ -444,12 +470,17 @@ export function AppShell() {
         open={backstageOpen}
         initialPanel={backstageInitialPanel}
         onClose={() => { setBackstageOpen(false); setBackstageInitialPanel(undefined); }}
-        onOpenLocal={handleUploadClick}
+        onSave={handleSave}
+        onSaveAsLocal={handleSaveAsLocal}
+        onSaveAsCloud={handleSaveAsCloud}
+        onOpenLocal={handleOpenLocal}
+        onOpenCloud={handleOpenCloudDirect}
         onExportBcf={handleExportBcf}
         onCloudOpen={handleCloudOpen}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenFeedback={() => setFeedbackOpen(true)}
         cloudEnabled={cloudEnabled}
+        hasModel={hasLoadedModel}
         projectStorage={projectStorage}
         onOpenProject={handleOpenProject}
       />
@@ -477,14 +508,16 @@ export function AppShell() {
 
       <SaveAsDialog
         open={saveAsDialogOpen}
-        onClose={() => setSaveAsDialogOpen(false)}
-        onSaveComplete={() => setSaveAsDialogOpen(false)}
+        onClose={() => { setSaveAsDialogOpen(false); setSaveAsDirectTarget(undefined); }}
+        directTarget={saveAsDirectTarget}
+        onSaveComplete={() => { setSaveAsDialogOpen(false); setSaveAsDirectTarget(undefined); }}
       />
 
       <OpenDialog
         open={openDialogOpen}
-        onClose={() => setOpenDialogOpen(false)}
+        onClose={() => { setOpenDialogOpen(false); setOpenDirectTarget(undefined); }}
         onFilesSelected={handleOpenFilesSelected}
+        directTarget={openDirectTarget}
       />
 
       <ToastContainer />

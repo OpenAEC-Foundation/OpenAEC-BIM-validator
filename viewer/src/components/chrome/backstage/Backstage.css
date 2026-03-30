@@ -110,6 +110,69 @@
   color: var(--theme-backstage-item-shortcut-hover);
 }
 
+.backstage-item.has-submenu .backstage-item-chevron {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  color: var(--theme-text-secondary);
+}
+
+.backstage-item.has-submenu:hover .backstage-item-chevron,
+.backstage-item.expanded .backstage-item-chevron {
+  color: var(--theme-accent);
+}
+
+.backstage-submenu {
+  display: flex;
+  flex-direction: column;
+  background: var(--theme-bg);
+  border-left: 3px solid var(--theme-border-subtle);
+  margin-left: 20px;
+}
+
+.backstage-subitem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px 8px 12px;
+  background: transparent;
+  border: none;
+  color: var(--theme-text);
+  font-size: 12px;
+  cursor: default;
+  transition: background 0.1s;
+  text-align: left;
+  width: 100%;
+}
+
+.backstage-subitem:hover {
+  background: var(--theme-hover);
+  color: var(--theme-accent);
+}
+
+.backstage-subitem-icon {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.backstage-subitem-icon svg {
+  stroke: var(--theme-text);
+  width: 16px;
+  height: 16px;
+}
+
+.backstage-subitem:hover .backstage-subitem-icon svg {
+  stroke: var(--theme-accent);
+}
+
+.backstage-subitem-label {
+  flex: 1;
+}
+
 .backstage-divider {
   height: 1px;
   background: var(--theme-border-subtle);

@@ -19,12 +19,15 @@ interface OpenDialogProps {
   onClose: () => void;
   /** Callback when files are selected for opening */
   onFilesSelected?: (files: File[]) => void;
+  /** When set, skip the choose screen and go directly to the target */
+  directTarget?: "local" | "cloud";
 }
 
 export default function OpenDialog({
   open,
   onClose,
   onFilesSelected,
+  directTarget,
 }: OpenDialogProps) {
   const { t } = useTranslation("projectIo");
 
@@ -49,13 +52,19 @@ export default function OpenDialog({
   // Reset state when dialog opens
   useEffect(() => {
     if (open) {
-      setTarget("choose");
+      const initial = directTarget ?? "choose";
+      setTarget(initial);
       setSelectedCloudProject("");
       setSelectedCloudFile(null);
       setIsOpening(false);
       setError(null);
+      // If directTarget is "local", immediately open file picker
+      if (initial === "local") {
+        // Defer to next tick so the modal renders first
+        setTimeout(() => fileInputRef.current?.click(), 0);
+      }
     }
-  }, [open]);
+  }, [open, directTarget]);
 
   // Load cloud projects when switching to cloud target
   useEffect(() => {
