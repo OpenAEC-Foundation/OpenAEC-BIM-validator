@@ -141,6 +141,7 @@ export async function cloudUploadFile(
   project: string,
   filename: string,
   blob: Blob,
+  category: "bim" | "output" = "output",
 ): Promise<void> {
   const formData = new FormData();
   formData.append("file", blob, filename);
@@ -148,7 +149,7 @@ export async function cloudUploadFile(
   let response: Response;
   try {
     response = await fetch(
-      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/files/${encodeURIComponent(filename)}`,
+      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/files/${encodeURIComponent(filename)}?category=${category}`,
       { method: "PUT", body: formData },
     );
   } catch (error) {

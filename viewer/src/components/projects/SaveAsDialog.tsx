@@ -156,11 +156,11 @@ export default function SaveAsDialog({
           const blob = new Blob([bytes], {
             type: "application/octet-stream",
           });
-          await cloudUpload(selectedCloudProject, model.fileName, blob);
+          await cloudUpload(selectedCloudProject, model.fileName, blob, "bim");
         }
       }
 
-      // Upload validation results if available
+      // Upload validation results to validation/ directory
       if (validationResult) {
         const resultBlob = new Blob(
           [JSON.stringify(validationResult, null, 2)],
@@ -169,7 +169,8 @@ export default function SaveAsDialog({
         await cloudUpload(
           selectedCloudProject,
           "validation-result.json",
-          resultBlob
+          resultBlob,
+          "output",
         );
       }
 

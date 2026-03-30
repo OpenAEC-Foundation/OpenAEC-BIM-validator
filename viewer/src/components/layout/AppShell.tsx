@@ -280,7 +280,7 @@ export function AppShell() {
           const bytes = await getModelBytes(model.fileName);
           if (bytes) {
             const blob = new Blob([bytes], { type: "application/octet-stream" });
-            await cloudUploadFn(projectSaveInfo.cloudProject!, model.fileName, blob);
+            await cloudUploadFn(projectSaveInfo.cloudProject!, model.fileName, blob, "bim");
           }
         }
         markClean();

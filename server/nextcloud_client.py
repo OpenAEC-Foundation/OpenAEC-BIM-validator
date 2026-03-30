@@ -334,20 +334,25 @@ class NextcloudClient:
             project_name, LEGACY_OUTPUT_SUBDIR
         )
 
-    async def upload_to_validation(
-        self, project_name: str, filename: str, content: bytes
+    async def upload_to(
+        self,
+        project_name: str,
+        filename: str,
+        content: bytes,
+        subdir: str = DIR_VALIDATION,
     ) -> None:
-        """Upload a file to the project's validation/ directory.
+        """Upload a file to a project subdirectory.
 
-        Always writes to the new path. Creates directories as needed.
+        Creates directories as needed.
 
         Args:
             project_name: Name of the project folder.
             filename: Target filename.
             content: File content as bytes.
+            subdir: Target subdirectory (default: validation/).
         """
         safe_project = quote(project_name, safe="")
-        path = f"{PROJECTS_ROOT}/{safe_project}/{DIR_VALIDATION}"
+        path = f"{PROJECTS_ROOT}/{safe_project}/{subdir}"
         await self.ensure_directory(path)
 
         url = (
@@ -363,6 +368,15 @@ class NextcloudClient:
                 f"Upload failed: {resp.status_code}",
                 status_code=resp.status_code,
             )
+
+    async def upload_to_validation(
+        self, project_name: str, filename: str, content: bytes
+    ) -> None:
+        """Upload a file to the project's validation/ directory.
+
+        Convenience wrapper around upload_to().
+        """
+        await self.upload_to(project_name, filename, content, DIR_VALIDATION)
 
     async def download_from(
         self,

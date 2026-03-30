@@ -40,7 +40,7 @@ export interface CloudSlice {
   cloudLoadProjects: () => Promise<void>;
   cloudSelectProject: (project: string | null) => void;
   cloudLoadFiles: (project?: string) => Promise<void>;
-  cloudUpload: (project: string, filename: string, blob: Blob) => Promise<boolean>;
+  cloudUpload: (project: string, filename: string, blob: Blob, category?: "bim" | "output") => Promise<boolean>;
   cloudDownload: (project: string, filename: string) => Promise<Blob | null>;
   cloudDelete: (project: string, filename: string) => Promise<boolean>;
   cloudReset: () => void;
@@ -100,10 +100,10 @@ export const createCloudSlice: StateCreator<CloudSlice> = (set, get) => ({
     }
   },
 
-  cloudUpload: async (project: string, filename: string, blob: Blob) => {
+  cloudUpload: async (project: string, filename: string, blob: Blob, category?: "bim" | "output") => {
     set({ cloudPhase: "uploading", cloudError: null });
     try {
-      await apiUploadFile(project, filename, blob);
+      await apiUploadFile(project, filename, blob, category);
       // Refresh file list after upload
       const files = await apiListFiles(project);
       set({ cloudFiles: files, cloudPhase: "idle" });

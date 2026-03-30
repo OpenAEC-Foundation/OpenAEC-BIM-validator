@@ -289,20 +289,24 @@ async def cloud_upload_file(
     project: str,
     filename: str,
     file: UploadFile = File(...),
+    category: str = Query("output", pattern="^(bim|output)$"),
     tenant: str | None = Query(None),
 ):
-    """Upload a file to the project's validation/ directory via WebDAV.
+    """Upload a file to a project subdirectory via WebDAV.
 
-    Always writes to the new validation/ path.
+    Args:
+        project: Project folder name.
+        filename: Target filename.
+        category: 'bim' writes to models/, 'output' writes to validation/.
+        tenant: Tenant slug (optional).
     """
     config = _resolve_tenant(tenant)
     client = get_nc_client(config)
 
+    subdir = DIR_MODELS if category == "bim" else DIR_VALIDATION
     content = await file.read()
     try:
-        await client.upload_to_validation(
-            project, filename, content
-        )
+        await client.upload_to(project, filename, content, subdir)
     except Exception as exc:
         raise _nc_error_to_http(exc) from exc
 
