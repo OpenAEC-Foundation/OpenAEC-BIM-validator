@@ -1,4 +1,4 @@
-# IFC Validator Project - 3BM Bouwkunde
+# IFC Validator Project 
 
 ## Quick Start (Lokaal Testen)
 
