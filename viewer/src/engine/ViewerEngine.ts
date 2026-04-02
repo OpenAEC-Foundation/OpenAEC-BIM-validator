@@ -11,6 +11,7 @@ import * as OBC from "@thatopen/components";
 import * as OBCF from "@thatopen/components-front";
 import * as FRAGS from "@thatopen/fragments";
 import * as THREE from "three";
+import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 
 import { PropertyExtractor } from "./PropertyExtractor";
 import type { IfcElementProperties } from "./PropertyExtractor";
@@ -33,6 +34,24 @@ const HIGHLIGHT_OPACITY = 0.6;
 
 /** Ghost mode: low opacity makes non-selected elements nearly invisible */
 const GHOST_OPACITY = 0.15;
+
+/** Section plane colors per axis: X=red, Y=green, Z=blue */
+const SECTION_PLANE_COLORS: Record<string, string> = {
+  x: "#ff4444",
+  y: "#44bb44",
+  z: "#4488ff",
+};
+
+/** Section plane mesh opacity */
+const SECTION_PLANE_OPACITY = 0.2;
+
+/** Tracked section plane with visual mesh */
+interface SectionPlaneEntry {
+  id: string;
+  axis: "x" | "y" | "z";
+  plane: THREE.Plane;
+  mesh: THREE.Mesh;
+}
 
 /** Callbacks for engine events */
 export interface ViewerEngineCallbacks {
@@ -110,11 +129,26 @@ export class ViewerEngine {
     { opacity: number; transparent: boolean; depthWrite: boolean }
   >();
 
-  /** Active section planes. */
-  private sectionPlanes: THREE.Plane[] = [];
+  /** Isolation indicator mesh (box around selected element). */
+  private isolationIndicator: THREE.Group | null = null;
 
-  /** Clipping plane helpers for visualization. */
-  private planeHelpers: THREE.PlaneHelper[] = [];
+  /** Active section plane entries with visual meshes. */
+  private sectionEntries: SectionPlaneEntry[] = [];
+
+  /** Shared TransformControls for section plane interaction. */
+  private sectionGizmo: TransformControls | null = null;
+
+  /** Currently selected section plane ID. */
+  private activeSectionPlaneId: string | null = null;
+
+  /** Pointer handler for section plane selection via raycasting. */
+  private sectionPlanePointerHandler: ((e: PointerEvent) => void) | null = null;
+
+  /** Reusable raycaster for section plane hit testing. */
+  private sectionRaycaster = new THREE.Raycaster();
+
+  /** Flag to prevent deselection after gizmo drag. */
+  private wasDraggingSection = false;
 
   constructor(
     container: HTMLElement,
@@ -223,6 +257,7 @@ export class ViewerEngine {
       if (this._disposed) return;
 
       this.setupHighlighter();
+      this.setupSectionPlaneDeselect();
 
       this._isInitialized = true;
       this.progress("Engine ready.");
@@ -403,11 +438,7 @@ export class ViewerEngine {
   fitToAllModels(): void {
     if (!this.world || this.modelBoxes.size === 0) return;
 
-    const box = new THREE.Box3();
-    for (const modelBox of this.modelBoxes.values()) {
-      box.union(modelBox);
-    }
-
+    const box = this.getModelBoundingBox();
     if (box.isEmpty()) return;
 
     this.fitCameraToBox(box);
@@ -490,21 +521,22 @@ export class ViewerEngine {
   }
 
   /**
-   * Isolate an element: ghost everything transparent,
-   * then highlight the selected element with an opaque overlay.
+   * Isolate an element: ghost all geometry via material-level opacity,
+   * then show a bounding box indicator around the selected element.
    *
-   * Material-level opacity + depthWrite:false ghosts all geometry.
-   * Fragment-level highlight renders the selected element on top
-   * (visible because ghosted materials no longer write to depth buffer).
+   * fragments.highlight() modifies per-instance color attributes on shared
+   * meshes, which gets overridden by material-level opacity. A separate
+   * Box3Helper + filled box is used instead — fully independent of the
+   * fragment material system.
    */
   async isolateElement(globalId: string): Promise<void> {
-    if (!this.world) return;
+    if (!this.world || !this.components || !this.fragments) return;
 
     // Restore any previous isolation first
     this.restoreMaterials();
-    await this.clearHighlights();
+    this.removeIsolationIndicator();
 
-    // Ghost ALL meshes: transparent + no depth write so highlight shows through
+    // Ghost ALL meshes at the material level
     for (const obj of this.modelObjects.values()) {
       obj.traverse((child) => {
         if (!(child instanceof THREE.Mesh)) return;
@@ -526,25 +558,68 @@ export class ViewerEngine {
       });
     }
 
-    // Highlight selected element with opaque overlay
-    if (this.fragments) {
-      try {
-        const modelIdMap = await this.fragments.guidsToModelIdMap([globalId]);
-        if (Object.keys(modelIdMap).length > 0) {
-          const style: FRAGS.MaterialDefinition = {
-            color: new THREE.Color("#44B6A8"),
-            renderedFaces: FRAGS.RenderedFaces.TWO,
-            opacity: 1.0,
-            transparent: false,
-          };
-          await this.fragments.highlight(style, modelIdMap);
-        }
-      } catch {
-        // Highlight failed — ghost-only mode still works
+    // Build a bounding box indicator around the selected element
+    try {
+      const modelIdMap = await this.fragments.guidsToModelIdMap([globalId]);
+      if (Object.keys(modelIdMap).length === 0) {
+        this._isolated = true;
+        return;
       }
+
+      const boxer = this.components.get(OBC.BoundingBoxer);
+      boxer.dispose();
+      await boxer.addFromModelIdMap(modelIdMap);
+      const box = boxer.get();
+
+      if (!box.isEmpty()) {
+        const group = new THREE.Group();
+        group.name = "__isolationIndicator";
+
+        // Wireframe box outline
+        const helper = new THREE.Box3Helper(box, new THREE.Color("#44B6A8"));
+        group.add(helper);
+
+        // Semi-transparent filled box for visibility
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
+        const material = new THREE.MeshBasicMaterial({
+          color: 0x44b6a8,
+          opacity: 0.25,
+          transparent: true,
+          depthTest: false,
+          side: THREE.DoubleSide,
+        });
+        const filled = new THREE.Mesh(geometry, material);
+        filled.position.copy(center);
+        group.add(filled);
+
+        this.world.scene.three.add(group);
+        this.isolationIndicator = group;
+      }
+    } catch {
+      // Element not found — ghost-only mode still works
     }
 
     this._isolated = true;
+  }
+
+  /**
+   * Remove isolation indicator from the scene.
+   */
+  private removeIsolationIndicator(): void {
+    if (!this.isolationIndicator || !this.world) return;
+    this.world.scene.three.remove(this.isolationIndicator);
+    this.isolationIndicator.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.geometry.dispose();
+        const mats = Array.isArray(child.material)
+          ? child.material
+          : [child.material];
+        for (const m of mats) m.dispose();
+      }
+    });
+    this.isolationIndicator = null;
   }
 
   /**
@@ -561,12 +636,12 @@ export class ViewerEngine {
   }
 
   /**
-   * Clear isolation: restore all materials and remove highlight overlay.
+   * Clear isolation: restore all materials and remove indicator.
    */
   async clearIsolation(): Promise<void> {
     if (!this._isolated) return;
     this.restoreMaterials();
-    await this.clearHighlights();
+    this.removeIsolationIndicator();
     this._isolated = false;
   }
 
@@ -574,7 +649,7 @@ export class ViewerEngine {
 
   /**
    * Add a section plane along a given axis.
-   * The plane is positioned at the center of all loaded models.
+   * Creates a transparent colored mesh and auto-selects it with a TransformControls gizmo.
    */
   addSectionPlane(axis: "x" | "y" | "z"): void {
     if (!this.world?.renderer?.three || !this.world?.scene?.three) return;
@@ -582,39 +657,61 @@ export class ViewerEngine {
     const renderer = this.world.renderer.three;
     const scene = this.world.scene.three;
 
-    // Compute center of all models
+    // Get model bounds for sizing and positioning
+    const modelBox = this.getModelBoundingBox();
     const center = new THREE.Vector3();
-    if (this.modelBoxes.size > 0) {
-      const box = new THREE.Box3();
-      for (const b of this.modelBoxes.values()) box.union(b);
-      box.getCenter(center);
+    const size = new THREE.Vector3();
+    if (!modelBox.isEmpty()) {
+      modelBox.getCenter(center);
+      modelBox.getSize(size);
     }
 
-    // Create plane normal along the given axis
+    const planeSize = Math.max(size.x, size.y, size.z, 10) * 2;
+    const color = SECTION_PLANE_COLORS[axis];
+
+    // Clipping plane with normal pointing into the negative axis direction
     const normal = new THREE.Vector3(
       axis === "x" ? -1 : 0,
       axis === "y" ? -1 : 0,
       axis === "z" ? -1 : 0
     );
-
     const constant = -normal.dot(center);
     const plane = new THREE.Plane(normal, constant);
 
-    this.sectionPlanes.push(plane);
+    // Transparent visual mesh
+    const geometry = new THREE.PlaneGeometry(planeSize, planeSize);
+    const material = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(color),
+      opacity: SECTION_PLANE_OPACITY,
+      transparent: true,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.copy(center);
 
-    // Add visual helper
-    const size = 50;
-    const helper = new THREE.PlaneHelper(plane, size, 0x44b6a8);
-    scene.add(helper);
-    this.planeHelpers.push(helper);
+    // Orient mesh to match clipping plane axis
+    if (axis === "x") mesh.rotation.y = Math.PI / 2;
+    else if (axis === "y") mesh.rotation.x = -Math.PI / 2;
+
+    const id = `sectionPlane_${axis}_${Date.now()}`;
+    mesh.name = id;
+    scene.add(mesh);
+
+    const entry: SectionPlaneEntry = { id, axis, plane, mesh };
+    this.sectionEntries.push(entry);
 
     // Apply all clipping planes to renderer
-    renderer.clippingPlanes = [...this.sectionPlanes];
+    renderer.clippingPlanes = this.sectionEntries.map((e) => e.plane);
     renderer.localClippingEnabled = true;
+
+    // Create shared gizmo if needed, then select this plane
+    this.ensureSectionGizmo();
+    this.selectSectionPlane(id);
   }
 
   /**
-   * Remove all section planes.
+   * Remove all section planes, gizmos, and visual meshes.
    */
   removeAllSectionPlanes(): void {
     if (!this.world?.renderer?.three || !this.world?.scene?.three) return;
@@ -622,13 +719,21 @@ export class ViewerEngine {
     const renderer = this.world.renderer.three;
     const scene = this.world.scene.three;
 
-    for (const helper of this.planeHelpers) {
-      scene.remove(helper);
-      helper.dispose();
+    for (const entry of this.sectionEntries) {
+      scene.remove(entry.mesh);
+      entry.mesh.geometry.dispose();
+      (entry.mesh.material as THREE.Material).dispose();
     }
+    this.sectionEntries = [];
+    this.activeSectionPlaneId = null;
 
-    this.sectionPlanes = [];
-    this.planeHelpers = [];
+    // Dispose shared gizmo
+    if (this.sectionGizmo) {
+      this.sectionGizmo.detach();
+      scene.remove(this.sectionGizmo as unknown as THREE.Object3D);
+      this.sectionGizmo.dispose();
+      this.sectionGizmo = null;
+    }
 
     renderer.clippingPlanes = [];
     renderer.localClippingEnabled = false;
@@ -638,7 +743,124 @@ export class ViewerEngine {
    * Get the number of active section planes.
    */
   get sectionPlaneCount(): number {
-    return this.sectionPlanes.length;
+    return this.sectionEntries.length;
+  }
+
+  /**
+   * Select a section plane by ID: attach the shared gizmo to its mesh.
+   */
+  selectSectionPlane(id: string): void {
+    const entry = this.sectionEntries.find((e) => e.id === id);
+    if (!entry || !this.sectionGizmo) return;
+
+    this.activeSectionPlaneId = id;
+    this.sectionGizmo.attach(entry.mesh);
+  }
+
+  // -- Section Plane Interaction (private) --
+
+  /**
+   * Deselect all section planes: detach the gizmo.
+   */
+  private deselectAllSectionPlanes(): void {
+    if (this.sectionGizmo) {
+      this.sectionGizmo.detach();
+    }
+    this.activeSectionPlaneId = null;
+  }
+
+  /**
+   * Sync a clipping plane's constant from its mesh position.
+   * Called on every gizmo objectChange during drag.
+   */
+  private syncPlaneFromMesh(entry: SectionPlaneEntry): void {
+    entry.plane.constant = -entry.plane.normal.dot(entry.mesh.position);
+  }
+
+  /**
+   * Create the shared TransformControls gizmo (once).
+   * Registers objectChange and dragging-changed listeners.
+   */
+  private ensureSectionGizmo(): void {
+    if (this.sectionGizmo || !this.world?.renderer?.three) return;
+
+    const cam = this.world.camera.three;
+    const domElement = this.world.renderer.three.domElement;
+
+    const gizmo = new TransformControls(cam, domElement);
+    gizmo.setMode("translate");
+    gizmo.setSize(0.8);
+
+    gizmo.addEventListener("dragging-changed", (event) => {
+      const isDragging = (event as unknown as { value: boolean }).value;
+      if (isDragging) this.wasDraggingSection = true;
+      if (!this.world) return;
+      const camCtrl = this.world.camera as OBC.OrthoPerspectiveCamera;
+      camCtrl.controls.enabled = !isDragging;
+    });
+
+    gizmo.addEventListener("objectChange", () => {
+      const activeEntry = this.sectionEntries.find(
+        (e) => e.id === this.activeSectionPlaneId
+      );
+      if (activeEntry) this.syncPlaneFromMesh(activeEntry);
+    });
+
+    this.world.scene.three.add(gizmo as unknown as THREE.Object3D);
+    this.sectionGizmo = gizmo;
+  }
+
+  /**
+   * Set up pointer handler for clicking on section plane meshes.
+   * Click on a plane mesh -> select it; click elsewhere -> deselect.
+   */
+  private setupSectionPlaneDeselect(): void {
+    if (!this.world?.renderer?.three) return;
+
+    const domElement = this.world.renderer.three.domElement;
+
+    this.sectionPlanePointerHandler = (event: PointerEvent) => {
+      if (!this.world || this.sectionEntries.length === 0) return;
+
+      // Skip if we just finished a gizmo drag
+      if (this.wasDraggingSection) {
+        this.wasDraggingSection = false;
+        return;
+      }
+
+      const rect = domElement.getBoundingClientRect();
+      const mouse = new THREE.Vector2(
+        ((event.clientX - rect.left) / rect.width) * 2 - 1,
+        -((event.clientY - rect.top) / rect.height) * 2 + 1
+      );
+
+      this.sectionRaycaster.setFromCamera(mouse, this.world.camera.three);
+      const meshes = this.sectionEntries.map((e) => e.mesh);
+      const intersects = this.sectionRaycaster.intersectObjects(meshes, false);
+
+      const firstHit = intersects[0];
+      if (firstHit) {
+        const hitEntry = this.sectionEntries.find(
+          (e) => e.mesh === firstHit.object
+        );
+        if (hitEntry && hitEntry.id !== this.activeSectionPlaneId) {
+          this.selectSectionPlane(hitEntry.id);
+        }
+      } else if (this.activeSectionPlaneId) {
+        this.deselectAllSectionPlanes();
+      }
+    };
+
+    domElement.addEventListener("pointerup", this.sectionPlanePointerHandler);
+  }
+
+  /**
+   * Get the combined bounding box of all loaded models.
+   */
+  private getModelBoundingBox(): THREE.Box3 {
+    const box = new THREE.Box3();
+    for (const b of this.modelBoxes.values()) box.union(b);
+    return box;
   }
 
   // -- Camera Utility Methods --
@@ -665,11 +887,10 @@ export class ViewerEngine {
 
     const center = new THREE.Vector3();
     let dist = 15;
-    if (this.modelBoxes.size > 0) {
-      const box = new THREE.Box3();
-      for (const b of this.modelBoxes.values()) box.union(b);
-      box.getCenter(center);
-      const size = box.getSize(new THREE.Vector3());
+    const modelBox = this.getModelBoundingBox();
+    if (!modelBox.isEmpty()) {
+      modelBox.getCenter(center);
+      const size = modelBox.getSize(new THREE.Vector3());
       dist = Math.max(size.x, size.y, size.z) * CAMERA_FIT_PADDING;
     }
 
@@ -855,7 +1076,16 @@ export class ViewerEngine {
   dispose(): void {
     this._disposed = true;
     this._isInitialized = false;
+    // Clean up section plane pointer handler before removing planes
+    if (this.sectionPlanePointerHandler && this.world?.renderer?.three) {
+      this.world.renderer.three.domElement.removeEventListener(
+        "pointerup",
+        this.sectionPlanePointerHandler
+      );
+      this.sectionPlanePointerHandler = null;
+    }
     this.removeAllSectionPlanes();
+    this.removeIsolationIndicator();
     this.modelObjects.clear();
     this.modelBoxes.clear();
     this.modelBytes.clear();
