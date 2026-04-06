@@ -64,6 +64,14 @@ class CloudDeleteResponse(BaseModel):
     filename: str = Field(..., description="Deleted file name")
 
 
+class ManifestInfo(BaseModel):
+    """Summary info for a .wefc manifest file."""
+
+    name: str = Field(..., description="Manifest filename (e.g. project.wefc)")
+    size: int = Field(0, description="File size in bytes")
+    last_modified: str = Field("", description="Last modification date")
+
+
 class ManifestHeader(BaseModel):
     """Header section of a project.wefc manifest."""
 
@@ -71,12 +79,30 @@ class ManifestHeader(BaseModel):
         "WeFC", alias="schema", description="Schema identifier"
     )
     schema_version: str = Field(
-        "1.0.0", description="Schema version"
+        "1.1.0", description="Schema version"
+    )
+    file_id: str = Field(
+        "", alias="fileId", description="Unique file identifier (UUID4)"
     )
     timestamp: str = Field("", description="Last update timestamp (ISO 8601)")
     application: str = Field("", description="Application that last wrote")
+    application_version: str | None = Field(
+        None,
+        alias="applicationVersion",
+        description="Application version string",
+    )
 
     model_config = {"populate_by_name": True}
+
+
+class ManifestListResponse(BaseModel):
+    """Response for GET /api/cloud/projects/{project}/manifests."""
+
+    project: str = Field(..., description="Project name")
+    manifests: list[ManifestInfo] = Field(
+        default_factory=list,
+        description="List of .wefc manifest files in the project",
+    )
 
 
 class ManifestResponse(BaseModel):

@@ -6,7 +6,7 @@
  */
 
 import type { StateCreator } from "zustand";
-import type { CloudProject, CloudFile } from "../../api/cloudApi";
+import type { CloudProject, CloudFile, ManifestInfo } from "../../api/cloudApi";
 import {
   cloudStatus as apiCloudStatus,
   cloudListProjects as apiListProjects,
@@ -15,6 +15,8 @@ import {
   cloudDownloadFile as apiDownloadFile,
   cloudDeleteFile as apiDeleteFile,
   cloudSaveManifest as apiSaveManifest,
+  cloudListManifests as apiListManifests,
+  cloudReadManifest as apiReadManifest,
 } from "../../api/cloudApi";
 
 type CloudPhase =
@@ -35,6 +37,7 @@ export interface CloudSlice {
   cloudProjects: CloudProject[];
   cloudSelectedProject: string | null;
   cloudFiles: CloudFile[];
+  cloudManifests: ManifestInfo[];
 
   // ── Actions ────────────────────────────────────────────────
   cloudCheckStatus: () => Promise<void>;
@@ -44,7 +47,9 @@ export interface CloudSlice {
   cloudUpload: (project: string, filename: string, blob: Blob, category?: "bim" | "output") => Promise<boolean>;
   cloudDownload: (project: string, filename: string) => Promise<Blob | null>;
   cloudDelete: (project: string, filename: string) => Promise<boolean>;
-  cloudSaveManifest: (project: string, manifest: Record<string, unknown>) => Promise<boolean>;
+  cloudSaveManifest: (project: string, manifest: Record<string, unknown>, name?: string) => Promise<boolean>;
+  cloudLoadManifests: (project: string) => Promise<ManifestInfo[]>;
+  cloudReadManifest: (project: string, name?: string) => Promise<Record<string, unknown> | null>;
   cloudReset: () => void;
 }
 
@@ -57,6 +62,7 @@ export const createCloudSlice: StateCreator<CloudSlice> = (set, get) => ({
   cloudProjects: [],
   cloudSelectedProject: null,
   cloudFiles: [],
+  cloudManifests: [],
 
   cloudCheckStatus: async () => {
     set({ cloudPhase: "checking", cloudError: null });
@@ -145,14 +151,40 @@ export const createCloudSlice: StateCreator<CloudSlice> = (set, get) => ({
     }
   },
 
-  cloudSaveManifest: async (project: string, manifest: Record<string, unknown>) => {
+  cloudSaveManifest: async (project: string, manifest: Record<string, unknown>, name?: string) => {
     try {
-      await apiSaveManifest(project, manifest);
+      await apiSaveManifest(project, manifest, name);
       return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Manifest save failed";
       set({ cloudError: message });
       return false;
+    }
+  },
+
+  cloudLoadManifests: async (project: string) => {
+    set({ cloudPhase: "loading", cloudError: null });
+    try {
+      const manifests = await apiListManifests(project);
+      set({ cloudManifests: manifests, cloudPhase: "idle" });
+      return manifests;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to load manifests";
+      set({ cloudPhase: "error", cloudError: message, cloudManifests: [] });
+      return [];
+    }
+  },
+
+  cloudReadManifest: async (project: string, name?: string) => {
+    set({ cloudPhase: "loading", cloudError: null });
+    try {
+      const manifest = await apiReadManifest(project, name);
+      set({ cloudPhase: "idle" });
+      return manifest;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to read manifest";
+      set({ cloudPhase: "error", cloudError: message });
+      return null;
     }
   },
 
@@ -163,6 +195,7 @@ export const createCloudSlice: StateCreator<CloudSlice> = (set, get) => ({
       cloudProjects: [],
       cloudSelectedProject: null,
       cloudFiles: [],
+      cloudManifests: [],
     });
   },
 });

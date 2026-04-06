@@ -217,13 +217,64 @@ class VolumeReader:
             logger.error("Failed to read %s: %s", path, exc)
             return None
 
-    def read_manifest(
+    def list_manifests(
         self, project_name: str
-    ) -> dict[str, Any] | None:
-        """Read and parse the project.wefc manifest from volume.
+    ) -> list[dict[str, Any]]:
+        """List all .wefc manifest files in a project root.
+
+        Scans the project directory for files with .wefc extension.
 
         Args:
             project_name: Name of the project directory.
+
+        Returns:
+            List of dicts with keys: name, size, last_modified.
+        """
+        if not self.available:
+            return []
+
+        project_dir = self._root / project_name
+        if not project_dir.is_dir():
+            return []
+
+        manifests: list[dict[str, Any]] = []
+        try:
+            for entry in project_dir.iterdir():
+                if (
+                    entry.is_file()
+                    and entry.suffix.lower() == ".wefc"
+                    and not entry.name.startswith(".")
+                ):
+                    stat = entry.stat()
+                    modified = datetime.fromtimestamp(
+                        stat.st_mtime, tz=timezone.utc
+                    ).isoformat()
+                    manifests.append({
+                        "name": entry.name,
+                        "size": stat.st_size,
+                        "last_modified": modified,
+                    })
+        except OSError as exc:
+            logger.error(
+                "Failed to list manifests for %s: %s",
+                project_name,
+                exc,
+            )
+            return []
+
+        manifests.sort(key=lambda m: m["name"])
+        return manifests
+
+    def read_manifest(
+        self,
+        project_name: str,
+        name: str = MANIFEST_FILENAME,
+    ) -> dict[str, Any] | None:
+        """Read and parse a .wefc manifest from volume.
+
+        Args:
+            project_name: Name of the project directory.
+            name: Manifest filename (default: project.wefc).
 
         Returns:
             Parsed manifest dict, or None if not found/invalid.
@@ -231,10 +282,15 @@ class VolumeReader:
         if not self.available:
             return None
 
-        manifest_path = (
-            self._root / project_name / MANIFEST_FILENAME
-        )
+        manifest_path = self._root / project_name / name
         if not manifest_path.is_file():
+            return None
+
+        # Security: ensure path doesn't escape the project root
+        try:
+            manifest_path.resolve().relative_to(self._root.resolve())
+        except ValueError:
+            logger.warning("Path traversal attempt: %s", manifest_path)
             return None
 
         try:
@@ -242,8 +298,9 @@ class VolumeReader:
             return json.loads(content)
         except (OSError, json.JSONDecodeError, ValueError) as exc:
             logger.warning(
-                "Manifest read error for %s: %s",
+                "Manifest read error for %s/%s: %s",
                 project_name,
+                name,
                 exc,
             )
             return None

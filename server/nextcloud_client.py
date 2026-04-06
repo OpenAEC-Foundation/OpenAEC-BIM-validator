@@ -420,20 +420,56 @@ class NextcloudClient:
 
     # ── Manifest operations ───────────────────────────────────────
 
-    async def read_manifest(
+    async def list_manifests(
         self, project_name: str
-    ) -> dict[str, Any] | None:
-        """Read and parse the project.wefc manifest.
+    ) -> list[dict[str, Any]]:
+        """List all .wefc manifest files in a project root.
+
+        Performs a PROPFIND on the project directory and filters for
+        files with the .wefc extension.
 
         Args:
             project_name: Name of the project folder.
+
+        Returns:
+            List of dicts with keys: name, size, last_modified.
+        """
+        safe_project = quote(project_name, safe="")
+        path = f"{PROJECTS_ROOT}/{safe_project}/"
+        try:
+            items = await self._list_directory(path)
+        except NextcloudError as exc:
+            if exc.status_code == 404:
+                return []
+            raise
+
+        manifests: list[dict[str, Any]] = []
+        for item in items:
+            if not item.is_collection and item.name.endswith(".wefc"):
+                manifests.append({
+                    "name": item.name,
+                    "size": item.content_length,
+                    "last_modified": item.last_modified,
+                })
+        return manifests
+
+    async def read_manifest(
+        self,
+        project_name: str,
+        name: str = MANIFEST_FILENAME,
+    ) -> dict[str, Any] | None:
+        """Read and parse a .wefc manifest.
+
+        Args:
+            project_name: Name of the project folder.
+            name: Manifest filename (default: project.wefc).
 
         Returns:
             Parsed manifest dict, or None if it does not exist.
         """
         safe_project = quote(project_name, safe="")
         path = (
-            f"{PROJECTS_ROOT}/{safe_project}/{MANIFEST_FILENAME}"
+            f"{PROJECTS_ROOT}/{safe_project}/{quote(name, safe='')}"
         )
         url = f"{self._webdav_root}/{path}"
 
@@ -447,9 +483,10 @@ class NextcloudClient:
             return None
         if resp.status_code >= 400:
             logger.warning(
-                "Manifest read HTTP %s for %s",
+                "Manifest read HTTP %s for %s/%s",
                 resp.status_code,
                 project_name,
+                name,
             )
             return None
 
@@ -457,26 +494,56 @@ class NextcloudClient:
             return json.loads(resp.content)
         except (json.JSONDecodeError, ValueError) as exc:
             logger.warning(
-                "Manifest parse error for %s: %s",
+                "Manifest parse error for %s/%s: %s",
                 project_name,
+                name,
                 exc,
             )
             return None
 
+    async def download_manifest(
+        self,
+        project_name: str,
+        name: str,
+    ) -> dict[str, Any] | None:
+        """Download and parse a specific .wefc manifest.
+
+        Alias for read_manifest with an explicit name parameter.
+
+        Args:
+            project_name: Name of the project folder.
+            name: Manifest filename (e.g. 'design.wefc').
+
+        Returns:
+            Parsed manifest dict, or None if it does not exist.
+        """
+        return await self.read_manifest(project_name, name)
+
     async def write_manifest(
-        self, project_name: str, data: dict[str, Any]
+        self,
+        project_name: str,
+        data: dict[str, Any],
+        name: str = MANIFEST_FILENAME,
     ) -> None:
-        """Write the project.wefc manifest via WebDAV PUT.
+        """Write a .wefc manifest via WebDAV PUT.
 
         Args:
             project_name: Name of the project folder.
             data: Full manifest dict to serialize as JSON.
+            name: Manifest filename (default: project.wefc).
         """
         safe_project = quote(project_name, safe="")
         path = (
-            f"{PROJECTS_ROOT}/{safe_project}/{MANIFEST_FILENAME}"
+            f"{PROJECTS_ROOT}/{safe_project}/{quote(name, safe='')}"
         )
         url = f"{self._webdav_root}/{path}"
+
+        # Ensure header has fileId on new manifests
+        header = data.get("header", {})
+        if not header.get("fileId"):
+            header["fileId"] = str(uuid.uuid4())
+            data["header"] = header
+
         content = json.dumps(data, indent=2, ensure_ascii=False)
 
         try:
@@ -496,8 +563,9 @@ class NextcloudClient:
         self,
         project_name: str,
         obj: dict[str, Any],
+        name: str = MANIFEST_FILENAME,
     ) -> dict[str, Any]:
-        """Add or update an object in the project manifest.
+        """Add or update an object in a project manifest.
 
         Reads the existing manifest (or creates a new one), appends/updates
         the given object in the data array, and writes back.
@@ -508,17 +576,19 @@ class NextcloudClient:
         Args:
             project_name: Name of the project folder.
             obj: WeFC object dict (must contain 'type' and 'guid').
+            name: Manifest filename (default: project.wefc).
 
         Returns:
             The full updated manifest dict.
         """
-        manifest = await self.read_manifest(project_name)
+        manifest = await self.read_manifest(project_name, name)
         if manifest is None:
             now = datetime.now(timezone.utc).isoformat()
             manifest = {
                 "header": {
                     "schema": "WeFC",
-                    "schema_version": "1.0.0",
+                    "schema_version": "1.1.0",
+                    "fileId": str(uuid.uuid4()),
                     "timestamp": now,
                     "application": "bim-validator",
                 },
@@ -544,7 +614,7 @@ class NextcloudClient:
             datetime.now(timezone.utc).isoformat()
         )
 
-        await self.write_manifest(project_name, manifest)
+        await self.write_manifest(project_name, manifest, name)
         return manifest
 
     # ── Private helpers ─────────────────────────────────────────

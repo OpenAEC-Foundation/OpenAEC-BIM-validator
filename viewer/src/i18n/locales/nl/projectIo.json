@@ -30,5 +30,8 @@
   "projectFiles": "Projectbestanden",
   "models": "Modellen",
   "validation": "Validatie",
-  "results": "Resultaten"
+  "results": "Resultaten",
+  "selectManifest": "Selecteer manifest",
+  "noManifests": "Geen manifests gevonden",
+  "manifests": "Manifests (.wefc)"
 }

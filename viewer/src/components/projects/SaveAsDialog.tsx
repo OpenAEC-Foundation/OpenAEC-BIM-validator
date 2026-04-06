@@ -226,7 +226,8 @@ export default function SaveAsDialog({
       await cloudSaveManifest(selectedCloudProject, {
         header: {
           schema: "WeFC",
-          schema_version: "1.0.0",
+          schema_version: "1.1.0",
+          fileId: crypto.randomUUID(),
           timestamp: now,
           application: "bim-validator",
         },

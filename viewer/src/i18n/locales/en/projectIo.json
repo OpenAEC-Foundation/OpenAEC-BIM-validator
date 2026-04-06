@@ -30,5 +30,8 @@
   "projectFiles": "Project files",
   "models": "Models",
   "validation": "Validation",
-  "results": "Results"
+  "results": "Results",
+  "selectManifest": "Select manifest",
+  "noManifests": "No manifests found",
+  "manifests": "Manifests (.wefc)"
 }

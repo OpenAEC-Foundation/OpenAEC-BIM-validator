@@ -35,6 +35,8 @@ from server.models.cloud import (
     CloudProjectsResponse,
     CloudStatusResponse,
     CloudUploadResponse,
+    ManifestInfo,
+    ManifestListResponse,
 )
 from server.nextcloud_client import (
     DIR_MODELS,
@@ -402,7 +404,132 @@ async def cloud_save_validation(
     )
 
 
-# ── Manifest ──────────────────────────────────────────────────
+# ── Manifests (multi-manifest API — ADR-001) ────────────────────
+
+
+@router.get("/projects/{project}/manifests")
+async def cloud_list_manifests(
+    project: str,
+    tenant: str | None = Query(None),
+):
+    """List all .wefc manifest files in a project.
+
+    Scans the project root directory for files with the .wefc extension.
+    Uses volume mount for fast reads, falls back to WebDAV PROPFIND.
+    """
+    config = _resolve_tenant(tenant)
+    reader = _get_reader(config)
+
+    # Fast path: read from volume mount
+    if reader.available:
+        items = reader.list_manifests(project)
+        return ManifestListResponse(
+            project=project,
+            manifests=[
+                ManifestInfo(
+                    name=m["name"],
+                    size=m["size"],
+                    last_modified=m["last_modified"],
+                )
+                for m in items
+            ],
+        )
+
+    # Fallback: WebDAV
+    client = get_nc_client(config)
+    try:
+        items = await client.list_manifests(project)
+    except Exception as exc:
+        raise _nc_error_to_http(exc) from exc
+
+    return ManifestListResponse(
+        project=project,
+        manifests=[
+            ManifestInfo(
+                name=m["name"],
+                size=m["size"],
+                last_modified=m["last_modified"],
+            )
+            for m in items
+        ],
+    )
+
+
+@router.get("/projects/{project}/manifests/{name}")
+async def cloud_get_manifest_by_name(
+    project: str,
+    name: str,
+    tenant: str | None = Query(None),
+):
+    """Read a specific .wefc manifest as JSON.
+
+    Args:
+        project: Project folder name.
+        name: Manifest filename (e.g. 'project.wefc', 'design.wefc').
+        tenant: Tenant slug (optional).
+    """
+    if not name.endswith(".wefc"):
+        raise HTTPException(400, "Manifest name must end with .wefc")
+
+    config = _resolve_tenant(tenant)
+    reader = _get_reader(config)
+
+    # Fast path: read from volume mount
+    if reader.available:
+        manifest = reader.read_manifest(project, name)
+        if manifest is not None:
+            return JSONResponse(content=manifest)
+
+    # Fallback: WebDAV
+    client = get_nc_client(config)
+    try:
+        manifest = await client.read_manifest(project, name)
+    except Exception as exc:
+        raise _nc_error_to_http(exc) from exc
+
+    if manifest is None:
+        raise HTTPException(
+            404, f"Manifest not found: {project}/{name}"
+        )
+
+    return JSONResponse(content=manifest)
+
+
+@router.put("/projects/{project}/manifests/{name}")
+async def cloud_upsert_manifest_object(
+    project: str,
+    name: str,
+    obj: dict[str, Any],
+    tenant: str | None = Query(None),
+):
+    """Add or update an object in a specific .wefc manifest.
+
+    Reads the existing manifest (or creates a new one), upserts the
+    object by guid, and writes back via WebDAV.
+
+    Args:
+        project: Project folder name.
+        name: Manifest filename (e.g. 'project.wefc').
+        obj: WeFC object dict (must contain 'type' and 'guid').
+        tenant: Tenant slug (optional).
+    """
+    if not name.endswith(".wefc"):
+        raise HTTPException(400, "Manifest name must end with .wefc")
+
+    config = _resolve_tenant(tenant)
+    client = get_nc_client(config)
+
+    try:
+        manifest = await client.upsert_manifest_object(
+            project, obj, name
+        )
+    except Exception as exc:
+        raise _nc_error_to_http(exc) from exc
+
+    return JSONResponse(content=manifest)
+
+
+# ── Manifest (backward-compat aliases) ──────────────────────────
 
 
 @router.get("/projects/{project}/manifest")
@@ -412,31 +539,12 @@ async def cloud_get_manifest(
 ):
     """Read the project.wefc manifest as JSON.
 
-    Returns the full manifest if it exists. Uses volume mount for
-    fast reads, falls back to WebDAV.
+    Backward-compatible alias — redirects to the multi-manifest
+    endpoint with name='project.wefc'.
     """
-    config = _resolve_tenant(tenant)
-    reader = _get_reader(config)
-
-    # Fast path: read from volume mount
-    if reader.available:
-        manifest = reader.read_manifest(project)
-        if manifest is not None:
-            return JSONResponse(content=manifest)
-
-    # Fallback: WebDAV
-    client = get_nc_client(config)
-    try:
-        manifest = await client.read_manifest(project)
-    except Exception as exc:
-        raise _nc_error_to_http(exc) from exc
-
-    if manifest is None:
-        raise HTTPException(
-            404, f"No manifest found for project: {project}"
-        )
-
-    return JSONResponse(content=manifest)
+    return await cloud_get_manifest_by_name(
+        project, "project.wefc", tenant
+    )
 
 
 @router.put("/projects/{project}/manifest")
@@ -447,8 +555,8 @@ async def cloud_put_manifest(
 ):
     """Write a full project.wefc manifest.
 
-    Accepts a complete manifest JSON body and writes it to the project
-    root as project.wefc via WebDAV.
+    Backward-compatible alias. Accepts a complete manifest JSON body
+    and writes it to the project root as project.wefc via WebDAV.
 
     Args:
         project: Project folder name.

@@ -37,6 +37,12 @@ export interface CloudFile {
   last_modified: string;
 }
 
+export interface ManifestInfo {
+  name: string;
+  size: number;
+  last_modified: string;
+}
+
 // ── API functions ──────────────────────────────────────────────
 
 /** Check if cloud storage is enabled and reachable. */
@@ -166,21 +172,78 @@ export async function cloudUploadFile(
   }
 }
 
+/** List all .wefc manifest files in a project. */
+export async function cloudListManifests(
+  project: string,
+): Promise<ManifestInfo[]> {
+  let response: Response;
+  try {
+    response = await fetch(
+      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/manifests`,
+    );
+  } catch (error) {
+    throw new ApiError(
+      "Network error: unable to list manifests.",
+      undefined,
+      error instanceof Error ? error.message : "Unknown network error",
+    );
+  }
+
+  if (!response.ok) {
+    const msg = await parseError(response);
+    throw new ApiError(msg, response.status, msg);
+  }
+
+  const data = await response.json();
+  return data.manifests;
+}
+
+/** Read a specific .wefc manifest from the cloud. */
+export async function cloudReadManifest(
+  project: string,
+  name: string = "project.wefc",
+): Promise<Record<string, unknown>> {
+  let response: Response;
+  try {
+    response = await fetch(
+      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/manifests/${encodeURIComponent(name)}`,
+    );
+  } catch (error) {
+    throw new ApiError(
+      "Network error: unable to read manifest.",
+      undefined,
+      error instanceof Error ? error.message : "Unknown network error",
+    );
+  }
+
+  if (!response.ok) {
+    const msg = await parseError(response);
+    throw new ApiError(msg, response.status, msg);
+  }
+
+  return response.json();
+}
+
 /** Save a project.wefc manifest to the cloud. */
 export async function cloudSaveManifest(
   project: string,
   manifest: Record<string, unknown>,
+  name: string = "project.wefc",
 ): Promise<void> {
+  // Use the backward-compat endpoint for default name,
+  // or the new multi-manifest endpoint for custom names
+  const url =
+    name === "project.wefc"
+      ? `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/manifest`
+      : `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/manifests/${encodeURIComponent(name)}`;
+
   let response: Response;
   try {
-    response = await fetch(
-      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/manifest`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(manifest),
-      },
-    );
+    response = await fetch(url, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(manifest),
+    });
   } catch (error) {
     throw new ApiError(
       "Network error: unable to save manifest.",

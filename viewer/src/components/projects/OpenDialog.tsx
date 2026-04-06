@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import type { ManifestInfo } from "../../api/cloudApi";
 import Modal from "../chrome/Modal";
 import { useStore } from "../../store";
 import "./OpenDialog.css";
@@ -39,11 +40,14 @@ export default function OpenDialog({
   const cloudFiles = useStore((s) => s.cloudFiles);
   const cloudLoadFiles = useStore((s) => s.cloudLoadFiles);
   const cloudDownload = useStore((s) => s.cloudDownload);
+  const cloudLoadManifests = useStore((s) => s.cloudLoadManifests);
   const setSaveInfo = useStore((s) => s.setSaveInfo);
 
   const [target, setTarget] = useState<OpenTarget>("choose");
   const [selectedCloudProject, setSelectedCloudProject] = useState<string>("");
   const [selectedCloudFile, setSelectedCloudFile] = useState<string | null>(null);
+  const [manifests, setManifests] = useState<ManifestInfo[]>([]);
+  const [selectedManifest, setSelectedManifest] = useState<string | null>(null);
   const [isOpening, setIsOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,6 +60,8 @@ export default function OpenDialog({
       setTarget(initial);
       setSelectedCloudProject("");
       setSelectedCloudFile(null);
+      setManifests([]);
+      setSelectedManifest(null);
       setIsOpening(false);
       setError(null);
       // If directTarget is "local", immediately open file picker
@@ -73,12 +79,21 @@ export default function OpenDialog({
     }
   }, [open, target, cloudEnabled, cloudLoadProjects]);
 
-  // Load files when cloud project changes
+  // Load files and manifests when cloud project changes
   useEffect(() => {
     if (open && selectedCloudProject) {
       cloudLoadFiles(selectedCloudProject);
+      // Load manifests for the project
+      cloudLoadManifests(selectedCloudProject).then((items) => {
+        setManifests(items);
+        setSelectedManifest(null);
+        // Auto-select if there is exactly one manifest
+        if (items.length === 1 && items[0]) {
+          setSelectedManifest(items[0].name);
+        }
+      });
     }
-  }, [open, selectedCloudProject, cloudLoadFiles]);
+  }, [open, selectedCloudProject, cloudLoadFiles, cloudLoadManifests]);
 
   const handleLocalOpen = useCallback(() => {
     fileInputRef.current?.click();
@@ -276,6 +291,8 @@ export default function OpenDialog({
                   onChange={(e) => {
                     setSelectedCloudProject(e.target.value);
                     setSelectedCloudFile(null);
+                    setManifests([]);
+                    setSelectedManifest(null);
                   }}
                   disabled={isCloudBusy || isOpening}
                 >
@@ -300,6 +317,35 @@ export default function OpenDialog({
                 </button>
               </div>
             </div>
+
+            {/* Manifest selector — shown when project has .wefc files */}
+            {selectedCloudProject && manifests.length > 1 && (
+              <div className="open-dialog__field">
+                <label className="open-dialog__label">
+                  {t("manifests")}
+                </label>
+                <div className="open-dialog__file-list">
+                  {manifests.map((m) => (
+                    <button
+                      key={m.name}
+                      className={`open-dialog__file-item${
+                        selectedManifest === m.name
+                          ? " open-dialog__file-item--selected"
+                          : ""
+                      }`}
+                      onClick={() => setSelectedManifest(m.name)}
+                    >
+                      <span className="open-dialog__file-name">
+                        {m.name}
+                      </span>
+                      <span className="open-dialog__file-meta">
+                        {formatFileSize(m.size)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {selectedCloudProject && (
               <div className="open-dialog__files">
