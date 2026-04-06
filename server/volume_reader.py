@@ -6,13 +6,18 @@ Nextcloud data volume, bypassing WebDAV for fast I/O on large files.
 
 Falls back to None/empty when volume mount is not available,
 so callers can use WebDAV as fallback.
+
+Supports the new project container model (models/, validation/) with
+backward compatibility for legacy paths (70_BIM, 99_overige_documenten).
 """
 
+import json
 import logging
 import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from server.tenant_config import TenantConfig
 
@@ -20,9 +25,18 @@ logger = logging.getLogger(__name__)
 
 TOOL_SLUG = "bim-validator"
 
-# Subdirectories within a project
-BIM_SUBDIR = "70_BIM"
-OUTPUT_SUBDIR = f"99_overige_documenten/{TOOL_SLUG}"
+# ── New project container model paths ──────────────────────────
+DIR_MODELS = "models"
+DIR_VALIDATION = "validation"
+MANIFEST_FILENAME = "project.wefc"
+
+# ── Legacy paths (backward compatibility) ──────────────────────
+LEGACY_BIM_SUBDIR = "70_BIM"
+LEGACY_OUTPUT_SUBDIR = f"99_overige_documenten/{TOOL_SLUG}"
+
+# Keep old names as aliases for import compatibility
+BIM_SUBDIR = LEGACY_BIM_SUBDIR
+OUTPUT_SUBDIR = LEGACY_OUTPUT_SUBDIR
 
 # File extensions per category
 BIM_EXTENSIONS = {".ifc", ".ifcx", ".ids", ".xml", ".bcf", ".bcfzip"}
@@ -84,7 +98,9 @@ class VolumeReader:
         return projects
 
     def list_bim_files(self, project_name: str) -> list[VolumeFileInfo]:
-        """List BIM files (IFC/IDS/BCF) in a project's 70_BIM directory.
+        """List BIM model files (IFC/IDS/BCF).
+
+        Tries new models/ directory first, falls back to legacy 70_BIM/.
 
         Args:
             project_name: Name of the project directory.
@@ -92,11 +108,22 @@ class VolumeReader:
         Returns:
             List of VolumeFileInfo for matching files.
         """
-        bim_dir = self._root / project_name / BIM_SUBDIR
-        return self._list_files_in(bim_dir, BIM_EXTENSIONS)
+        # Try new path first
+        new_dir = self._root / project_name / DIR_MODELS
+        files = self._list_files_in(new_dir, BIM_EXTENSIONS)
+        if files:
+            return files
+        # Fallback to legacy path
+        legacy_dir = self._root / project_name / LEGACY_BIM_SUBDIR
+        return self._list_files_in(legacy_dir, BIM_EXTENSIONS)
 
-    def list_output_files(self, project_name: str) -> list[VolumeFileInfo]:
-        """List tool output files in 99_overige_documenten/bim-validator/.
+    def list_output_files(
+        self, project_name: str
+    ) -> list[VolumeFileInfo]:
+        """List validation output files.
+
+        Tries new validation/ directory first, falls back to legacy
+        99_overige_documenten/bim-validator/.
 
         Args:
             project_name: Name of the project directory.
@@ -104,18 +131,30 @@ class VolumeReader:
         Returns:
             List of VolumeFileInfo.
         """
-        output_dir = self._root / project_name / OUTPUT_SUBDIR
-        return self._list_files_in(output_dir)
+        # Try new path first
+        new_dir = self._root / project_name / DIR_VALIDATION
+        files = self._list_files_in(new_dir)
+        if files:
+            return files
+        # Fallback to legacy path
+        legacy_dir = self._root / project_name / LEGACY_OUTPUT_SUBDIR
+        return self._list_files_in(legacy_dir)
 
     def get_file_path(
-        self, project_name: str, filename: str, subdir: str = BIM_SUBDIR
+        self,
+        project_name: str,
+        filename: str,
+        subdir: str = DIR_MODELS,
     ) -> Path | None:
         """Get the absolute path to a file on the volume mount.
+
+        Checks the given subdir first. For model and validation
+        subdirs, falls back to legacy paths automatically.
 
         Args:
             project_name: Project directory name.
             filename: File name.
-            subdir: Subdirectory within the project (default: 70_BIM).
+            subdir: Subdirectory within the project (default: models).
 
         Returns:
             Path if the file exists, None otherwise.
@@ -134,10 +173,29 @@ class VolumeReader:
 
         if file_path.is_file():
             return file_path
+
+        # Fallback to legacy paths
+        fallback_subdir = self._legacy_fallback(subdir)
+        if fallback_subdir and fallback_subdir != subdir:
+            fallback_path = (
+                self._root / project_name / fallback_subdir / filename
+            )
+            try:
+                fallback_path.resolve().relative_to(
+                    self._root.resolve()
+                )
+            except ValueError:
+                return None
+            if fallback_path.is_file():
+                return fallback_path
+
         return None
 
     def read_file(
-        self, project_name: str, filename: str, subdir: str = BIM_SUBDIR
+        self,
+        project_name: str,
+        filename: str,
+        subdir: str = DIR_MODELS,
     ) -> bytes | None:
         """Read file content from the volume mount.
 
@@ -159,6 +217,37 @@ class VolumeReader:
             logger.error("Failed to read %s: %s", path, exc)
             return None
 
+    def read_manifest(
+        self, project_name: str
+    ) -> dict[str, Any] | None:
+        """Read and parse the project.wefc manifest from volume.
+
+        Args:
+            project_name: Name of the project directory.
+
+        Returns:
+            Parsed manifest dict, or None if not found/invalid.
+        """
+        if not self.available:
+            return None
+
+        manifest_path = (
+            self._root / project_name / MANIFEST_FILENAME
+        )
+        if not manifest_path.is_file():
+            return None
+
+        try:
+            content = manifest_path.read_text(encoding="utf-8")
+            return json.loads(content)
+        except (OSError, json.JSONDecodeError, ValueError) as exc:
+            logger.warning(
+                "Manifest read error for %s: %s",
+                project_name,
+                exc,
+            )
+            return None
+
     def project_exists(self, project_name: str) -> bool:
         """Check if a project directory exists."""
         if not self.available:
@@ -166,6 +255,22 @@ class VolumeReader:
         return (self._root / project_name).is_dir()
 
     # ── Private helpers ────────────────────────────────────────
+
+    @staticmethod
+    def _legacy_fallback(subdir: str) -> str | None:
+        """Map a new-style subdir to its legacy equivalent.
+
+        Args:
+            subdir: New-style subdirectory name.
+
+        Returns:
+            Legacy subdirectory path, or None if no mapping exists.
+        """
+        mapping = {
+            DIR_MODELS: LEGACY_BIM_SUBDIR,
+            DIR_VALIDATION: LEGACY_OUTPUT_SUBDIR,
+        }
+        return mapping.get(subdir)
 
     def _list_files_in(
         self, directory: Path, extensions: set[str] | None = None

@@ -33,3 +33,9 @@ export const loginIcon = '<svg width="24" height="24" viewBox="0 0 24 24" fill="
 export const sectionPlaneIcon = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M6 4l-4 8 4 8"/><path d="M18 4l4 8-4 8"/><line x1="12" y1="2" x2="12" y2="22" stroke-dasharray="2 2" opacity="0.5"/></svg>';
 
 export const removeSectionIcon = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor"/><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor"/></svg>';
+
+export const saveIcon = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>';
+
+export const saveAsIcon = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v6"/><polyline points="15 21 15 13 7 13 7 21"/><polyline points="7 3 7 8 13 8"/><path d="M17 22l5-5"/><path d="M17.5 17.5L22 22"/></svg>';
+
+export const openIcon = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 11 15 14"/></svg>';

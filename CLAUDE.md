@@ -69,6 +69,14 @@ Check ROADMAP.md for current phase and specs.
 
 ---
 
+## Agent Broker
+- **project_id:** `bim-validator`
+- **display_name:** `BIM Validator`
+- **capabilities:** `["ifc-validation", "ids", "bcf-export"]`
+- **subscriptions:** `["bim/*", "shared/*"]`
+
+---
+
 ## Orchestrator
 
 Bij sessie START → lees:

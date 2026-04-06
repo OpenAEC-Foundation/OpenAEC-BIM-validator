@@ -62,3 +62,31 @@ class CloudDeleteResponse(BaseModel):
     success: bool = Field(..., description="Whether the deletion succeeded")
     project: str = Field(..., description="Project name")
     filename: str = Field(..., description="Deleted file name")
+
+
+class ManifestHeader(BaseModel):
+    """Header section of a project.wefc manifest."""
+
+    schema_name: str = Field(
+        "WeFC", alias="schema", description="Schema identifier"
+    )
+    schema_version: str = Field(
+        "1.0.0", description="Schema version"
+    )
+    timestamp: str = Field("", description="Last update timestamp (ISO 8601)")
+    application: str = Field("", description="Application that last wrote")
+
+    model_config = {"populate_by_name": True}
+
+
+class ManifestResponse(BaseModel):
+    """Response for GET /api/cloud/projects/{project}/manifest."""
+
+    header: ManifestHeader = Field(
+        default_factory=ManifestHeader,
+        description="Manifest header",
+    )
+    data: list[dict] = Field(
+        default_factory=list,
+        description="List of WeFC objects in the project",
+    )

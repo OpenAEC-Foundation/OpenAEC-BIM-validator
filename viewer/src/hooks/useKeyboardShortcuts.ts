@@ -6,6 +6,9 @@ interface ShortcutHandlers {
   onValidate?: () => void;
   onExportBcf?: () => void;
   onEscape?: () => void;
+  onSave?: () => void;
+  onSaveAs?: () => void;
+  onOpen?: () => void;
 }
 
 export function useKeyboardShortcuts({
@@ -14,6 +17,9 @@ export function useKeyboardShortcuts({
   onValidate,
   onExportBcf,
   onEscape,
+  onSave,
+  onSaveAs,
+  onOpen,
 }: ShortcutHandlers): void {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -28,10 +34,24 @@ export function useKeyboardShortcuts({
 
       if (isInput) return;
 
-      // Ctrl+O → Open IFC
+      // Ctrl+S → Save
+      if (e.ctrlKey && !e.shiftKey && e.key === "s") {
+        e.preventDefault();
+        onSave?.();
+        return;
+      }
+
+      // Ctrl+Shift+S → Save As
+      if (e.ctrlKey && e.shiftKey && e.key === "S") {
+        e.preventDefault();
+        onSaveAs?.();
+        return;
+      }
+
+      // Ctrl+O → Open
       if (e.ctrlKey && !e.shiftKey && e.key === "o") {
         e.preventDefault();
-        onOpenIfc?.();
+        onOpen?.();
         return;
       }
 
@@ -59,5 +79,5 @@ export function useKeyboardShortcuts({
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onOpenIfc, onSettings, onValidate, onExportBcf, onEscape]);
+  }, [onOpenIfc, onSettings, onValidate, onExportBcf, onEscape, onSave, onSaveAs, onOpen]);
 }

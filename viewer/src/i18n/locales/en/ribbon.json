@@ -6,7 +6,7 @@
   },
   "home": {
     "models": "Models",
-    "upload": "Upload IFC",
+    "upload": "Add IFC",
     "removeModel": "Remove",
     "validation": "Validation",
     "validate": "Validate",
@@ -18,7 +18,11 @@
     "pushPlatform": "Push",
     "bcfLogin": "Login",
     "cloudSave": "Cloud Save",
-    "cloudOpen": "Cloud Open"
+    "cloudOpen": "Cloud Open",
+    "project": "Project",
+    "save": "Save",
+    "saveAs": "Save As",
+    "open": "Open"
   },
   "view": {
     "panels": "Panels",

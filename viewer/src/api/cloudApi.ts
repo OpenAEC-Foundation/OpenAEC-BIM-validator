@@ -83,11 +83,14 @@ export async function cloudListProjects(): Promise<CloudProject[]> {
 }
 
 /** List files in a project's tool subdirectory. */
-export async function cloudListFiles(project: string): Promise<CloudFile[]> {
+export async function cloudListFiles(
+  project: string,
+  category: "bim" | "output" = "bim",
+): Promise<CloudFile[]> {
   let response: Response;
   try {
     response = await fetch(
-      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/files`,
+      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/files?category=${category}`,
     );
   } catch (error) {
     throw new ApiError(
@@ -110,11 +113,12 @@ export async function cloudListFiles(project: string): Promise<CloudFile[]> {
 export async function cloudDownloadFile(
   project: string,
   filename: string,
+  category: "bim" | "output" = "bim",
 ): Promise<Blob> {
   let response: Response;
   try {
     response = await fetch(
-      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/files/${encodeURIComponent(filename)}`,
+      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/files/${encodeURIComponent(filename)}?category=${category}`,
     );
   } catch (error) {
     throw new ApiError(
@@ -137,6 +141,7 @@ export async function cloudUploadFile(
   project: string,
   filename: string,
   blob: Blob,
+  category: "bim" | "output" = "output",
 ): Promise<void> {
   const formData = new FormData();
   formData.append("file", blob, filename);
@@ -144,12 +149,41 @@ export async function cloudUploadFile(
   let response: Response;
   try {
     response = await fetch(
-      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/files/${encodeURIComponent(filename)}`,
+      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/files/${encodeURIComponent(filename)}?category=${category}`,
       { method: "PUT", body: formData },
     );
   } catch (error) {
     throw new ApiError(
       "Network error: unable to upload cloud file.",
+      undefined,
+      error instanceof Error ? error.message : "Unknown network error",
+    );
+  }
+
+  if (!response.ok) {
+    const msg = await parseError(response);
+    throw new ApiError(msg, response.status, msg);
+  }
+}
+
+/** Save a project.wefc manifest to the cloud. */
+export async function cloudSaveManifest(
+  project: string,
+  manifest: Record<string, unknown>,
+): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(
+      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/manifest`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(manifest),
+      },
+    );
+  } catch (error) {
+    throw new ApiError(
+      "Network error: unable to save manifest.",
       undefined,
       error instanceof Error ? error.message : "Unknown network error",
     );

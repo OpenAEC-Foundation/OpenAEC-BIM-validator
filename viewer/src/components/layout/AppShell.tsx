@@ -30,6 +30,8 @@ import Backstage from "../chrome/backstage/Backstage";
 import SettingsDialog from "../chrome/settings/SettingsDialog";
 import FeedbackDialog from "../feedback/FeedbackDialog";
 import CloudDialog from "../cloud/CloudDialog";
+import SaveAsDialog from "../projects/SaveAsDialog";
+import OpenDialog from "../projects/OpenDialog";
 
 import { LeftPanel } from "./LeftPanel";
 import { CenterPanel } from "./CenterPanel";
@@ -80,6 +82,10 @@ export function AppShell() {
   const bcfConnected = bcfPhase === "connected" || bcfPhase === "pushing" || bcfPhase === "done";
   const bcfHasQueuedIssues = bcfIssues.some((i) => i.pushState === "queued");
 
+  // Project I/O state
+  const projectSaveInfo = useStore((s) => s.projectSaveInfo);
+  const markClean = useStore((s) => s.markClean);
+
   // --- Local chrome state ---
   const [backstageOpen, setBackstageOpen] = useState(false);
   const [backstageInitialPanel, setBackstageInitialPanel] = useState<string | undefined>();
@@ -88,6 +94,10 @@ export function AppShell() {
   const [cloudDialogOpen, setCloudDialogOpen] = useState(false);
   const [cloudDialogMode, setCloudDialogMode] = useState<"save" | "open">("save");
   const [cloudBcfBlob, setCloudBcfBlob] = useState<Blob | undefined>();
+  const [saveAsDialogOpen, setSaveAsDialogOpen] = useState(false);
+  const [saveAsDirectTarget, setSaveAsDirectTarget] = useState<"local" | "cloud" | undefined>();
+  const [openDialogOpen, setOpenDialogOpen] = useState(false);
+  const [openDirectTarget, setOpenDirectTarget] = useState<"local" | "cloud" | undefined>();
   const [theme, setTheme] = useState(() => getSetting("theme", "light"));
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -257,12 +267,96 @@ export function AppShell() {
     URL.revokeObjectURL(url);
   }, []);
 
+  // --- Save / Save As / Open handlers ---
+  const handleSave = useCallback(() => {
+    if (!project) return;
+    // If we have a known save location, save directly there
+    if (projectSaveInfo.source === "cloud" && projectSaveInfo.cloudProject) {
+      // Direct cloud save — reuse the cloud upload flow
+      const doCloudSave = async () => {
+        const { getModelBytes } = await import("../../engine/modelCache");
+        const cloudUploadFn = useStore.getState().cloudUpload;
+        for (const model of project.models) {
+          const bytes = await getModelBytes(model.fileName);
+          if (bytes) {
+            const blob = new Blob([bytes], { type: "application/octet-stream" });
+            await cloudUploadFn(projectSaveInfo.cloudProject!, model.fileName, blob, "bim");
+          }
+        }
+        markClean();
+      };
+      doCloudSave().catch(console.error);
+      return;
+    }
+    // No previous save location or local → open SaveAs dialog
+    setSaveAsDialogOpen(true);
+  }, [project, projectSaveInfo, markClean]);
+
+  const handleSaveAs = useCallback(() => {
+    if (!project) return;
+    setSaveAsDirectTarget(undefined);
+    setSaveAsDialogOpen(true);
+  }, [project]);
+
+  const handleSaveAsLocal = useCallback(() => {
+    if (!project) return;
+    setSaveAsDirectTarget("local");
+    setSaveAsDialogOpen(true);
+  }, [project]);
+
+  const handleSaveAsCloud = useCallback(() => {
+    if (!project) return;
+    setSaveAsDirectTarget("cloud");
+    setSaveAsDialogOpen(true);
+  }, [project]);
+
+  const handleOpen = useCallback(() => {
+    setOpenDirectTarget(undefined);
+    setOpenDialogOpen(true);
+  }, []);
+
+  const handleOpenLocal = useCallback(() => {
+    setOpenDirectTarget("local");
+    setOpenDialogOpen(true);
+  }, []);
+
+  const handleOpenCloudDirect = useCallback(() => {
+    setOpenDirectTarget("cloud");
+    setOpenDialogOpen(true);
+  }, []);
+
+  const handleOpenFilesSelected = useCallback(
+    (files: File[]) => {
+      if (!project) {
+        createProject("Nieuw project");
+      }
+
+      for (const file of files) {
+        const ext = file.name.toLowerCase();
+        if (!ext.endsWith(".ifc") && !ext.endsWith(".ifcx")) continue;
+        if (file.size > MAX_FILE_SIZE) continue;
+
+        setCachedFile(file.name, file);
+        file.arrayBuffer().then((bytes) => {
+          saveModelBytes(file.name, bytes).catch(console.error);
+        });
+        addModel(file);
+        window.dispatchEvent(
+          new CustomEvent("model-file-added", { detail: { file } })
+        );
+      }
+    },
+    [project, createProject, addModel]
+  );
+
   const handleEscape = useCallback(() => {
+    if (saveAsDialogOpen) { setSaveAsDialogOpen(false); return; }
+    if (openDialogOpen) { setOpenDialogOpen(false); return; }
     if (cloudDialogOpen) { setCloudDialogOpen(false); return; }
     if (backstageOpen) { setBackstageOpen(false); return; }
     if (settingsOpen) { setSettingsOpen(false); return; }
     if (feedbackOpen) { setFeedbackOpen(false); return; }
-  }, [cloudDialogOpen, backstageOpen, settingsOpen, feedbackOpen]);
+  }, [saveAsDialogOpen, openDialogOpen, cloudDialogOpen, backstageOpen, settingsOpen, feedbackOpen]);
 
   // --- Keyboard shortcuts ---
   useKeyboardShortcuts({
@@ -271,6 +365,9 @@ export function AppShell() {
     onValidate: handleValidateClick,
     onExportBcf: handleExportBcf,
     onEscape: handleEscape,
+    onSave: handleSave,
+    onSaveAs: handleSaveAs,
+    onOpen: handleOpen,
   });
 
   const hasLoadedModel = project?.models.some((m) => m.loadState === "loaded");
@@ -295,6 +392,9 @@ export function AppShell() {
         onBcfPush={handleBcfPush}
         onCloudSave={handleCloudSave}
         onCloudOpen={handleCloudOpen}
+        onSave={handleSave}
+        onSaveAs={handleSaveAs}
+        onOpen={handleOpen}
         hasModel={hasLoadedModel}
         isValidating={isValidating}
         bcfConnected={bcfConnected}
@@ -370,9 +470,12 @@ export function AppShell() {
         open={backstageOpen}
         initialPanel={backstageInitialPanel}
         onClose={() => { setBackstageOpen(false); setBackstageInitialPanel(undefined); }}
-        onOpenLocal={handleUploadClick}
+        onSave={handleSave}
+        onSaveAsLocal={handleSaveAsLocal}
+        onSaveAsCloud={handleSaveAsCloud}
+        onOpenLocal={handleOpenLocal}
+        onOpenCloud={handleOpenCloudDirect}
         onExportBcf={handleExportBcf}
-        onCloudOpen={handleCloudOpen}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenFeedback={() => setFeedbackOpen(true)}
         cloudEnabled={cloudEnabled}
@@ -399,6 +502,20 @@ export function AppShell() {
         bcfBlob={cloudBcfBlob}
         suggestedFilename={`${project?.name ?? "validation"}-${new Date().toISOString().slice(0, 10)}.bcf`}
         onFileOpened={handleCloudFileOpened}
+      />
+
+      <SaveAsDialog
+        open={saveAsDialogOpen}
+        onClose={() => { setSaveAsDialogOpen(false); setSaveAsDirectTarget(undefined); }}
+        directTarget={saveAsDirectTarget}
+        onSaveComplete={() => { setSaveAsDialogOpen(false); setSaveAsDirectTarget(undefined); }}
+      />
+
+      <OpenDialog
+        open={openDialogOpen}
+        onClose={() => { setOpenDialogOpen(false); setOpenDirectTarget(undefined); }}
+        onFilesSelected={handleOpenFilesSelected}
+        directTarget={openDirectTarget}
       />
 
       <ToastContainer />

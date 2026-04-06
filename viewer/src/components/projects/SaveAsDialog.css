@@ -1,0 +1,215 @@
+/* SaveAsDialog — save as modal styling */
+
+.saveas-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 12px;
+  min-height: 120px;
+}
+
+/* Choice screen — two large option buttons */
+.saveas-dialog__options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.saveas-dialog__option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--theme-border, #d0d0d0);
+  border-radius: 4px;
+  background: var(--theme-surface, #fff);
+  color: var(--theme-text, #222);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: left;
+  width: 100%;
+}
+
+.saveas-dialog__option:hover:not(:disabled) {
+  border-color: var(--theme-accent, #44b6a8);
+  background: var(--theme-hover, rgba(68, 182, 168, 0.05));
+}
+
+.saveas-dialog__option:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.saveas-dialog__option-icon {
+  flex-shrink: 0;
+  color: var(--theme-accent, #44b6a8);
+  display: flex;
+  align-items: center;
+}
+
+.saveas-dialog__option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.saveas-dialog__option-text strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--theme-text, #222);
+}
+
+.saveas-dialog__option-text span {
+  font-size: 11px;
+  color: var(--theme-text-secondary, #666);
+}
+
+/* Form fields */
+.saveas-dialog__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.saveas-dialog__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.saveas-dialog__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--theme-text-secondary, #666);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.saveas-dialog__input {
+  padding: 6px 8px;
+  border: 1px solid var(--theme-border, #d0d0d0);
+  border-radius: 3px;
+  background: var(--theme-surface, #fff);
+  color: var(--theme-text, #222);
+  font-size: 12px;
+  outline: none;
+}
+
+.saveas-dialog__input:focus {
+  border-color: var(--theme-accent, #44b6a8);
+}
+
+.saveas-dialog__project-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.saveas-dialog__select {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid var(--theme-border, #d0d0d0);
+  border-radius: 3px;
+  background: var(--theme-surface, #fff);
+  color: var(--theme-text, #222);
+  font-size: 12px;
+  outline: none;
+}
+
+.saveas-dialog__select:focus {
+  border-color: var(--theme-accent, #44b6a8);
+}
+
+/* File preview */
+.saveas-dialog__preview {
+  border: 1px solid var(--theme-border, #d0d0d0);
+  border-radius: 3px;
+  padding: 8px 10px;
+  background: var(--theme-bg-lighter, #f8f8f8);
+}
+
+.saveas-dialog__preview-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--theme-text-secondary, #666);
+}
+
+.saveas-dialog__file-list {
+  margin: 4px 0 0 0;
+  padding: 0 0 0 16px;
+  font-size: 11px;
+  color: var(--theme-text, #222);
+  list-style: disc;
+}
+
+.saveas-dialog__file-list li {
+  padding: 1px 0;
+}
+
+/* Footer */
+.saveas-dialog__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.saveas-dialog__error {
+  font-size: 11px;
+  color: var(--theme-danger, #db4c40);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saveas-dialog__actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Buttons — consistent with CloudDialog */
+.saveas-dialog__btn {
+  padding: 6px 14px;
+  border: 1px solid var(--theme-border, #d0d0d0);
+  border-radius: 3px;
+  background: var(--theme-surface, #fff);
+  color: var(--theme-text, #222);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.saveas-dialog__btn:hover:not(:disabled) {
+  background: var(--theme-hover, #f0f0f0);
+}
+
+.saveas-dialog__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.saveas-dialog__btn--primary {
+  background: var(--theme-accent, #44b6a8);
+  color: #fff;
+  border-color: var(--theme-accent, #44b6a8);
+}
+
+.saveas-dialog__btn--primary:hover:not(:disabled) {
+  background: var(--theme-accent-hover, #3a9e92);
+}
+
+.saveas-dialog__btn--secondary {
+  background: transparent;
+}
+
+.saveas-dialog__btn--icon {
+  padding: 5px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

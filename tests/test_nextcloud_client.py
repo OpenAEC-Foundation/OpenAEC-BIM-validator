@@ -119,9 +119,9 @@ class TestNextcloudClientSync:
         assert client._webdav_root == expected
 
     def test_tool_path(self, client: NextcloudClient):
-        """Tool path is correctly constructed for a project."""
+        """Tool path uses new validation/ directory for writes."""
         path = client._tool_path("My Project")
-        assert path == "Projects/My%20Project/99_overige_documenten/bim-validator"
+        assert path == "Projects/My%20Project/validation"
 
     def test_tool_path_special_chars(self, client: NextcloudClient):
         """Tool path correctly encodes special characters."""

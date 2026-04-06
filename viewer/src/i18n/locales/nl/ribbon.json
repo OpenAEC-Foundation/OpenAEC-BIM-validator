@@ -6,7 +6,7 @@
   },
   "home": {
     "models": "Modellen",
-    "upload": "Upload IFC",
+    "upload": "Toevoegen IFC",
     "removeModel": "Verwijder",
     "validation": "Validatie",
     "validate": "Valideer",
@@ -18,7 +18,11 @@
     "pushPlatform": "Push",
     "bcfLogin": "Inloggen",
     "cloudSave": "Cloud Opslaan",
-    "cloudOpen": "Cloud Openen"
+    "cloudOpen": "Cloud Openen",
+    "project": "Project",
+    "save": "Opslaan",
+    "saveAs": "Opslaan als",
+    "open": "Openen"
   },
   "view": {
     "panels": "Panelen",
