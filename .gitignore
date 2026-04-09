@@ -36,3 +36,11 @@ package-lock.json
 src/ifc_validator.egg-info/
 quick_test.py
 test_output.json
+
+# Session notes (local only)
+SESSION_STATUS.md
+viewer/SESSION_STATUS.md
+viewer/BCF_IMPLEMENTATION_PROMPT.md
+
+# TypeScript incremental build artifacts
+*.tsbuildinfo
