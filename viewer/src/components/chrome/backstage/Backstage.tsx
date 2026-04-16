@@ -1,23 +1,20 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../../stores/authStore";
-import type { IProjectStorage } from "../../../services/ProjectStorage";
-import ProjectList from "../../projects/ProjectList";
+import { showToast } from "../../Toast";
 import "./Backstage.css";
 
 const ICONS = {
-  projects: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>',
-  save: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>',
-  saveAs: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v6"/><polyline points="15 21 15 13 7 13 7 21"/><polyline points="7 3 7 8 13 8"/><path d="M19 16v6"/><path d="M16 19h6"/></svg>',
+  new: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6m-3 3h6"/></svg>',
   open: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>',
-  local: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
-  exportBcf: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>',
+  save: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V7l-4-4z"/><path d="M17 3v4a1 1 0 01-1 1H8"/><path d="M7 14h10v7H7z"/></svg>',
+  saveAs: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V7l-4-4z"/><path d="M17 3v4a1 1 0 01-1 1H8"/><path d="M12 12v6m-3-3h6"/></svg>',
+  close: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9l6 6m0-6l-6 6"/></svg>',
   preferences: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>',
-  feedback: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
   about: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
-  account: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-  logout: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
-  cloud: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/></svg>',
+  exit: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+  server: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>',
+  file: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>',
 };
 
 function MenuItem({
@@ -26,44 +23,27 @@ function MenuItem({
   shortcut,
   active,
   onClick,
-  expanded,
-  children,
 }: {
   icon: string;
   label: string;
   shortcut?: string;
   active?: boolean;
   onClick: () => void;
-  expanded?: boolean;
-  children?: React.ReactNode;
 }) {
-  const hasChildren = !!children;
   return (
-    <>
-      <button
-        className={`backstage-item${active ? " active" : ""}${hasChildren ? " has-submenu" : ""}${expanded ? " expanded" : ""}`}
-        onClick={onClick}
-      >
-        <span
-          className="backstage-item-icon"
-          dangerouslySetInnerHTML={{ __html: icon }}
-        />
-        <span className="backstage-item-label">{label}</span>
-        {shortcut && (
-          <span className="backstage-item-shortcut">{shortcut}</span>
-        )}
-        {hasChildren && (
-          <span className="backstage-item-chevron">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points={expanded ? "6 9 12 15 18 9" : "9 6 15 12 9 18"} />
-            </svg>
-          </span>
-        )}
-      </button>
-      {expanded && children && (
-        <div className="backstage-submenu">{children}</div>
+    <button
+      className={`backstage-item${active ? " active" : ""}`}
+      onClick={onClick}
+    >
+      <span
+        className="backstage-item-icon"
+        dangerouslySetInnerHTML={{ __html: icon }}
+      />
+      <span className="backstage-item-label">{label}</span>
+      {shortcut && (
+        <span className="backstage-item-shortcut">{shortcut}</span>
       )}
-    </>
+    </button>
   );
 }
 
@@ -71,18 +51,28 @@ function SubMenuItem({
   icon,
   label,
   onClick,
+  disabled,
 }: {
   icon: string;
   label: string;
   onClick: () => void;
+  disabled?: boolean;
 }) {
   return (
-    <button className="backstage-subitem" onClick={onClick}>
+    <button
+      className="backstage-item backstage-sub-item"
+      onClick={onClick}
+      disabled={disabled}
+      style={{ opacity: disabled ? 0.4 : 1 }}
+    >
       <span
-        className="backstage-subitem-icon"
+        className="backstage-item-icon"
+        style={{ width: 18, height: 18 }}
         dangerouslySetInnerHTML={{ __html: icon }}
       />
-      <span className="backstage-subitem-label">{label}</span>
+      <span className="backstage-item-label" style={{ fontSize: 12 }}>
+        {label}
+      </span>
     </button>
   );
 }
@@ -93,42 +83,25 @@ function Divider() {
 
 interface BackstageProps {
   open: boolean;
-  initialPanel?: string;
   onClose: () => void;
-  onSave?: () => void;
-  onSaveAsLocal?: () => void;
-  onSaveAsCloud?: () => void;
-  onOpenLocal: () => void;
-  onOpenCloud?: () => void;
-  onExportBcf: () => void;
   onOpenSettings: () => void;
-  onOpenFeedback: () => void;
-  cloudEnabled?: boolean;
-  projectStorage?: IProjectStorage;
-  onOpenProject?: (projectId: string) => void;
+  onNavigate?: (path: string) => void;
 }
 
 export default function Backstage({
   open,
-  initialPanel,
   onClose,
-  onSave,
-  onSaveAsLocal,
-  onSaveAsCloud,
-  onOpenLocal,
-  onOpenCloud,
-  onExportBcf,
   onOpenSettings,
-  onOpenFeedback,
-  cloudEnabled,
-  projectStorage,
-  onOpenProject,
+  onNavigate,
 }: BackstageProps) {
   const { t } = useTranslation("backstage");
   const [activePanel, setActivePanel] = useState<string>("none");
-  const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
+  const [openExpanded, setOpenExpanded] = useState(false);
+  const [saveAsExpanded, setSaveAsExpanded] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const user = useAuthStore((s) => s.user);
-  const logout = useAuthStore((s) => s.logout);
+  const isLoggedIn = !!user;
 
   const actionAndClose = useCallback(
     (fn?: () => void) => {
@@ -141,19 +114,146 @@ export default function Backstage({
   useEffect(() => {
     if (!open) {
       setActivePanel("none");
-      setExpandedMenu(null);
+      setOpenExpanded(false);
+      setSaveAsExpanded(false);
       return;
-    }
-    // Open to specific panel if requested
-    if (initialPanel) {
-      setActivePanel(initialPanel);
     }
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, onClose, initialPanel]);
+  }, [open, onClose]);
+
+  // --- File actions ---
+
+  const handleNew = useCallback(() => {
+    // TODO: Reset project state
+    onClose();
+    onNavigate?.("/");
+    showToast(t("newProject"), "info");
+  }, [onClose, onNavigate, t]);
+
+  const handleOpenServer = useCallback(() => {
+    onClose();
+    onNavigate?.("/projects");
+  }, [onClose, onNavigate]);
+
+  const handleOpenLocal = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileSelected = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      try {
+        // Check if it's a .wefc file
+        const ext = file.name.toLowerCase().split('.').pop();
+        if (ext !== 'wefc') {
+          showToast(`${t("importError")}: Only .wefc files are supported`, "error");
+          e.target.value = "";
+          return;
+        }
+
+        // TODO: Parse .wefc envelope and load project
+        // For now, just show success
+        showToast(t("opened"), "success");
+        onClose();
+        onNavigate?.("/");
+      } catch (err) {
+        showToast(
+          `${t("importError")}: ${err instanceof Error ? err.message : String(err)}`,
+          "error",
+        );
+      }
+
+      // Reset file input so the same file can be selected again
+      e.target.value = "";
+    },
+    [onClose, onNavigate, t],
+  );
+
+  const handleSave = useCallback(async () => {
+    if (isLoggedIn) {
+      try {
+        // TODO: Get current project data and save to cloud
+        const projectData = { placeholder: "project data" };
+        const response = await fetch("/api/cloud/projects/current-project/manifest", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(projectData),
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        showToast(t("savedToServer"), "success");
+        onClose();
+      } catch (err) {
+        showToast(
+          `${t("saveError")}: ${err instanceof Error ? err.message : String(err)}`,
+          "error",
+        );
+      }
+    } else {
+      // Not logged in — fallback to local export
+      handleSaveAsLocal();
+    }
+  }, [isLoggedIn, onClose, t]);
+
+  const handleSaveAsServer = useCallback(async () => {
+    const name = window.prompt(
+      t("projectNamePrompt"),
+      "Nieuw project"
+    );
+    if (!name) return;
+
+    try {
+      // TODO: Get current project data and save as new cloud project
+      const projectData = { placeholder: "project data" };
+      const response = await fetch(`/api/cloud/projects/${encodeURIComponent(name)}/manifest`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(projectData),
+      });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      showToast(t("savedToServer"), "success");
+      onClose();
+    } catch (err) {
+      showToast(
+        `${t("saveError")}: ${err instanceof Error ? err.message : String(err)}`,
+        "error",
+      );
+    }
+  }, [onClose, t]);
+
+  const handleSaveAsLocal = useCallback(() => {
+    try {
+      // TODO: Implement .wefc export
+      const blob = new Blob(["placeholder wefc content"], { type: "application/zip" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "project.wefc";
+      a.click();
+      URL.revokeObjectURL(url);
+
+      showToast(t("savedLocally"), "success");
+      onClose();
+    } catch (err) {
+      showToast(
+        `${t("saveError")}: ${err instanceof Error ? err.message : String(err)}`,
+        "error",
+      );
+    }
+  }, [onClose, t]);
+
+  const handleClose = useCallback(() => {
+    // TODO: Reset project state
+    onClose();
+    showToast(t("closed"), "info");
+  }, [onClose, t]);
 
   if (!open) return null;
 
@@ -180,77 +280,82 @@ export default function Backstage({
           <span>{t("file")}</span>
         </button>
         <div className="backstage-items">
-          {projectStorage && (
-            <MenuItem
-              icon={ICONS.projects}
-              label={t("projects", "Projecten")}
-              active={activePanel === "projects"}
-              onClick={() => setActivePanel("projects")}
-            />
-          )}
-
+          {/* Nieuw */}
           <MenuItem
-            icon={ICONS.save}
-            label={t("save")}
-            shortcut="Ctrl+S"
-            onClick={() => actionAndClose(onSave)}
+            icon={ICONS.new}
+            label={t("new")}
+            shortcut="Ctrl+N"
+            onClick={handleNew}
           />
 
-          <MenuItem
-            icon={ICONS.saveAs}
-            label={t("saveAs")}
-            shortcut="Ctrl+Shift+S"
-            expanded={expandedMenu === "saveAs"}
-            onClick={() =>
-              setExpandedMenu(expandedMenu === "saveAs" ? null : "saveAs")
-            }
-          >
-            <SubMenuItem
-              icon={ICONS.local}
-              label={t("local")}
-              onClick={() => actionAndClose(onSaveAsLocal)}
-            />
-            {cloudEnabled && (
-              <SubMenuItem
-                icon={ICONS.cloud}
-                label={t("cloudStorage")}
-                onClick={() => actionAndClose(onSaveAsCloud)}
-              />
-            )}
-          </MenuItem>
-
+          {/* Openen */}
           <MenuItem
             icon={ICONS.open}
             label={t("open")}
             shortcut="Ctrl+O"
-            expanded={expandedMenu === "open"}
-            onClick={() =>
-              setExpandedMenu(expandedMenu === "open" ? null : "open")
-            }
-          >
-            <SubMenuItem
-              icon={ICONS.local}
-              label={t("local")}
-              onClick={() => actionAndClose(onOpenLocal)}
-            />
-            {cloudEnabled && (
+            onClick={() => setOpenExpanded((v) => !v)}
+          />
+          {openExpanded && (
+            <>
+              {isLoggedIn && (
+                <SubMenuItem
+                  icon={ICONS.server}
+                  label={t("fromServer")}
+                  onClick={handleOpenServer}
+                />
+              )}
               <SubMenuItem
-                icon={ICONS.cloud}
-                label={t("cloudStorage")}
-                onClick={() => actionAndClose(onOpenCloud)}
+                icon={ICONS.file}
+                label={t("localFile")}
+                onClick={handleOpenLocal}
               />
-            )}
-          </MenuItem>
+            </>
+          )}
 
+          {/* Opslaan */}
           <MenuItem
-            icon={ICONS.exportBcf}
-            label={t("exportBcf")}
-            shortcut="Ctrl+B"
-            onClick={() => actionAndClose(onExportBcf)}
+            icon={ICONS.save}
+            label={t("save")}
+            shortcut="Ctrl+S"
+            onClick={handleSave}
+          />
+
+          {/* Opslaan als */}
+          <MenuItem
+            icon={ICONS.saveAs}
+            label={t("saveAs")}
+            shortcut="Ctrl+Shift+S"
+            onClick={() => setSaveAsExpanded((v) => !v)}
+          />
+          {saveAsExpanded && (
+            <>
+              {isLoggedIn && (
+                <SubMenuItem
+                  icon={ICONS.server}
+                  label={t("toServer")}
+                  onClick={handleSaveAsServer}
+                />
+              )}
+              <SubMenuItem
+                icon={ICONS.file}
+                label={t("localExport")}
+                onClick={handleSaveAsLocal}
+              />
+            </>
+          )}
+
+          <Divider />
+
+          {/* Sluiten */}
+          <MenuItem
+            icon={ICONS.close}
+            label={t("close")}
+            onClick={handleClose}
           />
 
           <Divider />
 
+          {/* Voorkeuren */}
           <MenuItem
             icon={ICONS.preferences}
             label={t("preferences")}
@@ -258,14 +363,9 @@ export default function Backstage({
             onClick={() => actionAndClose(onOpenSettings)}
           />
 
-          <MenuItem
-            icon={ICONS.feedback}
-            label={t("feedback")}
-            onClick={() => actionAndClose(onOpenFeedback)}
-          />
-
           <Divider />
 
+          {/* Over */}
           <MenuItem
             icon={ICONS.about}
             label={t("about")}
@@ -273,38 +373,32 @@ export default function Backstage({
             onClick={() => setActivePanel("about")}
           />
 
-          {user && (
-            <>
-              <Divider />
-              <MenuItem
-                icon={ICONS.account}
-                label={user.display_name || user.username}
-                onClick={() => {}}
-              />
-              <MenuItem
-                icon={ICONS.logout}
-                label={t("logout")}
-                onClick={() => {
-                  onClose();
-                  logout();
-                }}
-              />
-            </>
-          )}
+          <Divider />
+
+          {/* Afsluiten */}
+          <MenuItem
+            icon={ICONS.exit}
+            label={t("exit")}
+            shortcut="Alt+F4"
+            onClick={() => {
+              onClose();
+              // Web mode — no-op for exit
+            }}
+          />
         </div>
       </div>
       <div className="backstage-content" onClick={handleContentClick}>
-        {activePanel === "projects" && projectStorage && onOpenProject && (
-          <ProjectList
-            storage={projectStorage}
-            onOpenProject={(id) => {
-              onClose();
-              onOpenProject(id);
-            }}
-          />
-        )}
         {activePanel === "about" && <AboutPanel />}
       </div>
+
+      {/* Hidden file input for local open */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".wefc"
+        onChange={handleFileSelected}
+        style={{ display: "none" }}
+      />
     </div>
   );
 }

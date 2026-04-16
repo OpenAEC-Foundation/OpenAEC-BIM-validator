@@ -5,7 +5,7 @@
  * TitleBar + Ribbon + Panels + StatusBar + Backstage + Dialogs.
  */
 
-import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Panel,
   Group,
@@ -38,7 +38,7 @@ import { CenterPanel } from "./CenterPanel";
 import { RightPanel } from "./RightPanel";
 import { ToastContainer } from "../Toast";
 
-import { ServerProjectStorage } from "../../services/ServerProjectStorage";
+// import { ServerProjectStorage } from "../../services/ServerProjectStorage";
 
 import "./AppShell.css";
 
@@ -88,7 +88,6 @@ export function AppShell() {
 
   // --- Local chrome state ---
   const [backstageOpen, setBackstageOpen] = useState(false);
-  const [backstageInitialPanel, setBackstageInitialPanel] = useState<string | undefined>();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [cloudDialogOpen, setCloudDialogOpen] = useState(false);
@@ -103,41 +102,41 @@ export function AppShell() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Project storage (server-backed)
-  const projectStorage = useMemo(() => new ServerProjectStorage(), []);
+  // const projectStorage = useMemo(() => new ServerProjectStorage(), []);
 
   // Open a server project: load its files into the viewer
-  const handleOpenProject = useCallback(
-    async (projectId: string) => {
-      try {
-        const detail = await projectStorage.getProject(projectId);
+  // const handleOpenProject = useCallback(
+  //   async (projectId: string) => {
+  //     try {
+  //       const detail = await projectStorage.getProject(projectId);
 
-        // Create project in store
-        if (!project || project.id !== detail.id) {
-          createProject(detail.name);
-        }
+  //       // Create project in store
+  //       if (!project || project.id !== detail.id) {
+  //         createProject(detail.name);
+  //       }
 
-        // Load IFC files
-        const ifcFiles = detail.files.filter((f) => f.fileType === "ifc");
-        for (const fileInfo of ifcFiles) {
-          const blob = await projectStorage.getFileBlob(projectId, fileInfo.id);
-          const file = new File([blob], fileInfo.fileName, {
-            type: "application/octet-stream",
-          });
+  //       // Load IFC files
+  //       const ifcFiles = detail.files.filter((f) => f.fileType === "ifc");
+  //       for (const fileInfo of ifcFiles) {
+  //         const blob = await projectStorage.getFileBlob(projectId, fileInfo.id);
+  //         const file = new File([blob], fileInfo.fileName, {
+  //           type: "application/octet-stream",
+  //         });
 
-          setCachedFile(file.name, file);
-          const bytes = await file.arrayBuffer();
-          await saveModelBytes(file.name, bytes);
-          addModel(file);
-          window.dispatchEvent(
-            new CustomEvent("model-file-added", { detail: { file } })
-          );
-        }
-      } catch (err) {
-        console.error("Failed to open project:", err);
-      }
-    },
-    [projectStorage, project, createProject, addModel]
-  );
+  //         setCachedFile(file.name, file);
+  //         const bytes = await file.arrayBuffer();
+  //         await saveModelBytes(file.name, bytes);
+  //         addModel(file);
+  //         window.dispatchEvent(
+  //           new CustomEvent("model-file-added", { detail: { file } })
+  //         );
+  //       }
+  //     } catch (err) {
+  //       console.error("Failed to open project:", err);
+  //     }
+  //   },
+  //   [projectStorage, project, createProject, addModel]
+  // );
 
   // Apply theme on mount
   useEffect(() => {
@@ -242,7 +241,6 @@ export function AppShell() {
   }, [project]);
 
   const handleBcfLogin = useCallback(() => {
-    setBackstageInitialPanel("bcf-platform");
     setBackstageOpen(true);
   }, []);
 
@@ -298,32 +296,32 @@ export function AppShell() {
     setSaveAsDialogOpen(true);
   }, [project]);
 
-  const handleSaveAsLocal = useCallback(() => {
-    if (!project) return;
-    setSaveAsDirectTarget("local");
-    setSaveAsDialogOpen(true);
-  }, [project]);
+  // const handleSaveAsLocal = useCallback(() => {
+  //   if (!project) return;
+  //   setSaveAsDirectTarget("local");
+  //   setSaveAsDialogOpen(true);
+  // }, [project]);
 
-  const handleSaveAsCloud = useCallback(() => {
-    if (!project) return;
-    setSaveAsDirectTarget("cloud");
-    setSaveAsDialogOpen(true);
-  }, [project]);
+  // const handleSaveAsCloud = useCallback(() => {
+  //   if (!project) return;
+  //   setSaveAsDirectTarget("cloud");
+  //   setSaveAsDialogOpen(true);
+  // }, [project]);
 
   const handleOpen = useCallback(() => {
     setOpenDirectTarget(undefined);
     setOpenDialogOpen(true);
   }, []);
 
-  const handleOpenLocal = useCallback(() => {
-    setOpenDirectTarget("local");
-    setOpenDialogOpen(true);
-  }, []);
+  // const handleOpenLocal = useCallback(() => {
+  //   setOpenDirectTarget("local");
+  //   setOpenDialogOpen(true);
+  // }, []);
 
-  const handleOpenCloudDirect = useCallback(() => {
-    setOpenDirectTarget("cloud");
-    setOpenDialogOpen(true);
-  }, []);
+  // const handleOpenCloudDirect = useCallback(() => {
+  //   setOpenDirectTarget("cloud");
+  //   setOpenDialogOpen(true);
+  // }, []);
 
   const handleOpenFilesSelected = useCallback(
     (files: File[]) => {
@@ -384,7 +382,7 @@ export function AppShell() {
       />
 
       <Ribbon
-        onFileTabClick={() => { setBackstageInitialPanel(undefined); setBackstageOpen(true); }}
+        onFileTabClick={() => setBackstageOpen(true)}
         onUploadIfc={handleUploadClick}
         onValidate={handleValidateClick}
         onExportBcf={handleExportBcf}
@@ -468,19 +466,17 @@ export function AppShell() {
       {/* Overlays */}
       <Backstage
         open={backstageOpen}
-        initialPanel={backstageInitialPanel}
-        onClose={() => { setBackstageOpen(false); setBackstageInitialPanel(undefined); }}
-        onSave={handleSave}
-        onSaveAsLocal={handleSaveAsLocal}
-        onSaveAsCloud={handleSaveAsCloud}
-        onOpenLocal={handleOpenLocal}
-        onOpenCloud={handleOpenCloudDirect}
-        onExportBcf={handleExportBcf}
+        onClose={() => setBackstageOpen(false)}
         onOpenSettings={() => setSettingsOpen(true)}
-        onOpenFeedback={() => setFeedbackOpen(true)}
-        cloudEnabled={cloudEnabled}
-        projectStorage={projectStorage}
-        onOpenProject={handleOpenProject}
+        onNavigate={(path) => {
+          if (path === "/projects") {
+            // Navigate to projects list
+            console.log("Navigate to projects list");
+          } else if (path === "/") {
+            // Navigate to home/main view
+            console.log("Navigate to main view");
+          }
+        }}
       />
 
       <SettingsDialog
