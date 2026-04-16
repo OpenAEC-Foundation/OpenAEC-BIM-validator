@@ -283,3 +283,36 @@ export async function getElementProperties(
   );
   return handleResponse<ElementProperties>(response);
 }
+
+// ── .wefc envelope (cloud-bridge) ─────────────────────────────
+
+/**
+ * Read the .wefc envelope for a persistent project from the tenant
+ * Nextcloud folder. Returns ``null`` when no envelope exists yet.
+ */
+export async function readProjectWefc(
+  projectId: string
+): Promise<Record<string, unknown> | null> {
+  const response = await fetch(`${API_V2}/projects/${projectId}/wefc`);
+  if (response.status === 404) {
+    return null;
+  }
+  return handleResponse<Record<string, unknown>>(response);
+}
+
+/**
+ * Write the .wefc envelope for a persistent project. The backend
+ * persists the manifest in the tenant Nextcloud folder via WebDAV
+ * and refreshes the project's ``updated_at`` timestamp.
+ */
+export async function saveProjectWefc(
+  projectId: string,
+  manifest: Record<string, unknown>
+): Promise<void> {
+  const response = await fetch(`${API_V2}/projects/${projectId}/wefc`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(manifest),
+  });
+  await handleResponse(response);
+}

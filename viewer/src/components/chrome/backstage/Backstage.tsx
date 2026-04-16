@@ -1,8 +1,56 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../../stores/authStore";
+import { useStore } from "../../../store";
+import {
+  createProject as apiCreateProject,
+  readProjectWefc,
+  saveProjectWefc,
+  ProjectApiError,
+} from "../../../api/projectApi";
 import { showToast } from "../../Toast";
 import "./Backstage.css";
+
+/** Minimal WeFC envelope used by the BIM validator. */
+interface WefcEnvelope {
+  header: {
+    schema: string;
+    schema_version: string;
+    fileId?: string;
+    timestamp?: string;
+    application?: string;
+    projectId?: string;
+    projectName?: string;
+  };
+  data: Array<Record<string, unknown>>;
+}
+
+/** Build a fresh envelope from the active project state. */
+function buildEnvelope(
+  projectId: string,
+  projectName: string,
+  models: ReadonlyArray<{ id: string; fileName: string; fileSize: number; format: string }>,
+): WefcEnvelope {
+  const now = new Date().toISOString();
+  return {
+    header: {
+      schema: "WeFC",
+      schema_version: "1.1.0",
+      timestamp: now,
+      application: "bim-validator",
+      projectId,
+      projectName,
+    },
+    data: models.map((m) => ({
+      type: "WefcModel",
+      guid: m.id,
+      name: m.fileName,
+      path: `models/${m.fileName}`,
+      size: m.fileSize,
+      format: m.format,
+    })),
+  };
+}
 
 const ICONS = {
   new: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6m-3 3h6"/></svg>',
@@ -102,6 +150,9 @@ export default function Backstage({
 
   const user = useAuthStore((s) => s.user);
   const isLoggedIn = !!user;
+  const project = useStore((s) => s.project);
+  const markClean = useStore((s) => s.markClean);
+  const setSaveInfo = useStore((s) => s.setSaveInfo);
 
   const actionAndClose = useCallback(
     (fn?: () => void) => {
@@ -157,8 +208,26 @@ export default function Backstage({
           return;
         }
 
-        // TODO: Parse .wefc envelope and load project
-        // For now, just show success
+        // Parse the envelope and surface basic feedback. Full
+        // hydration into the project store is tracked separately —
+        // for now we make sure the file is at least valid JSON so the
+        // user gets clear feedback on bad envelopes.
+        const text = await file.text();
+        try {
+          const envelope = JSON.parse(text) as Partial<WefcEnvelope>;
+          if (!envelope.header || envelope.header.schema !== "WeFC") {
+            throw new Error("Missing WeFC header");
+          }
+        } catch (parseErr) {
+          showToast(
+            `${t("importError")}: Invalid .wefc envelope (${parseErr instanceof Error ? parseErr.message : String(parseErr)})`,
+            "error",
+          );
+          e.target.value = "";
+          return;
+        }
+
+        setSaveInfo({ source: "local", localFilename: file.name, dirty: false });
         showToast(t("opened"), "success");
         onClose();
         onNavigate?.("/");
@@ -172,73 +241,25 @@ export default function Backstage({
       // Reset file input so the same file can be selected again
       e.target.value = "";
     },
-    [onClose, onNavigate, t],
+    [onClose, onNavigate, setSaveInfo, t],
   );
-
-  const handleSave = useCallback(async () => {
-    if (isLoggedIn) {
-      try {
-        // TODO: Get current project data and save to cloud
-        const projectData = { placeholder: "project data" };
-        const response = await fetch("/api/cloud/projects/current-project/manifest", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(projectData),
-        });
-
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        showToast(t("savedToServer"), "success");
-        onClose();
-      } catch (err) {
-        showToast(
-          `${t("saveError")}: ${err instanceof Error ? err.message : String(err)}`,
-          "error",
-        );
-      }
-    } else {
-      // Not logged in — fallback to local export
-      handleSaveAsLocal();
-    }
-  }, [isLoggedIn, onClose, t]);
-
-  const handleSaveAsServer = useCallback(async () => {
-    const name = window.prompt(
-      t("projectNamePrompt"),
-      "Nieuw project"
-    );
-    if (!name) return;
-
-    try {
-      // TODO: Get current project data and save as new cloud project
-      const projectData = { placeholder: "project data" };
-      const response = await fetch(`/api/cloud/projects/${encodeURIComponent(name)}/manifest`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(projectData),
-      });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      showToast(t("savedToServer"), "success");
-      onClose();
-    } catch (err) {
-      showToast(
-        `${t("saveError")}: ${err instanceof Error ? err.message : String(err)}`,
-        "error",
-      );
-    }
-  }, [onClose, t]);
 
   const handleSaveAsLocal = useCallback(() => {
     try {
-      // TODO: Implement .wefc export
-      const blob = new Blob(["placeholder wefc content"], { type: "application/zip" });
+      const envelope = project
+        ? buildEnvelope(project.id, project.name, project.models)
+        : buildEnvelope(crypto.randomUUID(), "Nieuw project", []);
+      const json = JSON.stringify(envelope, null, 2);
+      const blob = new Blob([json], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "project.wefc";
+      a.download = `${(project?.name ?? "project").replace(/\s+/g, "-")}.wefc`;
       a.click();
       URL.revokeObjectURL(url);
 
+      setSaveInfo({ source: "local", localFilename: a.download, dirty: false });
+      markClean();
       showToast(t("savedLocally"), "success");
       onClose();
     } catch (err) {
@@ -247,7 +268,86 @@ export default function Backstage({
         "error",
       );
     }
-  }, [onClose, t]);
+  }, [markClean, onClose, project, setSaveInfo, t]);
+
+  const handleSave = useCallback(async () => {
+    if (!isLoggedIn) {
+      // Not logged in — fallback to local export
+      handleSaveAsLocal();
+      return;
+    }
+
+    if (!project) {
+      showToast(`${t("saveError")}: no active project`, "error");
+      return;
+    }
+
+    try {
+      // Read the current envelope so we preserve any extra objects
+      // (validations, BCF references, etc.) the backend may already
+      // have stored. If absent we start from a fresh envelope built
+      // from the active project state.
+      let envelope: WefcEnvelope;
+      try {
+        const existing = await readProjectWefc(project.id);
+        if (existing && typeof existing === "object" && "header" in existing) {
+          envelope = existing as unknown as WefcEnvelope;
+          envelope.header = {
+            ...envelope.header,
+            timestamp: new Date().toISOString(),
+            application: "bim-validator",
+            projectId: project.id,
+            projectName: project.name,
+          };
+        } else {
+          envelope = buildEnvelope(project.id, project.name, project.models);
+        }
+      } catch {
+        envelope = buildEnvelope(project.id, project.name, project.models);
+      }
+
+      await saveProjectWefc(project.id, envelope as unknown as Record<string, unknown>);
+      setSaveInfo({ source: "cloud", cloudProject: project.name, dirty: false });
+      markClean();
+      showToast(t("savedToServer"), "success");
+      onClose();
+    } catch (err) {
+      const detail =
+        err instanceof ProjectApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : String(err);
+      showToast(`${t("saveError")}: ${detail}`, "error");
+    }
+  }, [handleSaveAsLocal, isLoggedIn, markClean, onClose, project, setSaveInfo, t]);
+
+  const handleSaveAsServer = useCallback(async () => {
+    const name = window.prompt(t("projectNamePrompt"), project?.name ?? "Nieuw project");
+    if (!name) return;
+
+    try {
+      // Create a brand-new persistent project on the backend; the
+      // returned id is the canonical identifier for all future
+      // .wefc envelope writes.
+      const created = await apiCreateProject(name);
+      const envelope = buildEnvelope(created.id, created.name, project?.models ?? []);
+      await saveProjectWefc(created.id, envelope as unknown as Record<string, unknown>);
+
+      setSaveInfo({ source: "cloud", cloudProject: created.name, dirty: false });
+      markClean();
+      showToast(t("savedToServer"), "success");
+      onClose();
+    } catch (err) {
+      const detail =
+        err instanceof ProjectApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : String(err);
+      showToast(`${t("saveError")}: ${detail}`, "error");
+    }
+  }, [markClean, onClose, project, setSaveInfo, t]);
 
   const handleClose = useCallback(() => {
     // TODO: Reset project state
