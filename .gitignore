@@ -44,3 +44,8 @@ viewer/BCF_IMPLEMENTATION_PROMPT.md
 
 # TypeScript incremental build artifacts
 *.tsbuildinfo
+
+# Runtime databases
+*.db
+*.db-shm
+*.db-wal
