@@ -21,6 +21,7 @@ from typing import Any
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from server.database import get_session
 from server.models.db_models import Project, ProjectFile
@@ -98,6 +99,39 @@ def _resolve_tenant_slug(request: Request) -> str | None:
     )
 
 
+async def _get_project_for_tenant(
+    project_id: str,
+    session: AsyncSession,
+    request: Request,
+) -> Project:
+    """Fetch a project by id, enforcing tenant isolation.
+
+    Soft-fail: when the request carries no Authentik identity header
+    (dev/local runs without forward-auth), this behaves like a plain
+    ``session.get(Project, project_id)`` and raises ``404`` on missing
+    rows. When a tenant is resolved, the query is narrowed with an
+    ``== tenant_slug`` predicate and any mismatch (including the NULL
+    legacy rows) returns ``404`` — deliberately not ``403``, so that
+    the response does not disclose whether a project with that id
+    exists in another tenant.
+    """
+    tenant_slug = _resolve_tenant_slug(request)
+
+    if tenant_slug is None:
+        project = await session.get(Project, project_id)
+    else:
+        stmt = select(Project).where(
+            Project.id == project_id,
+            Project.tenant == tenant_slug,
+        )
+        result = await session.execute(stmt)
+        project = result.scalar_one_or_none()
+
+    if project is None:
+        raise HTTPException(404, f"Project not found: {project_id}")
+    return project
+
+
 # ── Projects CRUD ─────────────────────────────────────────────
 
 
@@ -158,26 +192,23 @@ async def create_project(
 
 
 @router.get("/projects/{project_id}")
-async def get_project(project_id: str):
+async def get_project(project_id: str, request: Request):
     """Get project details including file list."""
     async with get_session() as session:
-        project = await session.get(Project, project_id)
-        if not project:
-            raise HTTPException(404, f"Project not found: {project_id}")
+        project = await _get_project_for_tenant(project_id, session, request)
         return project.to_dict()
 
 
 @router.put("/projects/{project_id}")
 async def update_project(
     project_id: str,
+    request: Request,
     name: str = Form(None),
     description: str = Form(None),
 ):
     """Update project name and/or description."""
     async with get_session() as session:
-        project = await session.get(Project, project_id)
-        if not project:
-            raise HTTPException(404, f"Project not found: {project_id}")
+        project = await _get_project_for_tenant(project_id, session, request)
 
         if name is not None:
             project.name = name
@@ -189,12 +220,10 @@ async def update_project(
 
 
 @router.delete("/projects/{project_id}")
-async def delete_project(project_id: str):
+async def delete_project(project_id: str, request: Request):
     """Delete a project and all its files."""
     async with get_session() as session:
-        project = await session.get(Project, project_id)
-        if not project:
-            raise HTTPException(404, f"Project not found: {project_id}")
+        project = await _get_project_for_tenant(project_id, session, request)
 
         # Remove files from disk
         project_dir = _project_dir(project_id)
@@ -210,12 +239,14 @@ async def delete_project(project_id: str):
 
 
 @router.get("/projects/{project_id}/files")
-async def list_files(project_id: str, file_type: str | None = None):
+async def list_files(
+    project_id: str,
+    request: Request,
+    file_type: str | None = None,
+):
     """List files in a project, optionally filtered by type."""
     async with get_session() as session:
-        project = await session.get(Project, project_id)
-        if not project:
-            raise HTTPException(404, f"Project not found: {project_id}")
+        project = await _get_project_for_tenant(project_id, session, request)
 
         files = project.files
         if file_type:
@@ -230,6 +261,7 @@ async def list_files(project_id: str, file_type: str | None = None):
 @router.post("/projects/{project_id}/files", status_code=201)
 async def upload_file(
     project_id: str,
+    request: Request,
     file: UploadFile = File(..., description="IFC, BCF, or IDS file"),
     file_type: str = Form(..., description="File type: ifc, bcf, or ids"),
 ):
@@ -250,11 +282,9 @@ async def upload_file(
             f"Invalid extension '{ext}' for type '{file_type}'. Allowed: {allowed_exts}",
         )
 
-    # Check project exists
+    # Check project exists and belongs to the caller's tenant
     async with get_session() as session:
-        project = await session.get(Project, project_id)
-        if not project:
-            raise HTTPException(404, f"Project not found: {project_id}")
+        await _get_project_for_tenant(project_id, session, request)
 
         # Read file content with size limit
         size_limit = TYPE_SIZE_LIMITS[file_type]
@@ -300,9 +330,13 @@ async def upload_file(
 
 
 @router.get("/projects/{project_id}/files/{file_id}")
-async def download_file(project_id: str, file_id: str):
+async def download_file(project_id: str, file_id: str, request: Request):
     """Download a file from a project."""
     async with get_session() as session:
+        # Enforce tenant isolation on the parent project first — a
+        # stale/guessed file_id must not be resolvable across tenants.
+        await _get_project_for_tenant(project_id, session, request)
+
         project_file = await session.get(ProjectFile, file_id)
         if not project_file or project_file.project_id != project_id:
             raise HTTPException(404, "File not found")
@@ -319,9 +353,12 @@ async def download_file(project_id: str, file_id: str):
 
 
 @router.delete("/projects/{project_id}/files/{file_id}")
-async def delete_file(project_id: str, file_id: str):
+async def delete_file(project_id: str, file_id: str, request: Request):
     """Delete a file from a project."""
     async with get_session() as session:
+        # Enforce tenant isolation on the parent project first.
+        await _get_project_for_tenant(project_id, session, request)
+
         project_file = await session.get(ProjectFile, file_id)
         if not project_file or project_file.project_id != project_id:
             raise HTTPException(404, "File not found")
@@ -416,9 +453,7 @@ async def get_project_wefc(project_id: str, request: Request):
     config = _resolve_tenant_from_request(request)
 
     async with get_session() as session:
-        project = await session.get(Project, project_id)
-        if not project:
-            raise HTTPException(404, f"Project not found: {project_id}")
+        project = await _get_project_for_tenant(project_id, session, request)
         folder = _project_folder_name(project)
         manifest_name = _wefc_filename_for_project(project)
 
@@ -468,9 +503,7 @@ async def put_project_wefc(
         raise HTTPException(400, "Body must be a JSON object")
 
     async with get_session() as session:
-        project = await session.get(Project, project_id)
-        if not project:
-            raise HTTPException(404, f"Project not found: {project_id}")
+        project = await _get_project_for_tenant(project_id, session, request)
         folder = _project_folder_name(project)
         manifest_name = _wefc_filename_for_project(project)
 
@@ -487,6 +520,11 @@ async def put_project_wefc(
 
     # Touch the project's updated_at so the listing reflects the save.
     async with get_session() as session:
+        # Tenant already verified above; use a direct session.get here
+        # because a missing row at this point should be an exceptional
+        # transient state (deleted between the check and this block),
+        # and we don't want to raise a spurious 404 after a successful
+        # WebDAV write.
         db_project = await session.get(Project, project_id)
         if db_project is not None:
             db_project.updated_at = datetime.now(timezone.utc)

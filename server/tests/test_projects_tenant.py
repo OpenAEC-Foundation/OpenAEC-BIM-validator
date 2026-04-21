@@ -13,6 +13,7 @@ import asyncio
 import sys
 from collections.abc import Iterator
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -78,7 +79,7 @@ def _auth_headers(username: str, tenant: str) -> dict[str, str]:
     }
 
 
-def _seed_project(name: str, tenant: str | None) -> None:
+def _seed_project(name: str, tenant: str | None) -> str:
     """Insert a project row directly via SQLAlchemy, bypassing HTTP.
 
     The POST endpoint's ``project.to_dict()`` triggers a selectin-lazy
@@ -88,15 +89,53 @@ def _seed_project(name: str, tenant: str | None) -> None:
     context. This is a pre-existing issue in the endpoint, unrelated
     to tenant scoping, so the tests seed via the ORM directly to keep
     the scope narrow.
+
+    Returns the generated project id so per-project cross-tenant tests
+    can target a specific row.
     """
     from server.database import get_session  # noqa: WPS433
     from server.models.db_models import Project  # noqa: WPS433
 
+    holder: dict[str, str] = {}
+
     async def _insert() -> None:
         async with get_session() as session:
-            session.add(Project(name=name, tenant=tenant))
+            project = Project(name=name, tenant=tenant)
+            session.add(project)
+            await session.flush()
+            holder["id"] = project.id
 
     _run_async(_insert())
+    return holder["id"]
+
+
+def _seed_project_file(project_id: str, file_type: str, file_name: str) -> str:
+    """Insert a ProjectFile row for ``project_id`` via the ORM.
+
+    Only creates the DB row — no disk file. Tests that verify tenant
+    isolation on file endpoints check that the 404 short-circuit fires
+    before any disk access, so a physical file is not needed.
+    """
+    from server.database import get_session  # noqa: WPS433
+    from server.models.db_models import ProjectFile  # noqa: WPS433
+
+    holder: dict[str, str] = {}
+
+    async def _insert() -> None:
+        async with get_session() as session:
+            file_row = ProjectFile(
+                project_id=project_id,
+                file_type=file_type,
+                file_name=file_name,
+                file_size=0,
+                disk_path=f"{project_id}/{file_type}/{file_name}",
+            )
+            session.add(file_row)
+            await session.flush()
+            holder["id"] = file_row.id
+
+    _run_async(_insert())
+    return holder["id"]
 
 
 class TestProjectListTenantIsolation:
@@ -183,3 +222,201 @@ class TestProjectListTenantIsolation:
         rows = resp.json()["projects"]
         assert len(rows) == 1
         assert rows[0]["tenant"] == "tenant-a"
+
+
+class TestProjectDetailTenantIsolation:
+    """Per-project endpoints enforce tenant scoping via ``_get_project_for_tenant``.
+
+    All endpoints that accept ``{project_id}`` must return ``404`` (not
+    ``403``) when the caller's tenant does not match the project row.
+    ``404`` is deliberate: ``403`` would disclose that the id exists in
+    another tenant. Complements the scope-audit follow-up on the
+    Golf 5a B-6 list-endpoint fix.
+    """
+
+    def test_get_detail_other_tenant_returns_404(
+        self, tenant_client: TestClient
+    ) -> None:
+        """GET /projects/{id} for another tenant's project → 404."""
+        project_id = _seed_project("Secret project", "tenant-a")
+
+        resp = tenant_client.get(
+            f"/api/v2/projects/{project_id}",
+            headers=_auth_headers("bob", "tenant-b"),
+        )
+        assert resp.status_code == 404
+
+    def test_put_other_tenant_returns_404(
+        self, tenant_client: TestClient
+    ) -> None:
+        """PUT /projects/{id} for another tenant's project → 404 (no mutation)."""
+        project_id = _seed_project("Secret project", "tenant-a")
+
+        resp = tenant_client.put(
+            f"/api/v2/projects/{project_id}",
+            headers=_auth_headers("bob", "tenant-b"),
+            data={"name": "Hijacked"},
+        )
+        assert resp.status_code == 404
+
+        # Confirm the row is unchanged by listing as the owning tenant
+        list_resp = tenant_client.get(
+            "/api/v2/projects",
+            headers=_auth_headers("alice", "tenant-a"),
+        )
+        names = {p["name"] for p in list_resp.json()["projects"]}
+        assert names == {"Secret project"}
+
+    def test_delete_other_tenant_returns_404(
+        self, tenant_client: TestClient
+    ) -> None:
+        """DELETE /projects/{id} for another tenant's project → 404 (no delete)."""
+        project_id = _seed_project("Secret project", "tenant-a")
+
+        resp = tenant_client.delete(
+            f"/api/v2/projects/{project_id}",
+            headers=_auth_headers("bob", "tenant-b"),
+        )
+        assert resp.status_code == 404
+
+        # Confirm the row is still present for the owning tenant
+        list_resp = tenant_client.get(
+            "/api/v2/projects",
+            headers=_auth_headers("alice", "tenant-a"),
+        )
+        ids = {p["id"] for p in list_resp.json()["projects"]}
+        assert project_id in ids
+
+    def test_files_list_other_tenant_returns_404(
+        self, tenant_client: TestClient
+    ) -> None:
+        """GET /projects/{id}/files for another tenant's project → 404."""
+        project_id = _seed_project("Secret project", "tenant-a")
+        _seed_project_file(project_id, "ifc", "secret.ifc")
+
+        resp = tenant_client.get(
+            f"/api/v2/projects/{project_id}/files",
+            headers=_auth_headers("bob", "tenant-b"),
+        )
+        assert resp.status_code == 404
+
+    def test_file_download_other_tenant_returns_404(
+        self, tenant_client: TestClient
+    ) -> None:
+        """GET /projects/{id}/files/{file_id} for another tenant → 404.
+
+        Even with knowledge of both ids, cross-tenant download must be
+        blocked before any disk-path resolution takes place.
+        """
+        project_id = _seed_project("Secret project", "tenant-a")
+        file_id = _seed_project_file(project_id, "ifc", "secret.ifc")
+
+        resp = tenant_client.get(
+            f"/api/v2/projects/{project_id}/files/{file_id}",
+            headers=_auth_headers("bob", "tenant-b"),
+        )
+        assert resp.status_code == 404
+
+    def test_file_delete_other_tenant_returns_404(
+        self, tenant_client: TestClient
+    ) -> None:
+        """DELETE /projects/{id}/files/{file_id} for another tenant → 404."""
+        project_id = _seed_project("Secret project", "tenant-a")
+        file_id = _seed_project_file(project_id, "ifc", "secret.ifc")
+
+        resp = tenant_client.delete(
+            f"/api/v2/projects/{project_id}/files/{file_id}",
+            headers=_auth_headers("bob", "tenant-b"),
+        )
+        assert resp.status_code == 404
+
+    def test_legacy_null_tenant_unreachable_by_scoped_caller(
+        self, tenant_client: TestClient
+    ) -> None:
+        """A legacy ``tenant IS NULL`` row must 404 for any tenant-scoped caller.
+
+        Mirrors the list-endpoint fail-closed rule at the detail level:
+        even if a tenant-scoped caller learns the id (e.g. from logs or
+        an older export), the row stays unreachable until it is
+        re-stamped with a tenant slug.
+        """
+        project_id = _seed_project("Legacy project", None)
+
+        resp = tenant_client.get(
+            f"/api/v2/projects/{project_id}",
+            headers=_auth_headers("alice", "tenant-a"),
+        )
+        assert resp.status_code == 404
+
+        # Without an auth header (dev/local), the same id resolves as
+        # before — soft-fail branch in ``_get_project_for_tenant``.
+        resp_open = tenant_client.get(f"/api/v2/projects/{project_id}")
+        # to_dict() lazy-loads files and will hit MissingGreenlet in
+        # TestClient (pre-existing, documented), so we can't assert 200
+        # here. What matters is that it does NOT 404: the unscoped
+        # lookup found the row.
+        assert resp_open.status_code != 404
+
+
+class TestProjectWefcTenantIsolation:
+    """.wefc envelope endpoints enforce tenant scoping on the project row.
+
+    The hard ``_resolve_tenant_from_request`` gate already rejects
+    unauthenticated calls, but on its own it does not check that the
+    URL-path project belongs to the caller's tenant — any authenticated
+    tenant user could read or overwrite another tenant's envelope via
+    UUID knowledge. The ``_get_project_for_tenant`` call inserted in
+    the wefc handlers closes that gap by returning ``404`` on mismatch.
+    """
+
+    @staticmethod
+    def _mock_registry_for_tenants(slugs: list[str]):
+        """Build a mocked registry that returns a config for each slug."""
+
+        def _get(slug: str) -> MagicMock | None:
+            if slug not in slugs:
+                return None
+            config = MagicMock()
+            config.slug = slug
+            config.has_volume_mount = False
+            return config
+
+        registry = MagicMock()
+        registry.is_configured = True
+        registry.get.side_effect = _get
+        return registry
+
+    def test_wefc_get_other_tenant_returns_404(
+        self, tenant_client: TestClient
+    ) -> None:
+        """GET /projects/{id}/wefc for another tenant's project → 404."""
+        project_id = _seed_project("Secret project", "tenant-a")
+
+        registry = self._mock_registry_for_tenants(["tenant-a", "tenant-b"])
+        with patch(
+            "server.routers.projects.get_tenants",
+            return_value=registry,
+        ):
+            resp = tenant_client.get(
+                f"/api/v2/projects/{project_id}/wefc",
+                headers=_auth_headers("bob", "tenant-b"),
+            )
+        assert resp.status_code == 404
+
+    def test_wefc_put_other_tenant_returns_404(
+        self, tenant_client: TestClient
+    ) -> None:
+        """PUT /projects/{id}/wefc for another tenant's project → 404 (no write)."""
+        project_id = _seed_project("Secret project", "tenant-a")
+
+        registry = self._mock_registry_for_tenants(["tenant-a", "tenant-b"])
+        with patch(
+            "server.routers.projects.get_tenants",
+            return_value=registry,
+        ):
+            resp = tenant_client.put(
+                f"/api/v2/projects/{project_id}/wefc",
+                headers=_auth_headers("bob", "tenant-b"),
+                json={"header": {"schema": "WeFC"}},
+            )
+        assert resp.status_code == 404
