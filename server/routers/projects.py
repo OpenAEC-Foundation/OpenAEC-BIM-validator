@@ -70,28 +70,77 @@ def _project_dir(project_id: str, file_type: str | None = None) -> Path:
     return base
 
 
+def _resolve_tenant_slug(request: Request) -> str | None:
+    """Resolve the caller's tenant slug from forward-auth headers.
+
+    Soft variant of :func:`_resolve_tenant_from_request` — used by
+    endpoints that need tenant scoping but must remain callable in
+    dev/local runs where no Authentik is in front of the service.
+
+    Returns:
+        The tenant slug, or ``None`` when the request is not behind
+        Authentik (no ``X-authentik-username`` header). ``None`` signals
+        "no tenant context" and causes the caller to return the
+        backward-compat unscoped view.
+    """
+    # If the request is not behind Authentik at all, skip tenant scoping.
+    # This preserves the existing local-dev / auth-disabled behaviour.
+    if not request.headers.get("X-authentik-username"):
+        return None
+
+    # Header is set by Authentik when the openaec_profile scope is
+    # mapped. Fall back to the default slug when the user has no tenant
+    # attribute yet (e.g. legacy accounts).
+    return (
+        request.headers.get("X-Authentik-Meta-Tenant")
+        or request.query_params.get("tenant")
+        or DEFAULT_TENANT_SLUG
+    )
+
+
 # ── Projects CRUD ─────────────────────────────────────────────
 
 
 @router.get("/projects")
-async def list_projects():
-    """List all projects."""
+async def list_projects(request: Request):
+    """List projects visible to the caller.
+
+    When the request arrives behind Authentik forward-auth, the caller's
+    tenant slug is resolved from ``X-Authentik-Meta-Tenant`` and the
+    listing is filtered to projects stamped with that slug. Legacy rows
+    with ``tenant IS NULL`` are excluded from tenant-scoped views to
+    prevent data leaks across tenants — they must be migrated or
+    re-stamped before they become visible again.
+
+    When no Authentik header is present (dev/local or auth disabled),
+    the full list is returned for backward compatibility.
+    """
+    tenant_slug = _resolve_tenant_slug(request)
+
     async with get_session() as session:
-        result = await session.execute(
-            select(Project).order_by(Project.updated_at.desc())
-        )
+        stmt = select(Project).order_by(Project.updated_at.desc())
+        if tenant_slug is not None:
+            stmt = stmt.where(Project.tenant == tenant_slug)
+        result = await session.execute(stmt)
         projects = result.scalars().all()
         return {"projects": [p.to_summary() for p in projects]}
 
 
 @router.post("/projects", status_code=201)
 async def create_project(
+    request: Request,
     name: str = Form("Nieuw project"),
     description: str = Form(None),
 ):
-    """Create a new project."""
+    """Create a new project, stamped with the caller's tenant slug."""
+    tenant_slug = _resolve_tenant_slug(request)
+
     async with get_session() as session:
-        project = Project(name=name, description=description)
+        project = Project(
+            name=name,
+            description=description,
+            tenant=tenant_slug,
+        )
         session.add(project)
         await session.flush()
 
@@ -99,7 +148,12 @@ async def create_project(
         for ftype in ALLOWED_TYPES:
             _project_dir(project.id, ftype).mkdir(parents=True, exist_ok=True)
 
-        logger.info("Created project: %s (%s)", project.id, name)
+        logger.info(
+            "Created project: %s (%s, tenant=%s)",
+            project.id,
+            name,
+            tenant_slug,
+        )
         return project.to_dict()
 
 

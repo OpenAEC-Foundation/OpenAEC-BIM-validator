@@ -29,6 +29,14 @@ class Project(Base):
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Tenant slug owning this project. Nullable for backward compat with
+    # rows created before multi-tenant isolation existed; new rows are
+    # stamped with the caller's tenant from the Authentik forward-auth
+    # header (X-Authentik-Meta-Tenant). NULL rows are only visible when
+    # the caller has no tenant context (e.g. auth disabled).
+    tenant: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow
     )
@@ -47,6 +55,7 @@ class Project(Base):
             "id": self.id,
             "name": self.name,
             "description": self.description,
+            "tenant": self.tenant,
             "createdAt": self.created_at.isoformat(),
             "updatedAt": self.updated_at.isoformat(),
             "files": [f.to_dict() for f in self.files],
@@ -57,6 +66,7 @@ class Project(Base):
             "id": self.id,
             "name": self.name,
             "description": self.description,
+            "tenant": self.tenant,
             "createdAt": self.created_at.isoformat(),
             "updatedAt": self.updated_at.isoformat(),
             "fileCount": len(self.files),
