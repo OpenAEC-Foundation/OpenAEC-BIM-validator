@@ -40,6 +40,10 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0.0",
 ]
+desktop = [
+    "pystray>=0.19.5",
+    "Pillow>=10.0",
+]
 
 [project.scripts]
 ifc-validate = "ifc_validator.cli:app"

@@ -15,6 +15,7 @@ Usage:
         ids_path = get_bundled_ids('nl-bim')
 """
 
+import sys
 from importlib.resources import files
 from pathlib import Path
 
@@ -64,6 +65,19 @@ def get_bundled_ids(shortcut: str) -> Path:
         )
 
     filename = STANDARD_SHORTCUTS[shortcut]
+
+    # When running as a PyInstaller frozen app, importlib.resources won't
+    # work — resolve from the PyInstaller bundle directory instead.
+    if getattr(sys, 'frozen', False):
+        bundle_dir = Path(getattr(sys, '_MEIPASS', '.'))
+        resource_path = bundle_dir / 'ifc_validator' / 'standards' / filename
+        if not resource_path.exists():
+            raise FileNotFoundError(
+                f"Bundled IDS file not found in frozen app: {filename}. "
+                f"Expected at: {resource_path}"
+            )
+        return resource_path
+
     standards_dir = files('ifc_validator.standards')
     resource = standards_dir / filename
 
