@@ -107,6 +107,11 @@ _default_origins = [
     "http://127.0.0.1:8081",
     "http://localhost:8082",
     "http://127.0.0.1:8082",
+    # Tauri desktop webview origins (frontend served from tauri://localhost,
+    # rendered as http(s)://tauri.localhost on the Windows WebView2 runtime)
+    "http://tauri.localhost",
+    "https://tauri.localhost",
+    "tauri://localhost",
 ]
 _cors_env = os.environ.get("CORS_ORIGINS", "")
 cors_origins = [o.strip() for o in _cors_env.split(",") if o.strip()] if _cors_env else _default_origins
@@ -1049,7 +1054,12 @@ async def get_element_properties(model_id: str, global_id: str):
 # ==========================================================================
 
 # Mount frontend static files if the build exists
-_frontend_dist = Path(__file__).resolve().parent.parent / "viewer" / "dist"
+_frontend_dist_env = os.environ.get("VIEWER_DIST_PATH")
+_frontend_dist = (
+    Path(_frontend_dist_env)
+    if _frontend_dist_env
+    else Path(__file__).resolve().parent.parent / "viewer" / "dist"
+)
 if _frontend_dist.is_dir():
     # Serve index.html for SPA routes (catch-all must be last)
     @app.get("/{full_path:path}")

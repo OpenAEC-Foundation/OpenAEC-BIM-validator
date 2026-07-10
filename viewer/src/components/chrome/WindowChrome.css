@@ -1,0 +1,190 @@
+:root {
+  --window-chrome-h: 30px;
+}
+
+/* Tauri-only flex shell: OS chrome strip on top, app fills the rest. */
+.tauri-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+.tauri-shell__content {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+}
+/* AppShell defaults to height:100vh; inside the flex area it must fill 100%. */
+.tauri-shell__content > .app-shell {
+  height: 100% !important;
+}
+
+.window-chrome {
+  flex: 0 0 var(--window-chrome-h);
+  height: var(--window-chrome-h);
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  background: #36363e; /* Deep Forge */
+  color: #fafaf9; /* Blueprint White */
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+.window-chrome__drag {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 12px;
+  overflow: hidden;
+}
+.window-chrome__mark {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: #d97706; /* Construction Amber */
+  flex: 0 0 auto;
+}
+.window-chrome__title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.window-chrome__controls {
+  display: flex;
+  flex: 0 0 auto;
+}
+.window-chrome__btn {
+  width: 44px;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: #fafaf9;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.window-chrome__btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.window-chrome__btn--close:hover {
+  background: #db4c40;
+  color: #fff;
+}
+
+/* ── OpenAEC account (sign-in button / avatar + menu) ───────────────── */
+.window-chrome__signin-btn {
+  align-self: center;
+  margin-right: 8px;
+  padding: 4px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 4px;
+  background: transparent;
+  color: #fafaf9;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.window-chrome__signin-btn:hover:not(:disabled) {
+  background: #d97706; /* Construction Amber */
+  border-color: #d97706;
+}
+.window-chrome__signin-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.window-chrome__account {
+  position: relative;
+  align-self: center;
+  margin-right: 8px;
+}
+.window-chrome__account-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 8px 3px 3px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #fafaf9;
+  cursor: pointer;
+  max-width: 220px;
+  transition: background 0.12s ease;
+}
+.window-chrome__account-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.window-chrome__avatar {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #d97706; /* Construction Amber */
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.window-chrome__account-name {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.window-chrome__account-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 200px;
+  background: #2a2a30;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  padding: 4px;
+  z-index: 1000;
+}
+.window-chrome__account-menu-header {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 4px;
+}
+.window-chrome__account-menu-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fafaf9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.window-chrome__account-menu-email {
+  font-size: 11px;
+  color: rgba(250, 250, 249, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.window-chrome__account-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #fafaf9;
+  font-size: 12px;
+  cursor: pointer;
+}
+.window-chrome__account-menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}

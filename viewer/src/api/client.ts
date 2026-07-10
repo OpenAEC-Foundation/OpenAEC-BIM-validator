@@ -11,9 +11,10 @@ import type {
   SubmitValidationResponse,
   IdsStandard,
 } from '../types/validation';
+import { API_ORIGIN } from './apiBase';
 
 /** Base URL for API endpoints */
-const API_BASE = '/api/v1';
+const API_BASE = `${API_ORIGIN}/api/v1`;
 
 /**
  * Error thrown when an API request fails
