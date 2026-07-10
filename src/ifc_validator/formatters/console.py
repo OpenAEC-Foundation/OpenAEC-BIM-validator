@@ -123,6 +123,12 @@ def _create_summary_panel(result: ValidationResult) -> Panel:
     failed_color = "red" if result.failed_specifications > 0 else "dim"
     lines.append(f"  Failed: [{failed_color}]{result.failed_specifications}[/{failed_color}]")
 
+    # Not-checkable count (honesty rule: never hide unevaluated specs)
+    if result.not_checkable_specifications > 0:
+        lines.append(
+            f"  Not checkable: [yellow]{result.not_checkable_specifications}[/yellow]"
+        )
+
     # Pass rate with color based on value
     rate = result.pass_rate_percent
     if rate == 100.0:
@@ -164,7 +170,7 @@ def _create_specifications_table(result: ValidationResult) -> Table:
 
     # Define columns
     table.add_column("#", style="dim", width=4, justify="right")
-    table.add_column("Status", width=10, justify="center")
+    table.add_column("Status", width=13, justify="center")
     table.add_column("Specification", min_width=30)
     table.add_column("Applicable", justify="right", width=10)
     table.add_column("Passed", justify="right", width=10)
@@ -172,13 +178,19 @@ def _create_specifications_table(result: ValidationResult) -> Table:
 
     # Add rows for each specification
     for i, spec in enumerate(result.specifications, 1):
-        status = _get_status_text(spec.passed)
+        if spec.status == "not_checkable":
+            status = Text("? NOT CHECKED", style="yellow")
+        else:
+            status = _get_status_text(spec.passed)
 
         # Format name with description if available
         name = spec.name
         if spec.description:
             desc = _truncate(spec.description, 50)
             name = f"{name}\n[dim]{desc}[/dim]"
+        if spec.status == "not_checkable" and spec.not_checkable_reason:
+            reason = _truncate(spec.not_checkable_reason, 60)
+            name = f"{name}\n[yellow]{reason}[/yellow]"
 
         # Format counts with colors
         applicable = str(spec.applicable_count)

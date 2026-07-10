@@ -155,9 +155,18 @@ def _generate_html_template(result: ValidationResult) -> str:
     # Build specifications rows
     spec_rows = []
     for i, spec in enumerate(result.specifications, 1):
-        status_class = _get_status_class(spec.passed)
-        status_text = _get_status_text(spec.passed)
+        if spec.status == "not_checkable":
+            status_class = "not-checkable"
+            status_text = "? NOT CHECKED"
+        else:
+            status_class = _get_status_class(spec.passed)
+            status_text = _get_status_text(spec.passed)
         description = _escape_html(spec.description) if spec.description else ""
+        reason = (
+            _escape_html(spec.not_checkable_reason)
+            if spec.status == "not_checkable" and spec.not_checkable_reason
+            else ""
+        )
 
         spec_rows.append(f"""
             <tr class="{status_class}">
@@ -166,6 +175,7 @@ def _generate_html_template(result: ValidationResult) -> str:
                 <td>
                     <strong>{_escape_html(spec.name)}</strong>
                     {f'<br><small class="description">{description}</small>' if description else ''}
+                    {f'<br><small class="not-checkable-reason">{reason}</small>' if reason else ''}
                 </td>
                 <td class="count">{spec.applicable_count}</td>
                 <td class="count passed-count">{spec.passed_count}</td>
@@ -222,6 +232,14 @@ def _generate_html_template(result: ValidationResult) -> str:
 
     # IDS title section
     ids_title_html = f"<p><strong>Title:</strong> {_escape_html(result.ids_title)}</p>" if result.ids_title else ""
+
+    # Not-checkable summary line (honesty rule: never hide unevaluated specs)
+    not_checkable_html = (
+        f'<p><strong>Not checkable:</strong> <span class="stat not-checkable">'
+        f"{result.not_checkable_specifications}</span></p>"
+        if result.not_checkable_specifications > 0
+        else ""
+    )
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -373,6 +391,16 @@ def _generate_html_template(result: ValidationResult) -> str:
             color: var(--fail-color);
         }}
 
+        .not-checkable .status,
+        .stat.not-checkable {{
+            color: #b8860b;
+        }}
+
+        .not-checkable-reason {{
+            color: #b8860b;
+            font-style: italic;
+        }}
+
         .description {{
             color: var(--text-muted);
         }}
@@ -463,6 +491,7 @@ def _generate_html_template(result: ValidationResult) -> str:
                 <p><strong>Total Specifications:</strong> {result.total_specifications}</p>
                 <p><strong>Passed:</strong> <span class="stat pass">{result.passed_specifications}</span></p>
                 <p><strong>Failed:</strong> <span class="stat fail">{result.failed_specifications}</span></p>
+                {not_checkable_html}
                 <p><strong>Pass Rate:</strong> <span class="stat {overall_status_class}">{result.pass_rate_percent:.1f}%</span></p>
             </div>
         </div>
