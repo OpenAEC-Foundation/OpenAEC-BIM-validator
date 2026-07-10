@@ -1,0 +1,121 @@
+.clash-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.clash-panel__heading {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-muted, #8b8b9e);
+  margin: 0 0 8px;
+}
+
+.clash-panel__config {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.clash-panel__label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted, #8b8b9e);
+}
+
+.clash-panel__select {
+  background: var(--bg-input, #26263a);
+  color: var(--text, #e8e8f0);
+  border: 1px solid var(--border, #3a3a52);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.clash-panel__btn {
+  border: 1px solid var(--border, #3a3a52);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  background: var(--bg-input, #26263a);
+  color: var(--text, #e8e8f0);
+}
+
+.clash-panel__btn--primary {
+  background: #44b6a8;
+  border-color: #44b6a8;
+  color: #10101c;
+  font-weight: 600;
+}
+
+.clash-panel__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.clash-panel__error {
+  color: #db4c40;
+  font-size: 12px;
+  margin: 4px 0 0;
+}
+
+.clash-panel__summary {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.clash-panel__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.clash-panel__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--border, #3a3a52);
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.clash-panel__type {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #efbd75;
+  min-width: 68px;
+}
+
+.clash-panel__element {
+  background: none;
+  border: none;
+  color: #44b6a8;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.clash-panel__element:hover {
+  color: #6fd3c6;
+}
+
+.clash-panel__vs {
+  color: var(--text-muted, #8b8b9e);
+}
