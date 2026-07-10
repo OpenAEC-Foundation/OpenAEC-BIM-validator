@@ -25,11 +25,11 @@
   display: flex;
   align-items: stretch;
   justify-content: space-between;
-  background: #36363e; /* Deep Forge */
-  color: #fafaf9; /* Blueprint White */
+  background: var(--theme-bg);
+  color: var(--theme-text);
   user-select: none;
   -webkit-user-select: none;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--font-family-body);
 }
 .window-chrome__drag {
   flex: 1 1 auto;
@@ -43,7 +43,7 @@
   width: 10px;
   height: 10px;
   border-radius: 2px;
-  background: #d97706; /* Construction Amber */
+  background: var(--theme-accent);
   flex: 0 0 auto;
 }
 .window-chrome__title {
@@ -61,7 +61,7 @@
   height: 100%;
   border: 0;
   background: transparent;
-  color: #fafaf9;
+  color: var(--theme-text);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -72,8 +72,8 @@
   background: rgba(255, 255, 255, 0.12);
 }
 .window-chrome__btn--close:hover {
-  background: #db4c40;
-  color: #fff;
+  background: var(--theme-danger-color);
+  color: var(--theme-text);
 }
 
 /* ── OpenAEC account (sign-in button / avatar + menu) ───────────────── */
@@ -84,7 +84,7 @@
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 4px;
   background: transparent;
-  color: #fafaf9;
+  color: var(--theme-text);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -92,8 +92,8 @@
   transition: background 0.12s ease, border-color 0.12s ease;
 }
 .window-chrome__signin-btn:hover:not(:disabled) {
-  background: #d97706; /* Construction Amber */
-  border-color: #d97706;
+  background: var(--theme-accent);
+  border-color: var(--theme-accent);
 }
 .window-chrome__signin-btn:disabled {
   opacity: 0.6;
@@ -113,7 +113,7 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #fafaf9;
+  color: var(--theme-text);
   cursor: pointer;
   max-width: 220px;
   transition: background 0.12s ease;
@@ -126,8 +126,8 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #d97706; /* Construction Amber */
-  color: #fff;
+  background: var(--theme-accent);
+  color: var(--theme-btn-primary-text);
   font-size: 10px;
   font-weight: 700;
   display: inline-flex;
@@ -146,7 +146,7 @@
   top: calc(100% + 4px);
   right: 0;
   min-width: 200px;
-  background: #2a2a30;
+  background: var(--theme-bg-lighter);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 6px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
@@ -161,7 +161,7 @@
 .window-chrome__account-menu-name {
   font-size: 12px;
   font-weight: 600;
-  color: #fafaf9;
+  color: var(--theme-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -181,7 +181,7 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #fafaf9;
+  color: var(--theme-text);
   font-size: 12px;
   cursor: pointer;
 }

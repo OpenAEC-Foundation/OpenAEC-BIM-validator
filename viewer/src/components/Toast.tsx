@@ -2,7 +2,7 @@
  * Toast — Simple notification component with auto-dismiss.
  *
  * Listens for "toast" custom events and displays notifications
- * with magic-violet styling. Auto-dismisses after 3 seconds.
+ * with theme-token styling. Auto-dismisses after 3 seconds.
  */
 
 import { useState, useEffect, useCallback } from "react";

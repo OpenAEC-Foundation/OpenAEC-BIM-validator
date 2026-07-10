@@ -35,8 +35,8 @@ const HIGHLIGHT_OPACITY = 0.6;
 /** Ghost mode: low opacity makes non-selected elements nearly invisible */
 const GHOST_OPACITY = 0.15;
 
-/** Color for the isolated element and its fallback indicator (Verdigris) */
-const ISOLATION_COLOR = 0x44b6a8;
+/** Color for the isolated element and its fallback indicator (OpenAEC amber) */
+const ISOLATION_COLOR = 0xd97706;
 
 /** Section plane colors per axis: X=red, Y=green, Z=blue */
 const SECTION_PLANE_COLORS: Record<string, string> = {

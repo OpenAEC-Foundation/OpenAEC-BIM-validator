@@ -11,7 +11,7 @@
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: var(--text-muted, #8b8b9e);
+  color: var(--theme-text-muted);
   margin: 0 0 8px;
 }
 
@@ -26,32 +26,32 @@
   flex-direction: column;
   gap: 4px;
   font-size: 12px;
-  color: var(--text-muted, #8b8b9e);
+  color: var(--theme-text-muted);
 }
 
 .quality-panel__select {
-  background: var(--bg-input, #26263a);
-  color: var(--text, #e8e8f0);
-  border: 1px solid var(--border, #3a3a52);
+  background: var(--theme-dialog-input-bg);
+  color: var(--theme-text);
+  border: 1px solid var(--theme-border);
   border-radius: 4px;
   padding: 6px 8px;
   font-size: 13px;
 }
 
 .quality-panel__btn {
-  border: 1px solid var(--border, #3a3a52);
+  border: 1px solid var(--theme-border);
   border-radius: 4px;
   padding: 8px 12px;
   font-size: 13px;
   cursor: pointer;
-  background: var(--bg-input, #26263a);
-  color: var(--text, #e8e8f0);
+  background: var(--theme-dialog-input-bg);
+  color: var(--theme-text);
 }
 
 .quality-panel__btn--primary {
-  background: #44b6a8;
-  border-color: #44b6a8;
-  color: #10101c;
+  background: var(--theme-accent);
+  border-color: var(--theme-accent);
+  color: var(--theme-btn-primary-text);
   font-weight: 600;
 }
 
@@ -61,7 +61,7 @@
 }
 
 .quality-panel__error {
-  color: #db4c40;
+  color: var(--theme-danger-color);
   font-size: 12px;
   margin: 4px 0 0;
 }
@@ -87,29 +87,29 @@
   gap: 8px;
   width: 100%;
   padding: 6px 8px;
-  border: 1px solid var(--border, #3a3a52);
+  border: 1px solid var(--theme-border);
   border-radius: 4px;
   background: none;
-  color: var(--text, #e8e8f0);
+  color: var(--theme-text);
   font-size: 12px;
   cursor: pointer;
   text-align: left;
 }
 
 .quality-panel__check-header--pass .quality-panel__check-status {
-  color: #44b6a8;
+  color: var(--theme-accent);
 }
 
 .quality-panel__check-header--error .quality-panel__check-status {
-  color: #db4c40;
+  color: var(--theme-danger-color);
 }
 
 .quality-panel__check-header--warning .quality-panel__check-status {
-  color: #efbd75;
+  color: var(--domain-warning);
 }
 
 .quality-panel__check-header--info .quality-panel__check-status {
-  color: #8b8b9e;
+  color: var(--theme-text-muted);
 }
 
 .quality-panel__check-title {
@@ -118,7 +118,7 @@
 
 .quality-panel__check-count {
   font-size: 11px;
-  color: var(--text-muted, #8b8b9e);
+  color: var(--theme-text-muted);
 }
 
 .quality-panel__findings {
@@ -134,7 +134,7 @@
 .quality-panel__finding-link {
   background: none;
   border: none;
-  color: #44b6a8;
+  color: var(--theme-accent);
   cursor: pointer;
   font-size: 12px;
   padding: 0;
@@ -144,10 +144,10 @@
 }
 
 .quality-panel__finding-link:hover {
-  color: #6fd3c6;
+  color: var(--theme-accent-hover);
 }
 
 .quality-panel__omitted {
-  color: var(--text-muted, #8b8b9e);
+  color: var(--theme-text-muted);
   font-style: italic;
 }
