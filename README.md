@@ -498,6 +498,45 @@ python -m ifc_validator.cli renovatie_project.ifc --ids nl-bim
 
 ---
 
+## MCP Server (AI-assistenten)
+
+De validator is beschikbaar als [MCP-server](https://modelcontextprotocol.io/)
+zodat AI-assistenten (zoals Claude Desktop/Code) lokaal IFC-modellen kunnen
+valideren. De validatie draait volledig op de eigen machine via
+IfcOpenShell/ifctester — modeldata verlaat de machine niet en er is geen
+API-key nodig.
+
+```bash
+# Starten (stdio)
+python -m ifc_validator.mcp_server
+```
+
+Configuratie voor Claude Desktop (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "ifc-validator": {
+      "command": "python",
+      "args": ["-m", "ifc_validator.mcp_server"]
+    }
+  }
+}
+```
+
+Beschikbare tools:
+
+| Tool | Omschrijving |
+|------|--------------|
+| `validate_ifc` | Valideer een IFC tegen een IDS-bestand of bundled standaard (`nl-bim`, `rvb`); geeft per specificatie de status (passed/failed/not_checkable) en falende elementen |
+| `list_standards` | Toon de meegeleverde Nederlandse standaarden |
+| `export_report` | Valideer en schrijf een volledig HTML- of JSON-rapport naar schijf |
+
+Voorbeeldvraag aan de assistent: *"Valideer C:\\modellen\\gebouw.ifc tegen
+nl-bim en leg uit welke eisen falen."*
+
+---
+
 ## Links
 
 - [IfcOpenShell](https://ifcopenshell.org/)

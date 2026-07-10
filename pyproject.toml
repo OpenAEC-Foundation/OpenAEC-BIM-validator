@@ -47,6 +47,7 @@ desktop = [
 
 [project.scripts]
 ifc-validate = "ifc_validator.cli:app"
+ifc-validator-mcp = "ifc_validator.mcp_server:main"
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
