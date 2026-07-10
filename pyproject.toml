@@ -46,6 +46,9 @@ desktop = [
     "pystray>=0.19.5",
     "Pillow>=10.0",
 ]
+livelink = [
+    "websockets>=12.0",
+]
 
 [project.scripts]
 ifc-validate = "ifc_validator.cli:app"
