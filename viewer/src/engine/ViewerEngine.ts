@@ -13,7 +13,7 @@ import * as FRAGS from "@thatopen/fragments";
 import * as THREE from "three";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 
-import { PropertyExtractor } from "./PropertyExtractor";
+import { PropertyClient } from "./PropertyClient";
 import type { IfcElementProperties } from "./PropertyExtractor";
 import type { SpatialNode, ElementTypeGroup } from "../types/project";
 import type { BcfCameraState } from "../types/bcf";
@@ -118,7 +118,7 @@ export class ViewerEngine {
   private modelBytes = new Map<string, Uint8Array>();
 
   /** Property extractors per model, keyed by modelId. Lazy initialized. */
-  private propertyExtractors = new Map<string, PropertyExtractor>();
+  private propertyExtractors = new Map<string, PropertyClient>();
 
   /** Whether isolation mode is active. */
   private _isolated = false;
@@ -456,14 +456,14 @@ export class ViewerEngine {
   /**
    * Get or lazily create a PropertyExtractor for a model.
    */
-  private getOrCreateExtractor(modelId: string): PropertyExtractor | null {
+  private getOrCreateExtractor(modelId: string): PropertyClient | null {
     const existing = this.propertyExtractors.get(modelId);
     if (existing) return existing;
 
     const bytes = this.modelBytes.get(modelId);
     if (!bytes) return null;
 
-    const extractor = new PropertyExtractor(bytes);
+    const extractor = new PropertyClient(bytes);
     this.propertyExtractors.set(modelId, extractor);
     return extractor;
   }
