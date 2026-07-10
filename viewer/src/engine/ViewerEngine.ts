@@ -851,10 +851,10 @@ export class ViewerEngine {
     this.sectionEntries = [];
     this.activeSectionPlaneId = null;
 
-    // Dispose shared gizmo
+    // Dispose shared gizmo (visual lives in the scene via getHelper())
     if (this.sectionGizmo) {
       this.sectionGizmo.detach();
-      scene.remove(this.sectionGizmo as unknown as THREE.Object3D);
+      scene.remove(this.sectionGizmo.getHelper());
       this.sectionGizmo.dispose();
       this.sectionGizmo = null;
     }
@@ -963,7 +963,9 @@ export class ViewerEngine {
       if (activeEntry) this.syncPlaneFromMesh(activeEntry);
     });
 
-    this.world.scene.three.add(gizmo as unknown as THREE.Object3D);
+    // three r169+: TransformControls is no longer an Object3D itself —
+    // its visual representation must be added via getHelper()
+    this.world.scene.three.add(gizmo.getHelper());
     this.sectionGizmo = gizmo;
   }
 
