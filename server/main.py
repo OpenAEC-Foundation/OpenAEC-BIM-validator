@@ -40,8 +40,11 @@ from server.models.validation_results import (
     ValidationStatus,
 )
 from server.project_manager import ProjectManager
+from server.routers.clash import router as clash_router
 from server.routers.cloud import router as cloud_router
+from server.routers.optimize import router as optimize_router
 from server.routers.projects import router as projects_router
+from server.routers.quality import router as quality_router
 from ifc_validator.standards.resolver import get_bundled_ids
 
 
@@ -82,6 +85,11 @@ app = FastAPI(
 app.include_router(projects_router)
 app.include_router(cloud_router)
 
+# Feature routers: optimizer, clash detection, data-quality checks
+app.include_router(optimize_router)
+app.include_router(clash_router)
+app.include_router(quality_router)
+
 
 @app.on_event("startup")
 async def startup():
@@ -107,6 +115,11 @@ _default_origins = [
     "http://127.0.0.1:8081",
     "http://localhost:8082",
     "http://127.0.0.1:8082",
+    # Tauri desktop webview origins (frontend served from tauri://localhost,
+    # rendered as http(s)://tauri.localhost on the Windows WebView2 runtime)
+    "http://tauri.localhost",
+    "https://tauri.localhost",
+    "tauri://localhost",
 ]
 _cors_env = os.environ.get("CORS_ORIGINS", "")
 cors_origins = [o.strip() for o in _cors_env.split(",") if o.strip()] if _cors_env else _default_origins
@@ -118,6 +131,37 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def private_network_access(request, call_next):
+    """Answer Chrome's Private-Network-Access preflight.
+
+    A public web page probing this server on localhost triggers a CORS
+    preflight with Access-Control-Request-Private-Network; without the
+    matching allow-header Chrome blocks the request. Needed for the
+    local-engine detection flow (cloud web app → local server).
+    """
+    response = await call_next(request)
+    if request.headers.get("access-control-request-private-network") == "true":
+        response.headers["Access-Control-Allow-Private-Network"] = "true"
+    return response
+
+
+@app.get("/status")
+async def local_engine_status():
+    """Lightweight probe for local-engine detection.
+
+    The web app polls this endpoint to discover a locally running
+    validation server (same pattern for the desktop-embedded server).
+    Keep this fast and dependency-free.
+    """
+    return {
+        "status": "ok",
+        "service": "bim-validator",
+        "version": app.version,
+        "capabilities": ["validate", "quality", "optimize", "clash"],
+    }
 
 # Temp directory for uploaded files
 UPLOAD_DIR = Path(tempfile.gettempdir()) / "ifc_uploads"
@@ -1049,7 +1093,12 @@ async def get_element_properties(model_id: str, global_id: str):
 # ==========================================================================
 
 # Mount frontend static files if the build exists
-_frontend_dist = Path(__file__).resolve().parent.parent / "viewer" / "dist"
+_frontend_dist_env = os.environ.get("VIEWER_DIST_PATH")
+_frontend_dist = (
+    Path(_frontend_dist_env)
+    if _frontend_dist_env
+    else Path(__file__).resolve().parent.parent / "viewer" / "dist"
+)
 if _frontend_dist.is_dir():
     # Serve index.html for SPA routes (catch-all must be last)
     @app.get("/{full_path:path}")

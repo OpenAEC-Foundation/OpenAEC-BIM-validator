@@ -12,6 +12,7 @@ interface RibbonProps {
   onFileTabClick?: () => void;
   onUploadIfc?: () => void;
   onRemoveModel?: () => void;
+  onOptimize?: () => void;
   onValidate?: () => void;
   onResetValidation?: () => void;
   onExportBcf?: () => void;
@@ -44,6 +45,7 @@ export default function Ribbon({
   onFileTabClick,
   onUploadIfc,
   onRemoveModel,
+  onOptimize,
   onValidate,
   onResetValidation,
   onExportBcf,
@@ -146,6 +148,7 @@ export default function Ribbon({
         return (
           <HomeTab
             onUploadIfc={onUploadIfc}
+            onOptimize={onOptimize}
             onRemoveModel={onRemoveModel}
             onValidate={onValidate}
             onResetValidation={onResetValidation}

@@ -37,12 +37,6 @@ export interface CloudFile {
   last_modified: string;
 }
 
-export interface ManifestInfo {
-  name: string;
-  size: number;
-  last_modified: string;
-}
-
 // ── API functions ──────────────────────────────────────────────
 
 /** Check if cloud storage is enabled and reachable. */
@@ -170,32 +164,6 @@ export async function cloudUploadFile(
     const msg = await parseError(response);
     throw new ApiError(msg, response.status, msg);
   }
-}
-
-/** List all .wefc manifest files in a project. */
-export async function cloudListManifests(
-  project: string,
-): Promise<ManifestInfo[]> {
-  let response: Response;
-  try {
-    response = await fetch(
-      `${CLOUD_BASE}/projects/${encodeURIComponent(project)}/manifests`,
-    );
-  } catch (error) {
-    throw new ApiError(
-      "Network error: unable to list manifests.",
-      undefined,
-      error instanceof Error ? error.message : "Unknown network error",
-    );
-  }
-
-  if (!response.ok) {
-    const msg = await parseError(response);
-    throw new ApiError(msg, response.status, msg);
-  }
-
-  const data = await response.json();
-  return data.manifests;
 }
 
 /** Read a specific .wefc manifest from the cloud. */

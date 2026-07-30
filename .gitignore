@@ -41,6 +41,7 @@ test_output.json
 SESSION_STATUS.md
 viewer/SESSION_STATUS.md
 viewer/BCF_IMPLEMENTATION_PROMPT.md
+PROMPTS.md
 
 # TypeScript incremental build artifacts
 *.tsbuildinfo
@@ -49,3 +50,10 @@ viewer/BCF_IMPLEMENTATION_PROMPT.md
 *.db
 *.db-shm
 *.db-wal
+
+# Installer build artifacts (regenerated via installer/build.ps1)
+installer/build/
+installer/dist/
+installer/dist_tauri/
+installer/output/
+installer/*.log

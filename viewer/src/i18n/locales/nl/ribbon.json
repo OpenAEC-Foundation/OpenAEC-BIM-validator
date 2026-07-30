@@ -22,7 +22,8 @@
     "project": "Project",
     "save": "Opslaan",
     "saveAs": "Opslaan als",
-    "open": "Openen"
+    "open": "Openen",
+    "optimize": "Optimaliseer"
   },
   "view": {
     "panels": "Panelen",

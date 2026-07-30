@@ -22,7 +22,8 @@
     "project": "Project",
     "save": "Save",
     "saveAs": "Save As",
-    "open": "Open"
+    "open": "Open",
+    "optimize": "Optimize"
   },
   "view": {
     "panels": "Panels",

@@ -1,0 +1,4 @@
+# Build dependencies for creating the Windows installer
+pyinstaller>=6.0
+pystray>=0.19.5
+Pillow>=10.0

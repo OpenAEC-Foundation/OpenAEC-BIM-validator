@@ -13,7 +13,7 @@ import * as FRAGS from "@thatopen/fragments";
 import * as THREE from "three";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 
-import { PropertyExtractor } from "./PropertyExtractor";
+import { PropertyClient } from "./PropertyClient";
 import type { IfcElementProperties } from "./PropertyExtractor";
 import type { SpatialNode, ElementTypeGroup } from "../types/project";
 import type { BcfCameraState } from "../types/bcf";
@@ -34,6 +34,9 @@ const HIGHLIGHT_OPACITY = 0.6;
 
 /** Ghost mode: low opacity makes non-selected elements nearly invisible */
 const GHOST_OPACITY = 0.15;
+
+/** Color for the isolated element and its fallback indicator (OpenAEC amber) */
+const ISOLATION_COLOR = 0xd97706;
 
 /** Section plane colors per axis: X=red, Y=green, Z=blue */
 const SECTION_PLANE_COLORS: Record<string, string> = {
@@ -118,10 +121,17 @@ export class ViewerEngine {
   private modelBytes = new Map<string, Uint8Array>();
 
   /** Property extractors per model, keyed by modelId. Lazy initialized. */
-  private propertyExtractors = new Map<string, PropertyExtractor>();
+  private propertyExtractors = new Map<string, PropertyClient>();
 
   /** Whether isolation mode is active. */
   private _isolated = false;
+
+  /**
+   * Active section clipping planes. Applied per-material to model geometry
+   * only (never via renderer.clippingPlanes), so gizmos, section-plane
+   * visuals and other helpers are never clipped away.
+   */
+  private clipPlanes: THREE.Plane[] = [];
 
   /** Saved material state for isolation restore. */
   private savedMaterials = new Map<
@@ -245,6 +255,20 @@ export class ViewerEngine {
         if (this._disposed || !this.world) return;
         model.useCamera(this.world.camera.three);
         this.world.scene.three.add(model.object);
+        // Tiles stream in over time — each new tile must pick up any
+        // active per-material section clipping and ghost state
+        model.tiles.onItemSet.add(({ value: tile }) => {
+          const tileObject = tile as unknown as THREE.Object3D;
+          if (this.clipPlanes.length > 0) {
+            this.applyClippingToObject(tileObject);
+          }
+          if (this._isolated) {
+            this.ghostObject(tileObject);
+          }
+        });
+        if (this.clipPlanes.length > 0) {
+          this.applyClippingToObject(model.object);
+        }
         fragments.core.update(true);
       });
 
@@ -456,14 +480,14 @@ export class ViewerEngine {
   /**
    * Get or lazily create a PropertyExtractor for a model.
    */
-  private getOrCreateExtractor(modelId: string): PropertyExtractor | null {
+  private getOrCreateExtractor(modelId: string): PropertyClient | null {
     const existing = this.propertyExtractors.get(modelId);
     if (existing) return existing;
 
     const bytes = this.modelBytes.get(modelId);
     if (!bytes) return null;
 
-    const extractor = new PropertyExtractor(bytes);
+    const extractor = new PropertyClient(bytes);
     this.propertyExtractors.set(modelId, extractor);
     return extractor;
   }
@@ -522,43 +546,29 @@ export class ViewerEngine {
 
   /**
    * Isolate an element: ghost all geometry via material-level opacity,
-   * then show a bounding box indicator around the selected element.
+   * then render the selected element itself as a dedicated opaque mesh.
    *
-   * fragments.highlight() modifies per-instance color attributes on shared
-   * meshes, which gets overridden by material-level opacity. A separate
-   * Box3Helper + filled box is used instead — fully independent of the
-   * fragment material system.
+   * Fragments batch many elements into shared meshes, so no material- or
+   * instance-level trick can keep one element opaque while the rest is
+   * ghosted (see TODO.md for the failed attempts). Instead the element's
+   * triangles are split out of the batch via getItemsGeometry() into a
+   * standalone THREE.Mesh — fully independent of the fragment material
+   * system. Falls back to a bounding-box indicator if no geometry is
+   * available for the element.
    */
   async isolateElement(globalId: string): Promise<void> {
     if (!this.world || !this.components || !this.fragments) return;
 
-    // Restore any previous isolation first
+    // Restore any previous isolation first, so the split-out mesh and
+    // saved material state never leak into the new ghost pass
     this.restoreMaterials();
     this.removeIsolationIndicator();
 
     // Ghost ALL meshes at the material level
     for (const obj of this.modelObjects.values()) {
-      obj.traverse((child) => {
-        if (!(child instanceof THREE.Mesh)) return;
-        const materials = Array.isArray(child.material)
-          ? child.material
-          : [child.material];
-        for (const mat of materials) {
-          if (!mat || this.savedMaterials.has(mat)) continue;
-          this.savedMaterials.set(mat, {
-            opacity: mat.opacity,
-            transparent: mat.transparent,
-            depthWrite: mat.depthWrite,
-          });
-          mat.transparent = true;
-          mat.opacity = GHOST_OPACITY;
-          mat.depthWrite = false;
-          mat.needsUpdate = true;
-        }
-      });
+      this.ghostObject(obj);
     }
 
-    // Build a bounding box indicator around the selected element
     try {
       const modelIdMap = await this.fragments.guidsToModelIdMap([globalId]);
       if (Object.keys(modelIdMap).length === 0) {
@@ -566,36 +576,12 @@ export class ViewerEngine {
         return;
       }
 
-      const boxer = this.components.get(OBC.BoundingBoxer);
-      boxer.dispose();
-      await boxer.addFromModelIdMap(modelIdMap);
-      const box = boxer.get();
-
-      if (!box.isEmpty()) {
-        const group = new THREE.Group();
-        group.name = "__isolationIndicator";
-
-        // Wireframe box outline
-        const helper = new THREE.Box3Helper(box, new THREE.Color("#44B6A8"));
-        group.add(helper);
-
-        // Semi-transparent filled box for visibility
-        const size = box.getSize(new THREE.Vector3());
-        const center = box.getCenter(new THREE.Vector3());
-        const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
-        const material = new THREE.MeshBasicMaterial({
-          color: 0x44b6a8,
-          opacity: 0.25,
-          transparent: true,
-          depthTest: false,
-          side: THREE.DoubleSide,
-        });
-        const filled = new THREE.Mesh(geometry, material);
-        filled.position.copy(center);
-        group.add(filled);
-
+      const group = await this.buildSplitOutMeshes(modelIdMap);
+      if (group) {
         this.world.scene.three.add(group);
         this.isolationIndicator = group;
+      } else {
+        await this.buildBoundingBoxIndicator(modelIdMap);
       }
     } catch {
       // Element not found — ghost-only mode still works
@@ -605,11 +591,119 @@ export class ViewerEngine {
   }
 
   /**
+   * Split the given elements out of their fragment batches as standalone
+   * opaque meshes, parented in a single group positioned in world space.
+   * Returns null when no geometry could be extracted.
+   */
+  private async buildSplitOutMeshes(
+    modelIdMap: OBC.ModelIdMap
+  ): Promise<THREE.Group | null> {
+    if (!this.fragments) return null;
+
+    const group = new THREE.Group();
+    group.name = "__isolationIndicator";
+    const material = new THREE.MeshLambertMaterial({
+      color: ISOLATION_COLOR,
+      side: THREE.DoubleSide,
+      // Respect active section planes, like the model geometry it replaces
+      clippingPlanes: this.clipPlanes.length > 0 ? this.clipPlanes : null,
+    });
+
+    for (const [modelId, localIds] of Object.entries(modelIdMap)) {
+      const model = this.fragments.list.get(modelId);
+      if (!model) continue;
+
+      const itemsGeometry = await model.getItemsGeometry([...localIds]);
+      const modelObject = this.modelObjects.get(modelId);
+
+      for (const meshes of itemsGeometry) {
+        for (const data of meshes) {
+          if (!data.positions || !data.indices) continue;
+
+          const geometry = new THREE.BufferGeometry();
+          const positions =
+            data.positions instanceof Float64Array
+              ? new Float32Array(data.positions)
+              : data.positions;
+          geometry.setAttribute(
+            "position",
+            new THREE.BufferAttribute(positions, 3)
+          );
+          geometry.setIndex(new THREE.BufferAttribute(data.indices, 1));
+          if (data.normals) {
+            // Fragments deliver quantized Int16 normals
+            geometry.setAttribute(
+              "normal",
+              new THREE.BufferAttribute(data.normals, 3, true)
+            );
+          } else {
+            geometry.computeVertexNormals();
+          }
+
+          const mesh = new THREE.Mesh(geometry, material);
+          mesh.applyMatrix4(data.transform);
+          if (modelObject) {
+            mesh.applyMatrix4(modelObject.matrixWorld);
+          }
+          group.add(mesh);
+        }
+      }
+    }
+
+    if (group.children.length === 0) {
+      material.dispose();
+      return null;
+    }
+    return group;
+  }
+
+  /**
+   * Fallback indicator: wireframe + translucent bounding box around the
+   * selected element, used when no split-out geometry is available.
+   */
+  private async buildBoundingBoxIndicator(
+    modelIdMap: OBC.ModelIdMap
+  ): Promise<void> {
+    if (!this.world || !this.components) return;
+
+    const boxer = this.components.get(OBC.BoundingBoxer);
+    boxer.dispose();
+    await boxer.addFromModelIdMap(modelIdMap);
+    const box = boxer.get();
+    if (box.isEmpty()) return;
+
+    const group = new THREE.Group();
+    group.name = "__isolationIndicator";
+
+    // Wireframe box outline
+    const helper = new THREE.Box3Helper(box, new THREE.Color(ISOLATION_COLOR));
+    group.add(helper);
+
+    // Semi-transparent filled box for visibility
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
+    const material = new THREE.MeshBasicMaterial({
+      color: ISOLATION_COLOR,
+      opacity: 0.25,
+      transparent: true,
+      depthTest: false,
+      side: THREE.DoubleSide,
+    });
+    const filled = new THREE.Mesh(geometry, material);
+    filled.position.copy(center);
+    group.add(filled);
+
+    this.world.scene.three.add(group);
+    this.isolationIndicator = group;
+  }
+
+  /**
    * Remove isolation indicator from the scene.
    */
   private removeIsolationIndicator(): void {
-    if (!this.isolationIndicator || !this.world) return;
-    this.world.scene.three.remove(this.isolationIndicator);
+    if (!this.isolationIndicator) return;
+    this.isolationIndicator.parent?.remove(this.isolationIndicator);
     this.isolationIndicator.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         child.geometry.dispose();
@@ -620,6 +714,34 @@ export class ViewerEngine {
       }
     });
     this.isolationIndicator = null;
+  }
+
+  /**
+   * Ghost every mesh material under the given object, saving the original
+   * state for restore. The savedMaterials map doubles as a guard against
+   * double-ghosting shared materials. Uses isMesh duck-typing so meshes
+   * created by other module instances (fragments worker) are not missed.
+   */
+  private ghostObject(root: THREE.Object3D): void {
+    root.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const materials = Array.isArray(mesh.material)
+        ? mesh.material
+        : [mesh.material];
+      for (const mat of materials) {
+        if (!mat || this.savedMaterials.has(mat)) continue;
+        this.savedMaterials.set(mat, {
+          opacity: mat.opacity,
+          transparent: mat.transparent,
+          depthWrite: mat.depthWrite,
+        });
+        mat.transparent = true;
+        mat.opacity = GHOST_OPACITY;
+        mat.depthWrite = false;
+        mat.needsUpdate = true;
+      }
+    });
   }
 
   /**
@@ -701,9 +823,11 @@ export class ViewerEngine {
     const entry: SectionPlaneEntry = { id, axis, plane, mesh };
     this.sectionEntries.push(entry);
 
-    // Apply all clipping planes to renderer
-    renderer.clippingPlanes = this.sectionEntries.map((e) => e.plane);
+    // Apply clipping per-material to model geometry only, so the plane
+    // visuals and the TransformControls gizmo are never clipped themselves
+    this.clipPlanes = this.sectionEntries.map((e) => e.plane);
     renderer.localClippingEnabled = true;
+    this.applyClippingToAllModels();
 
     // Create shared gizmo if needed, then select this plane
     this.ensureSectionGizmo();
@@ -727,16 +851,49 @@ export class ViewerEngine {
     this.sectionEntries = [];
     this.activeSectionPlaneId = null;
 
-    // Dispose shared gizmo
+    // Dispose shared gizmo (visual lives in the scene via getHelper())
     if (this.sectionGizmo) {
       this.sectionGizmo.detach();
-      scene.remove(this.sectionGizmo as unknown as THREE.Object3D);
+      scene.remove(this.sectionGizmo.getHelper());
       this.sectionGizmo.dispose();
       this.sectionGizmo = null;
     }
 
-    renderer.clippingPlanes = [];
+    this.clipPlanes = [];
+    this.applyClippingToAllModels();
     renderer.localClippingEnabled = false;
+  }
+
+  /**
+   * Apply the active clipping planes to every material under the given
+   * object. Passing an empty plane set clears clipping.
+   */
+  private applyClippingToObject(obj: THREE.Object3D): void {
+    const planes = this.clipPlanes.length > 0 ? this.clipPlanes : null;
+    obj.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const materials = Array.isArray(mesh.material)
+        ? mesh.material
+        : [mesh.material];
+      for (const mat of materials) {
+        if (!mat) continue;
+        mat.clippingPlanes = planes;
+        mat.needsUpdate = true;
+      }
+    });
+  }
+
+  /**
+   * Re-apply clipping to all model geometry and the isolation mesh.
+   */
+  private applyClippingToAllModels(): void {
+    for (const obj of this.modelObjects.values()) {
+      this.applyClippingToObject(obj);
+    }
+    if (this.isolationIndicator) {
+      this.applyClippingToObject(this.isolationIndicator);
+    }
   }
 
   /**
@@ -806,7 +963,9 @@ export class ViewerEngine {
       if (activeEntry) this.syncPlaneFromMesh(activeEntry);
     });
 
-    this.world.scene.three.add(gizmo as unknown as THREE.Object3D);
+    // three r169+: TransformControls is no longer an Object3D itself —
+    // its visual representation must be added via getHelper()
+    this.world.scene.three.add(gizmo.getHelper());
     this.sectionGizmo = gizmo;
   }
 
