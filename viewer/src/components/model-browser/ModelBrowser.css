@@ -82,16 +82,16 @@
 }
 
 .model-item__state--loading {
-  background-color: var(--friendly-yellow);
+  background-color: var(--domain-warning);
   animation: pulse 1s ease-in-out infinite;
 }
 
 .model-item__state--loaded {
-  background-color: var(--verdigris);
+  background-color: var(--theme-accent);
 }
 
 .model-item__state--error {
-  background-color: var(--flaming-peach);
+  background-color: var(--theme-danger-color);
 }
 
 @keyframes pulse {

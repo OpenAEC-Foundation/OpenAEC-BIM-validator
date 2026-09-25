@@ -422,13 +422,13 @@
   .badge-pass {
     background-color: transparent !important;
     color: #000 !important;
-    border: 2px solid #44B6A8 !important;
+    border: 2px solid var(--theme-accent) !important;
   }
 
   .badge-fail {
     background-color: transparent !important;
     color: #000 !important;
-    border: 2px solid #DB4C40 !important;
+    border: 2px solid var(--theme-danger-color) !important;
   }
 }
 

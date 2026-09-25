@@ -23,6 +23,8 @@ classifiers = [
 dependencies = [
     "ifcopenshell>=0.8.0",
     "ifctester>=0.8.0",
+    "ifcpatch>=0.8.0",
+    "ifcclash>=0.8.0",
     "fastapi>=0.100.0",
     "uvicorn>=0.20.0",
     "python-multipart>=0.0.6",
@@ -40,9 +42,17 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0.0",
 ]
+desktop = [
+    "pystray>=0.19.5",
+    "Pillow>=10.0",
+]
+livelink = [
+    "websockets>=12.0",
+]
 
 [project.scripts]
 ifc-validate = "ifc_validator.cli:app"
+ifc-validator-mcp = "ifc_validator.mcp_server:main"
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]

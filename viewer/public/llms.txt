@@ -1,0 +1,54 @@
+# OpenAEC BIM Validator
+
+> Open-source, browser-based IFC validation against IDS specifications,
+> with a 3D viewer and BCF export. Built by 3BM Bouwkunde. Free to use;
+> also available as a Windows desktop app and a command-line tool.
+
+## What it does
+
+- Validates IFC building models (IFC2X3 and IFC4) against buildingSMART
+  IDS (Information Delivery Specification) files.
+- Ships two Dutch standards out of the box: NL BIM Basis ILS v2 and
+  RVB BIM Norm v1.1 (Rijksvastgoedbedrijf).
+- Reports each specification as passed, failed or **not checkable** — a
+  specification the engine cannot evaluate (e.g. its ifcVersion does not
+  cover the model schema) is never silently passed or failed.
+- 3D viewer with spatial tree, element properties, isolation (ghost
+  mode), section planes and multi-model federation.
+- Exports issues as BCF 2.1 for use in any BCF-compatible tool.
+- Project containers with cloud storage (.wefc project envelopes),
+  multi-tenant aware.
+
+## Interfaces
+
+- **Web app**: upload an IFC, pick a standard or custom IDS, validate,
+  inspect failing elements in 3D, export BCF.
+- **CLI**: `ifc-validate model.ifc --ids nl-bim` — console, HTML and
+  JSON output; exit codes for CI pipelines. Batch-friendly.
+- **MCP server**: `python -m ifc_validator.mcp_server` — Model Context
+  Protocol over stdio for AI assistants. Tools: `validate_ifc`,
+  `list_standards`, `export_report`. Validation runs locally via
+  IfcOpenShell/ifctester; model data never leaves the machine and no
+  API key is needed.
+- **REST API**: `/api/v1/validate` (async validation jobs, BCF export),
+  `/api/v2/projects` (project containers, models, spatial tree,
+  element properties).
+- **Desktop app**: Windows installer with an embedded validation
+  server; file associations for .ifc/.ifcx; sign-in with OpenAEC.
+
+## Typical workflows
+
+1. Quick check: upload IFC → choose NL BIM Basis ILS → validate →
+   review failing elements per specification in the 3D view.
+2. CI gate: `ifc-validate model.ifc --ids rules.ids --format json`,
+   fail the pipeline on non-zero exit.
+3. Issue handoff: validate → select failing elements → export BCF →
+   import in the modelling tool of choice.
+4. AI-assisted review: connect the MCP server to an AI assistant and
+   ask it to validate a model and explain which requirements fail and
+   why.
+
+## Technology
+
+Python (FastAPI, IfcOpenShell, ifctester) backend; React/TypeScript
+viewer on That Open Engine; open source.

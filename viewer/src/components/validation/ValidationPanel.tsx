@@ -148,7 +148,7 @@ export function ValidationPanel() {
         selectElement(item.el.global_id, true);
         setHighlightGroup({
           id: "element-selection",
-          color: "#44B6A8",
+          color: "#D97706",
           globalIds: [item.el.global_id],
         });
         window.dispatchEvent(
@@ -167,7 +167,7 @@ export function ValidationPanel() {
       selectElement(globalId, true);
       setHighlightGroup({
         id: "element-selection",
-        color: "#44B6A8",
+        color: "#D97706",
         globalIds: [globalId],
       });
       window.dispatchEvent(

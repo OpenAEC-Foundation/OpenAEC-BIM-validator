@@ -449,13 +449,13 @@
 
 .bs-platform-btn--danger {
   background: transparent;
-  color: var(--theme-error, #db4c40);
-  border-color: var(--theme-error, #db4c40);
+  color: var(--theme-danger-color);
+  border-color: var(--theme-danger-color);
 }
 
 .bs-platform-btn--danger:hover:not(:disabled) {
-  background: var(--theme-error, #db4c40);
-  color: #fff;
+  background: var(--theme-danger-color);
+  color: var(--theme-btn-primary-text);
 }
 
 .bs-platform-btn--icon {
@@ -484,13 +484,13 @@
 }
 
 .bs-platform-status--connected {
-  background: rgba(68, 182, 168, 0.1);
+  background: color-mix(in srgb, var(--theme-accent) 10%, transparent);
   color: var(--theme-accent);
 }
 
 .bs-platform-status--error {
-  background: rgba(219, 76, 64, 0.1);
-  color: var(--theme-error, #db4c40);
+  background: color-mix(in srgb, var(--theme-danger-color) 10%, transparent);
+  color: var(--theme-danger-color);
 }
 
 .bs-platform-status-dot {
@@ -505,7 +505,7 @@
 }
 
 .bs-platform-status--error .bs-platform-status-dot {
-  background: var(--theme-error, #db4c40);
+  background: var(--theme-danger-color);
 }
 
 .bs-platform-link {

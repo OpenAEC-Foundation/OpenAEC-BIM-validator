@@ -19,6 +19,72 @@ python test_ifctester.py
 
 ---
 
+## Functionaliteiten
+
+### Validatie
+
+| Functionaliteit | Omschrijving |
+|-----------------|-------------|
+| **IDS Validatie** | Valideer IFC-modellen tegen Information Delivery Specification (IDS) bestanden. Elke specificatie wordt per element getoetst op pass/fail met gedetailleerde foutmeldingen. |
+| **NL BIM Basis ILS v2** | Ingebouwde Nederlandse BIM-basisstandaard met 12 specificaties: naamgeving verdiepingen, NL/SfB classificatie, ruimte-attributen, draagconstructie, uitwendigheid, brandwerendheid, U-waarde, materialen en renovatiestatus. |
+| **RVB BIM Norm v1.1** | Ingebouwde Rijksvastgoedbedrijf-standaard met 27 specificaties voor overheidsbouwprojecten: projectinfo, terreincoördinaten, NL-SfB per elementtype (wanden, vloeren, daken, deuren, ramen, kolommen, liggers, trappen), constructieve & brandveiligheidseigenschappen en zone-informatie. |
+| **Custom IDS Upload** | Upload je eigen IDS-specificatiebestand (max 10MB) om te valideren tegen projectspecifieke of organisatie-eigen eisen. |
+| **Multi-schema Ondersteuning** | Ondersteunt zowel IFC2X3 als IFC4 schema's — compatibel met exports uit Revit, ArchiCAD, Tekla en andere BIM-software. |
+| **Element-niveau Rapportage** | Per gefaald element wordt GlobalId, IFC-klasse, elementnaam en een gedetailleerde foutmelding getoond, zodat je direct weet wát er mis is en wáár. |
+
+### 3D Viewer
+
+| Functionaliteit | Omschrijving |
+|-----------------|-------------|
+| **WebGL 3D Viewer** | Interactieve 3D-weergave van het IFC-model in de browser via That Open Engine (Three.js). Geen installatie of plugin nodig. |
+| **Element Selectie** | Klik op een element in de 3D-viewer om eigenschappen te bekijken, of klik op een fout in de resultatenlijst om het element in 3D te highlighten. |
+| **Camera Navigatie** | Orbit, pan en zoom door het model. Fit-all knop om het volledige model in beeld te brengen. |
+| **Resizable Panels** | Versleepbare driedeling: navigatiepaneel (links), 3D-viewer (midden) en detailpaneel (rechts). Elk paneel is inklapbaar. |
+
+### BCF Export
+
+| Functionaliteit | Omschrijving |
+|-----------------|-------------|
+| **BCF 2.1 ZIP Export** | Exporteer alle validatiefouten als BCF 2.1 ZIP-bestand. Elk gefaald element wordt een BCF-topic met viewpoint, direct importeerbaar in Revit, Solibri, BIMcollab of Navisworks. |
+| **BCF Platform Integratie** | Verbind met het OpenAEC BCF Platform om issues direct te pushen naar een centraal projectdashboard. Inclusief OIDC-authenticatie en projectselectie. |
+| **Issue Queue** | Lokaal overzicht van gegenereerde BCF-issues met thumbnails en detail-uitklap, vóórdat je exporteert of pusht naar het platform. |
+
+### Interfaces
+
+| Functionaliteit | Omschrijving |
+|-----------------|-------------|
+| **Web Applicatie** | Volledige browsergebaseerde interface met drag-and-drop upload, standaardselectie, voortgangsbalk, resultatenweergave en 3D-viewer. |
+| **Command Line Interface (CLI)** | `ifc-validate model.ifc --ids nl-bim` — geschikt voor batch-verwerking, CI/CD pipelines en scripting. Output als console, JSON of HTML. |
+| **REST API** | FastAPI-backend met async validatie-endpoints. Integreerbaar in eigen workflows, dashboards of third-party tools. |
+
+### Rapportage & Output
+
+| Functionaliteit | Omschrijving |
+|-----------------|-------------|
+| **Resultaten Dashboard** | Overzichtskaart met totaal pass/fail, percentage, aantal gevalideerde elementen en tijdstempel. |
+| **Specificatie Breakdown** | Uitklapbare lijst per specificatie met pass/fail status, percentage en lijst van gefaalde elementen met paginering. |
+| **JSON Export** | Download volledige validatieresultaten als gestructureerd JSON-bestand voor verdere analyse of archivering. |
+| **HTML Rapport** | Genereer een op zichzelf staand HTML-rapport voor delen met projectteam of opdrachtgever. |
+
+### Bestandsverwerking
+
+| Functionaliteit | Omschrijving |
+|-----------------|-------------|
+| **Drag & Drop Upload** | Sleep IFC-, IFCXML- of IFCZIP-bestanden naar de browser. Maximaal 500MB per bestand. |
+| **Geheugenmanagement** | Automatische controle of voldoende RAM beschikbaar is (IFC-bestanden gebruiken ~10x hun bestandsgrootte in geheugen). Tijdelijke bestanden worden direct opgeruimd. |
+| **Grote Bestanden** | Geoptimaliseerd voor IFC-modellen tot 1GB+. Voortgangsindicatie tijdens verwerking. |
+
+### Deployment & Integratie
+
+| Functionaliteit | Omschrijving |
+|-----------------|-------------|
+| **Docker Deployment** | Volledige Docker Compose setup met backend, frontend, nginx, PostgreSQL en Redis. Eén commando om alles op te starten. |
+| **On-Premises** | Draai de validator op je eigen server voor maximale controle over data en privacy. Geen cloud-afhankelijkheid. |
+| **Multi-tenant** | Projectopslag met optionele NextCloud-integratie voor bestandsbeheer per organisatie. |
+| **SSO Authenticatie** | OIDC-gebaseerde single sign-on voor enterprise-omgevingen. |
+
+---
+
 ## Folder Structuur
 
 ```
@@ -429,6 +495,45 @@ python -m ifc_validator.cli kantoorgebouw.ifc --ids nl-bim --output json > kanto
 # Controleer renovatiestatus van MEP-elementen (NL_BIM 4.8)
 python -m ifc_validator.cli renovatie_project.ifc --ids nl-bim
 ```
+
+---
+
+## MCP Server (AI-assistenten)
+
+De validator is beschikbaar als [MCP-server](https://modelcontextprotocol.io/)
+zodat AI-assistenten (zoals Claude Desktop/Code) lokaal IFC-modellen kunnen
+valideren. De validatie draait volledig op de eigen machine via
+IfcOpenShell/ifctester — modeldata verlaat de machine niet en er is geen
+API-key nodig.
+
+```bash
+# Starten (stdio)
+python -m ifc_validator.mcp_server
+```
+
+Configuratie voor Claude Desktop (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "ifc-validator": {
+      "command": "python",
+      "args": ["-m", "ifc_validator.mcp_server"]
+    }
+  }
+}
+```
+
+Beschikbare tools:
+
+| Tool | Omschrijving |
+|------|--------------|
+| `validate_ifc` | Valideer een IFC tegen een IDS-bestand of bundled standaard (`nl-bim`, `rvb`); geeft per specificatie de status (passed/failed/not_checkable) en falende elementen |
+| `list_standards` | Toon de meegeleverde Nederlandse standaarden |
+| `export_report` | Valideer en schrijf een volledig HTML- of JSON-rapport naar schijf |
+
+Voorbeeldvraag aan de assistent: *"Valideer C:\\modellen\\gebouw.ifc tegen
+nl-bim en leg uit welke eisen falen."*
 
 ---
 

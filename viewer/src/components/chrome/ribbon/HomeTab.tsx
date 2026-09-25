@@ -17,11 +17,13 @@ import {
   saveIcon,
   saveAsIcon,
   openIcon,
+  optimizeIcon,
 } from "./icons";
 
 interface HomeTabProps {
   onUploadIfc?: () => void;
   onRemoveModel?: () => void;
+  onOptimize?: () => void;
   onValidate?: () => void;
   onResetValidation?: () => void;
   onExportBcf?: () => void;
@@ -43,6 +45,7 @@ interface HomeTabProps {
 export default function HomeTab({
   onUploadIfc,
   onRemoveModel,
+  onOptimize,
   onValidate,
   onResetValidation,
   onExportBcf,
@@ -104,6 +107,13 @@ export default function HomeTab({
               label={t("home.removeModel")}
               size="small"
               onClick={onRemoveModel}
+              disabled={!hasModel}
+            />
+            <RibbonButton
+              icon={optimizeIcon}
+              label={t("home.optimize")}
+              size="small"
+              onClick={onOptimize}
               disabled={!hasModel}
             />
           </RibbonButtonStack>

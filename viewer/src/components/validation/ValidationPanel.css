@@ -301,7 +301,7 @@
 .vt-row__gid {
   flex-shrink: 0;
   font-size: 9px;
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
+  font-family: var(--font-family-mono);
   color: var(--theme-text-muted);
 }
 
@@ -366,7 +366,7 @@
 }
 
 .vt-detail__monospace {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
+  font-family: var(--font-family-mono);
   font-size: 10px;
 }
 
@@ -446,14 +446,14 @@
 }
 
 .vt-detail__btn--bcf {
-  background-color: rgba(68, 182, 168, 0.12);
-  color: #44b6a8;
-  border-color: rgba(68, 182, 168, 0.3);
+  background-color: color-mix(in srgb, var(--theme-accent) 12%, transparent);
+  color: var(--theme-accent);
+  border-color: color-mix(in srgb, var(--theme-accent) 30%, transparent);
 }
 
 .vt-detail__btn--bcf:hover {
-  background-color: rgba(68, 182, 168, 0.3);
-  border-color: #44b6a8;
+  background-color: color-mix(in srgb, var(--theme-accent) 30%, transparent);
+  border-color: var(--theme-accent);
 }
 
 /* ── Compact overrides for nested components ────────────── */

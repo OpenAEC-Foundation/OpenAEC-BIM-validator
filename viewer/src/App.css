@@ -26,7 +26,7 @@
    ====================================== */
 
 .app-header {
-  background-color: var(--magic-violet);
+  background-color: var(--theme-bg-lighter);
   color: var(--color-text-light);
   padding: var(--spacing-lg) var(--spacing-xl);
   box-shadow: var(--shadow-md);
@@ -46,7 +46,7 @@
   justify-content: center;
   width: 48px;
   height: 48px;
-  background-color: var(--verdigris);
+  background-color: var(--theme-accent);
   border-radius: var(--radius-md);
   flex-shrink: 0;
 }
@@ -131,7 +131,7 @@
 }
 
 .submit-btn:hover:not(:disabled) {
-  background-color: #3a9e92;
+  background-color: var(--theme-accent-hover);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }

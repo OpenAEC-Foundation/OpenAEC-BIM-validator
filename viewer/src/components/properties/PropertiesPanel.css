@@ -22,7 +22,7 @@
   display: inline-block;
   padding: 1px var(--spacing-xs);
   background-color: var(--color-primary);
-  color: #ffffff;
+  color: var(--theme-btn-primary-text);
   font-size: 9px;
   font-weight: 600;
   border-radius: 2px;
@@ -41,7 +41,7 @@
 .props-panel__id {
   display: block;
   font-size: 9px;
-  font-family: monospace;
+  font-family: var(--font-family-mono);
   color: var(--color-text-secondary);
   word-break: break-all;
   line-height: 1.3;
@@ -110,7 +110,7 @@
 
 .props-tabs__tab--active .props-tabs__badge {
   background-color: var(--color-primary);
-  color: #ffffff;
+  color: var(--theme-btn-primary-text);
 }
 
 /* Tab body — scrollable content area */

@@ -63,7 +63,7 @@
 }
 
 .project-list__btn--danger {
-  color: #e55;
+  color: var(--theme-danger-color);
   border-color: transparent;
   background: transparent;
 }
@@ -133,7 +133,7 @@
   padding: 8px 12px;
   background: rgba(238, 85, 85, 0.08);
   border-radius: 4px;
-  color: #e55;
+  color: var(--theme-danger-color);
   font-size: 13px;
   margin-bottom: 12px;
 }
@@ -142,7 +142,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #e55;
+  background: var(--theme-danger-color);
   flex-shrink: 0;
 }
 

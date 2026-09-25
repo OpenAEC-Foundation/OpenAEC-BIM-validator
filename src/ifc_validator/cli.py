@@ -16,6 +16,7 @@ Dutch BIM Standards Shortcuts:
 CRITICAL: This module uses typer.Exit(code=X) for exit codes, never sys.exit().
 """
 
+import sys
 from enum import Enum
 from pathlib import Path
 from typing import Optional
@@ -23,6 +24,17 @@ from typing import Optional
 import click
 import typer
 from rich.console import Console
+
+# Ensure Unicode output works regardless of the host console code page.
+# Frozen Windows builds and redirected output default to cp1252, which cannot
+# encode the ✓/✗ glyphs the console formatter emits (raising UnicodeEncodeError,
+# a ValueError subclass that surfaces misleadingly as "Validation Error").
+# Forcing UTF-8 on stdio fixes this independently of PYTHONUTF8/PYTHONIOENCODING.
+for _std in (sys.stdout, sys.stderr):
+    try:
+        _std.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+    except (AttributeError, ValueError):  # pragma: no cover - stream without reconfigure
+        pass
 
 # Create the Typer app instance
 # Entry point is ifc_validator.cli:app

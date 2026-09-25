@@ -1,44 +1,38 @@
 /**
- * 3BM Brand Colors — Backward-Compatible Aliases
+ * OpenAEC design-system aliases + basis-tokens.
  *
- * Maps legacy --color-* tokens to the new --theme-* tokens from themes.css.
- * Existing components that still reference --color-* will continue to work.
+ * Maps legacy --color-* tokens to the --theme-* tokens from themes.css,
+ * and defines the shared typography/spacing/radius/shadow scale conform
+ * OpenAEC-style-book (packages/tokens). Fonts come from styles/fonts.css.
  */
 
 :root {
-  /* 3BM Brand Colors (reference only — UI uses --theme-* tokens) */
-  --magic-violet: #350E35;
-  --verdigris: #44B6A8;
-  --friendly-yellow: #EFBD75;
-  --warm-magenta: #A01C48;
-  --flaming-peach: #DB4C40;
-
   /* Semantic aliases → theme tokens */
-  --color-primary: var(--theme-accent, #D97706);
-  --color-success: var(--domain-pass, #16A34A);
-  --color-error: var(--domain-fail, #DC2626);
-  --color-warning: var(--domain-warning, #F59E0B);
-  --color-text: var(--theme-text, #333);
+  --color-primary: var(--theme-accent);
+  --color-success: var(--domain-pass);
+  --color-error: var(--domain-fail);
+  --color-warning: var(--domain-warning);
+  --color-text: var(--theme-text);
 
   /* Extended palette → theme tokens */
-  --color-background: var(--theme-bg, #ffffff);
-  --color-surface: var(--theme-surface, #f8f9fa);
-  --color-border: var(--theme-border, #e0e0e0);
-  --color-text-secondary: var(--theme-text-secondary, #666);
-  --color-text-light: #ffffff;
+  --color-background: var(--theme-bg);
+  --color-surface: var(--theme-surface);
+  --color-border: var(--theme-border);
+  --color-text-secondary: var(--theme-text-secondary);
+  --color-text-light: var(--theme-btn-primary-text);
 
   /* State aliases */
-  --color-hover: var(--theme-hover, rgba(0,0,0,0.05));
-  --color-active: var(--theme-accent, #D97706);
-  --color-disabled: #cccccc;
+  --color-hover: var(--theme-hover);
+  --color-active: var(--theme-accent);
+  --color-disabled: var(--theme-text-faint);
 
   /* Validation Status → domain tokens */
-  --color-pass: var(--domain-pass, #16A34A);
-  --color-fail: var(--domain-fail, #DC2626);
-  --color-pending: var(--domain-warning, #F59E0B);
+  --color-pass: var(--domain-pass);
+  --color-fail: var(--domain-fail);
+  --color-pending: var(--domain-warning);
 
-  /* Typography */
-  --font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* Typography (families in styles/fonts.css) */
+  --font-family: var(--font-family-body);
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
@@ -47,7 +41,7 @@
   --font-size-2xl: 1.5rem;
   --font-size-3xl: 2rem;
 
-  /* Spacing */
+  /* Spacing (4px-grid) */
   --spacing-xxs: 0.125rem;
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
@@ -56,16 +50,17 @@
   --spacing-xl: 2rem;
   --spacing-2xl: 3rem;
 
-  /* Border Radius */
+  /* Border Radius (DESIGN-SYSTEM.md: 4/8/12/full) */
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-full: 9999px;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(53, 14, 53, 0.05);
-  --shadow-md: 0 4px 6px rgba(53, 14, 53, 0.1);
-  --shadow-lg: 0 10px 15px rgba(53, 14, 53, 0.15);
+  /* Shadows (neutral, conform tokens/shadow.json) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.15);
+  --shadow-focus: 0 0 0 3px rgba(217, 119, 6, 0.35);
 
   /* Transitions */
   --transition-fast: 150ms ease;
@@ -76,21 +71,29 @@
 /* Base Styles */
 body {
   font-family: var(--font-family);
-  color: var(--theme-text, var(--color-text));
-  background-color: var(--theme-bg, var(--color-background));
+  color: var(--theme-text);
+  background-color: var(--theme-bg);
   line-height: 1.5;
   margin: 0;
   padding: 0;
 }
 
+/* Form elements don't inherit fonts by default */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
 /* Focus styles for accessibility */
 :focus-visible {
-  outline: 2px solid var(--theme-accent, var(--color-primary));
+  outline: 2px solid var(--theme-focus-color);
   outline-offset: 2px;
 }
 
 /* Selection styles */
 ::selection {
-  background-color: var(--theme-accent, var(--color-primary));
-  color: #ffffff;
+  background-color: var(--theme-accent);
+  color: var(--theme-accent-text);
 }

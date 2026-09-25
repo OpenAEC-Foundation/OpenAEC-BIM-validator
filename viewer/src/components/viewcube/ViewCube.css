@@ -33,7 +33,7 @@
 
 .vc-dir {
   position: absolute;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  font-family: var(--font-family-body);
   font-size: 10px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.5);
@@ -104,14 +104,14 @@
 .vc-face:hover {
   background: linear-gradient(
     135deg,
-    rgba(68, 182, 168, 0.6) 0%,
-    rgba(68, 182, 168, 0.4) 100%
+    color-mix(in srgb, var(--theme-accent) 60%, transparent) 0%,
+    color-mix(in srgb, var(--theme-accent) 40%, transparent) 100%
   );
-  border-color: rgba(68, 182, 168, 0.8);
+  border-color: color-mix(in srgb, var(--theme-accent) 80%, transparent);
 }
 
 .vc-label {
-  font-family: "Segoe UI", system-ui, sans-serif;
+  font-family: var(--font-family-body);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -121,7 +121,7 @@
 }
 
 .vc-face:hover .vc-label {
-  color: #ffffff;
+  color: var(--theme-btn-primary-text);
 }
 
 /* Face transforms — half of 80px = 40px */
@@ -142,7 +142,7 @@
 }
 
 .vc-edge:hover {
-  background: rgba(68, 182, 168, 0.5);
+  background: color-mix(in srgb, var(--theme-accent) 50%, transparent);
 }
 
 /* ── Corner hit zones ── */
@@ -155,5 +155,5 @@
 }
 
 .vc-corner:hover {
-  background: rgba(239, 189, 117, 0.6);
+  background: color-mix(in srgb, var(--domain-warning) 60%, transparent);
 }

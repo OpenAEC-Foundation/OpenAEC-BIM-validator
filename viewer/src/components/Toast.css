@@ -1,6 +1,6 @@
 /**
  * Toast notification styles.
- * Fixed position bottom-right, magic-violet background.
+ * Fixed position bottom-right, theme-aware background.
  */
 
 .toast-container {
@@ -17,7 +17,7 @@
 .toast {
   padding: 10px 16px;
   border-radius: var(--radius-md, 6px);
-  color: #fff;
+  color: var(--theme-btn-primary-text);
   font-size: var(--font-size-sm, 13px);
   font-family: inherit;
   max-width: 320px;
@@ -28,15 +28,16 @@
 }
 
 .toast--success {
-  background-color: var(--magic-violet, #350E35);
+  background-color: var(--theme-bg-lighter);
+  color: var(--theme-text);
 }
 
 .toast--error {
-  background-color: var(--flaming-peach, #DB4C40);
+  background-color: var(--theme-danger-color);
 }
 
 .toast--info {
-  background-color: var(--verdigris, #44B6A8);
+  background-color: var(--theme-accent);
 }
 
 @keyframes toast-slide-in {

@@ -15,7 +15,10 @@
     "theme": "Thema",
     "themeDescription": "Kies een kleurthema voor de applicatie.",
     "dark": "Donker",
-    "light": "Licht"
+    "light": "Licht",
+    "forge": "Forge (donker amber)",
+    "blueprint": "Blueprint (blauw)",
+    "contrast": "Hoog contrast"
   },
   "about": {
     "appName": "OpenAEC BIM Validator",

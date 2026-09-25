@@ -119,4 +119,5 @@ export interface ElementTypeGroup {
 export type RightPanelTab =
   | "validation"
   | "clashes"
+  | "quality"
   | "bcf";

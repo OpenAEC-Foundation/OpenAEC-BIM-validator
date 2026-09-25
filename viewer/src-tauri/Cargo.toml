@@ -1,0 +1,38 @@
+[package]
+name = "openaec-bim-validator"
+version = "0.1.0"
+description = "OpenAEC BIM Validator — IFC validation desktop app"
+authors = ["OpenAEC / 3BM Bouwkunde"]
+license = ""
+repository = ""
+edition = "2021"
+rust-version = "1.77.2"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# Desktop-only build: drop the mobile-oriented cdylib/staticlib crate-types.
+# Building the cdylib (app_lib.dll) with the GNU/mingw toolchain fails to link
+# in debug ("export ordinal too large") because debug exports every symbol of
+# the windows/webview2-com crates. The desktop bin links the lib via rlib.
+[lib]
+name = "app_lib"
+crate-type = ["lib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.2", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+tauri = { version = "2.11.2", features = [] }
+tauri-plugin-log = "2"
+tauri-plugin-opener = "2"
+# OpenAEC Accounts: OIDC/PKCE-login + Accounts API. Versions match the
+# working open-calc-studio implementation this is ported from.
+tokio = { version = "1", features = ["rt", "net", "sync", "macros", "rt-multi-thread"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+base64 = "0.22"
+sha2 = "0.10"
+rand = "0.8"
+keyring = { version = "3", features = ["windows-native"] }

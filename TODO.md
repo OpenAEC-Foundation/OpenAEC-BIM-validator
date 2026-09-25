@@ -1,6 +1,6 @@
 # TODO
 
-## Bug: Ghost mode — geselecteerd element niet opaque
+## Bug: Ghost mode — geselecteerd element niet opaque — OPGELOST
 - [x] Oorzaak: material-level opacity beïnvloedt alle elementen in shared meshes (IFC batching)
 - [x] Fragment highlight overlay werkt niet omdat transparante materials erover heen renderen
 - **Geprobeerde fixes die NIET werkten:**
@@ -8,14 +8,13 @@
   - Poging 2: fragment highlight overlay (opacity 1.0, RenderedFaces.TWO) → overlay niet zichtbaar
   - Poging 3: FragmentsModel.setOpacity()/resetOpacity()/setColor() → niets transparant (tile streaming?)
   - Poging 4: material ghost + depthWrite=false + highlight overlay → highlight nog steeds niet opaque
-- **Nog te onderzoeken:**
-  - [ ] Controleer of `fragments.highlight()` überhaupt iets rendert (console log de modelIdMap)
-  - [ ] Test of `fragments.highlight()` een apart mesh aanmaakt of iets anders doet
-  - [ ] Alternatief: OBC.Hider.isolate(modelIdMap) — verbergt alles behalve selected element
-  - [ ] Alternatief: twee render passes — eerst ghost scene, dan selected element apart renderen
-  - [ ] Alternatief: kloon de geometry van het geselecteerde element als apart THREE.Mesh met opaque material
-  - [ ] Check browser console op errors tijdens isolateElement()
-- Relevante code: `viewer/src/engine/ViewerEngine.ts` → `isolateElement()`
+- [x] **Oplossing (split-out patroon):** de geometrie van het geselecteerde element
+  wordt via `model.getItemsGeometry(localIds)` uit de fragment-batch gesplitst en
+  als losse opaque `THREE.Mesh` gerenderd — volledig onafhankelijk van het
+  fragment-materiaalsysteem. Bounding-box blijft als fallback wanneer geen
+  geometrie beschikbaar is. Nagestreamde tiles worden geghost via
+  `model.tiles.onItemSet`. Zie `isolateElement()` / `buildSplitOutMeshes()` in
+  `viewer/src/engine/ViewerEngine.ts`.
 
 ## Project Container Model (Fase 7c)
 - [x] nextcloud_client.py: constanten DIR_MODELS, DIR_VALIDATION, MANIFEST_FILENAME

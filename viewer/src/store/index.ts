@@ -36,9 +36,13 @@ import {
   type ProjectIoSlice,
   createProjectIoSlice,
 } from "./slices/projectIoSlice";
+import {
+  type AccountsSlice,
+  createAccountsSlice,
+} from "./slices/accountsSlice";
 
 /** Combined store type */
-export type AppStore = ProjectSlice & ViewerSlice & ValidationSlice & UiSlice & BcfSlice & CloudSlice & ProjectIoSlice;
+export type AppStore = ProjectSlice & ViewerSlice & ValidationSlice & UiSlice & BcfSlice & CloudSlice & ProjectIoSlice & AccountsSlice;
 
 /** The single Zustand store instance */
 export const useStore = create<AppStore>()((...args) => ({
@@ -49,6 +53,7 @@ export const useStore = create<AppStore>()((...args) => ({
   ...createBcfSlice(...args),
   ...createCloudSlice(...args),
   ...createProjectIoSlice(...args),
+  ...createAccountsSlice(...args),
 }));
 
 /** Re-export slice types for convenience */
@@ -59,3 +64,4 @@ export type { UiSlice } from "./slices/uiSlice";
 export type { BcfSlice } from "./slices/bcfSlice";
 export type { CloudSlice } from "./slices/cloudSlice";
 export type { ProjectIoSlice, ProjectSource, ProjectIoPhase } from "./slices/projectIoSlice";
+export type { AccountsSlice, AccountsUser } from "./slices/accountsSlice";

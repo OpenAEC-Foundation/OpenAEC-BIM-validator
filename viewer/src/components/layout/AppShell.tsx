@@ -32,6 +32,7 @@ import FeedbackDialog from "../feedback/FeedbackDialog";
 import CloudDialog from "../cloud/CloudDialog";
 import SaveAsDialog from "../projects/SaveAsDialog";
 import OpenDialog from "../projects/OpenDialog";
+import { OptimizeDialog } from "../tools/OptimizeDialog";
 
 import { LeftPanel } from "./LeftPanel";
 import { CenterPanel } from "./CenterPanel";
@@ -90,6 +91,7 @@ export function AppShell() {
   const [backstageOpen, setBackstageOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [optimizeOpen, setOptimizeOpen] = useState(false);
   const [cloudDialogOpen, setCloudDialogOpen] = useState(false);
   const [cloudDialogMode, setCloudDialogMode] = useState<"save" | "open">("save");
   const [cloudBcfBlob, setCloudBcfBlob] = useState<Blob | undefined>();
@@ -384,7 +386,16 @@ export function AppShell() {
       <Ribbon
         onFileTabClick={() => setBackstageOpen(true)}
         onUploadIfc={handleUploadClick}
+        onRemoveModel={() => {
+          const state = useStore.getState();
+          const loaded = state.project?.models.find(
+            (m) => m.loadState === "loaded"
+          );
+          if (loaded) state.removeModel(loaded.id);
+        }}
+        onOptimize={() => setOptimizeOpen(true)}
         onValidate={handleValidateClick}
+        onResetValidation={() => useStore.getState().resetValidation()}
         onExportBcf={handleExportBcf}
         onBcfLogin={handleBcfLogin}
         onBcfPush={handleBcfPush}
@@ -489,6 +500,11 @@ export function AppShell() {
       <FeedbackDialog
         open={feedbackOpen}
         onClose={() => setFeedbackOpen(false)}
+      />
+
+      <OptimizeDialog
+        open={optimizeOpen}
+        onClose={() => setOptimizeOpen(false)}
       />
 
       <CloudDialog
