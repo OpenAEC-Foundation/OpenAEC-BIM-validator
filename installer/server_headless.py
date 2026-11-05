@@ -27,6 +27,7 @@ if getattr(sys, "frozen", False):
         "DATABASE_URL",
         f"sqlite+aiosqlite:///{_data_dir / 'bimvalidator.db'}",
     )
+    os.environ.setdefault("PROJECT_FILES_DIR", str(_data_dir / "projects"))
 
     # Spawned hidden (CREATE_NO_WINDOW) by the Tauri shell, so stdout/stderr
     # may be None; the logging module and uvicorn crash on first write.
