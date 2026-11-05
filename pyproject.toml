@@ -1,6 +1,6 @@
 [project]
 name = "ifc-validator"
-version = "2026.45.2"
+version = "2026.45.3"
 description = "IFC validation against IDS specifications - by 3BM Bouwkunde"
 readme = "README.md"
 requires-python = ">=3.11"

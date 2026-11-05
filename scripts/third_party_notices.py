@@ -1,9 +1,12 @@
 """Report installed distributions and their bundled license notices."""
 
+import sys
 from importlib.metadata import distributions
 
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     print("THIRD-PARTY SOFTWARE NOTICES\n")
     print(
         "Generated from the installed runtime. Original licenses apply to dependencies.\n"
