@@ -21,11 +21,21 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi import (
+    BackgroundTasks,
+    FastAPI,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Request,
+    UploadFile,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
-from fastapi.staticfiles import StaticFiles
 
+from ifc_validator import __version__
+from ifc_validator.standards.resolver import get_bundled_ids
 from server.bcf_export import generate_bcf_zip
 from server.database import close_db, init_db
 from server.ids_validator import IDSValidator, ValidationReport, report_to_dict
@@ -40,9 +50,11 @@ from server.models.validation_results import (
     ValidationStatus,
 )
 from server.project_manager import ProjectManager
+from server.routers.clash import router as clash_router
 from server.routers.cloud import router as cloud_router
+from server.routers.optimize import router as optimize_router
 from server.routers.projects import router as projects_router
-from ifc_validator.standards.resolver import get_bundled_ids
+from server.routers.quality import router as quality_router
 
 
 class JSONFormatter(logging.Formatter):
@@ -73,7 +85,7 @@ logger.propagate = False
 app = FastAPI(
     title="IFC Validation API",
     description="API for IFC file upload and validation",
-    version="1.0.0",
+    version=__version__,
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -81,6 +93,11 @@ app = FastAPI(
 # Include persistent project router (PostgreSQL-backed)
 app.include_router(projects_router)
 app.include_router(cloud_router)
+
+# Feature routers: optimizer, clash detection, data-quality checks
+app.include_router(optimize_router)
+app.include_router(clash_router)
+app.include_router(quality_router)
 
 
 @app.on_event("startup")
@@ -94,6 +111,7 @@ async def shutdown():
     """Clean up database connections and HTTP clients on shutdown."""
     await close_db()
     from server.nextcloud_client import close_all_clients
+
     await close_all_clients()
 
 
@@ -107,9 +125,18 @@ _default_origins = [
     "http://127.0.0.1:8081",
     "http://localhost:8082",
     "http://127.0.0.1:8082",
+    # Tauri desktop webview origins (frontend served from tauri://localhost,
+    # rendered as http(s)://tauri.localhost on the Windows WebView2 runtime)
+    "http://tauri.localhost",
+    "https://tauri.localhost",
+    "tauri://localhost",
 ]
 _cors_env = os.environ.get("CORS_ORIGINS", "")
-cors_origins = [o.strip() for o in _cors_env.split(",") if o.strip()] if _cors_env else _default_origins
+cors_origins = (
+    [o.strip() for o in _cors_env.split(",") if o.strip()]
+    if _cors_env
+    else _default_origins
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -118,6 +145,38 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def private_network_access(request, call_next):
+    """Answer Chrome's Private-Network-Access preflight.
+
+    A public web page probing this server on localhost triggers a CORS
+    preflight with Access-Control-Request-Private-Network; without the
+    matching allow-header Chrome blocks the request. Needed for the
+    local-engine detection flow (cloud web app → local server).
+    """
+    response = await call_next(request)
+    if request.headers.get("access-control-request-private-network") == "true":
+        response.headers["Access-Control-Allow-Private-Network"] = "true"
+    return response
+
+
+@app.get("/status")
+async def local_engine_status():
+    """Lightweight probe for local-engine detection.
+
+    The web app polls this endpoint to discover a locally running
+    validation server (same pattern for the desktop-embedded server).
+    Keep this fast and dependency-free.
+    """
+    return {
+        "status": "ok",
+        "service": "bim-validator",
+        "version": app.version,
+        "capabilities": ["validate", "quality", "optimize", "clash"],
+    }
+
 
 # Temp directory for uploaded files
 UPLOAD_DIR = Path(tempfile.gettempdir()) / "ifc_uploads"
@@ -165,7 +224,7 @@ async def root():
     return {
         "status": "healthy",
         "service": "IFC Validation API",
-        "version": "1.0.0",
+        "version": __version__,
         "endpoints": {
             "health": "/health",
             "upload": "/api/upload",
@@ -197,6 +256,7 @@ async def detailed_health_check():
 
 
 # ── Auth (Authentik Proxy) ───────────────────────────────────
+
 
 @app.get("/api/auth/me")
 async def get_current_user(request: Request):
@@ -268,7 +328,7 @@ async def upload_ifc(
         raise HTTPException(status_code=400, detail="Empty file uploaded")
 
     # Save file to temp directory
-    safe_filename = f"{file_id}_{ifc_file.filename.replace(' ', '_')}"
+    safe_filename = f"{file_id}.ifc"
     file_path = UPLOAD_DIR / safe_filename
 
     try:
@@ -548,6 +608,7 @@ async def get_capabilities():
 
 def transform_report_for_frontend(report: ValidationReport) -> dict:
     """Transform a ValidationReport to the format expected by the React frontend."""
+    raw_report = report_to_dict(report)
     total_elements = sum(s.applicable_count for s in report.specifications)
 
     specs = []
@@ -573,16 +634,20 @@ def transform_report_for_frontend(report: ValidationReport) -> dict:
             "elements": failed_elements,
         }
 
-        specs.append({
-            "specification_name": spec.name,
-            "status": "pass" if spec.passed else "fail",
-            "severity": "error",
-            "total_requirements": 1,
-            "failed_requirements": 0 if spec.passed else 1,
-            "requirements": [requirement],
-        })
+        specs.append(
+            {
+                **raw_report["specifications"][len(specs)],
+                "specification_name": spec.name,
+                "status": "pass" if spec.passed else "fail",
+                "severity": "error",
+                "total_requirements": 1,
+                "failed_requirements": 0 if spec.passed else 1,
+                "requirements": [requirement],
+            }
+        )
 
     return {
+        **raw_report,
         "success": report.failed_specifications == 0,
         "ifc_file_name": report.ifc_file,
         "ids_file_name": report.ids_file,
@@ -594,7 +659,13 @@ def transform_report_for_frontend(report: ValidationReport) -> dict:
     }
 
 
-def run_validation_task(job_id: str, ifc_path: Path, ids_path: Path) -> None:
+def run_validation_task(
+    job_id: str,
+    ifc_path: Path,
+    ids_path: Path,
+    ifc_filename: str | None = None,
+    ids_filename: str | None = None,
+) -> None:
     """
     Background task to run IDS validation.
 
@@ -619,8 +690,14 @@ def run_validation_task(job_id: str, ifc_path: Path, ids_path: Path) -> None:
         logger.info(f"Starting validation for job {job_id}")
 
         # Run validation
-        job_manager.update_progress(job_id, "Validating IFC against IDS specification...")
+        job_manager.update_progress(
+            job_id, "Validating IFC against IDS specification..."
+        )
         report = ids_validator.validate(ifc_path, ids_path)
+        if ifc_filename:
+            report.ifc_file = ifc_filename
+        if ids_filename:
+            report.ids_file = ids_filename
 
         # Check if validation itself failed
         if not report.success:
@@ -689,7 +766,11 @@ def convert_report_to_result(
                         RequirementResult(
                             requirement_id=req.requirement_id,
                             requirement_description=req.description,
-                            severity=SeverityLevel(req.severity.lower()) if hasattr(req.severity, 'lower') else SeverityLevel.ERROR,
+                            severity=(
+                                SeverityLevel(req.severity.lower())
+                                if hasattr(req.severity, "lower")
+                                else SeverityLevel.ERROR
+                            ),
                             failed=True,
                         )
                         for req in failure.requirements
@@ -698,7 +779,9 @@ def convert_report_to_result(
             )
 
         # Determine specification status based on failures
-        spec_status = ValidationStatus.PASSED if not element_results else ValidationStatus.FAILED
+        spec_status = (
+            ValidationStatus.PASSED if not element_results else ValidationStatus.FAILED
+        )
 
         spec_results.append(
             SpecificationResult(
@@ -723,16 +806,21 @@ def convert_report_to_result(
         total_elements_validated=total_elements_validated,
         specifications=spec_results,
         validation_time_ms=report.validation_time_ms,
-        validator_version=getattr(report, 'validator_version', '1.0.0'),
+        validator_version=getattr(report, "validator_version", "1.0.0"),
     )
 
 
 @app.post("/api/v1/validate")
 async def validate_ifc_ids(
+    background_tasks: BackgroundTasks,
+    request: Request,
     ifc_file: UploadFile = File(..., description="IFC file to validate"),  # noqa: B008
-    ids_file: Optional[UploadFile] = File(None, description="IDS file for validation"),  # noqa: B008
-    ids_standard: Optional[str] = Form(None, description="IDS standard name (e.g., 'nl-bim', 'rvb')"),
-    background_tasks: BackgroundTasks = BackgroundTasks(),
+    ids_file: Optional[UploadFile] = File(
+        None, description="IDS file for validation"
+    ),  # noqa: B008
+    ids_standard: Optional[str] = Form(
+        None, description="IDS standard name (e.g., 'nl-bim', 'rvb')"
+    ),
 ):
     """
     Validate an IFC file against IDS specifications (asynchronously).
@@ -743,10 +831,11 @@ async def validate_ifc_ids(
         Job ID for checking validation status via /api/v1/jobs/{job_id}
     """
     # Validate IFC file
-    if not ifc_file.filename or not ifc_file.filename.lower().endswith('.ifc'):
+    ids_standard = ids_standard or request.query_params.get("ids_standard")
+    if not ifc_file.filename or not ifc_file.filename.lower().endswith(".ifc"):
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid file type: {ifc_file.filename or 'unknown'}. Expected .ifc file"
+            detail=f"Invalid IFC file type: {ifc_file.filename or 'unknown'}. Expected .ifc file",
         )
 
     # Create job directory
@@ -762,7 +851,7 @@ async def validate_ifc_ids(
         if len(ifc_content) > MAX_FILE_SIZE:
             raise HTTPException(status_code=413, detail="IFC file too large")
 
-        ifc_path = job_dir / ifc_file.filename
+        ifc_path = job_dir / "model.ifc"
         with open(ifc_path, "wb") as f:
             f.write(ifc_content)
 
@@ -772,10 +861,12 @@ async def validate_ifc_ids(
 
         if ids_file:
             # Use uploaded IDS file
-            if not ids_file.filename or not ids_file.filename.lower().endswith('.ids'):
+            if not ids_file.filename or not ids_file.filename.lower().endswith(
+                (".ids", ".xml")
+            ):
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Invalid file type: {ids_file.filename or 'unknown'}. Expected .ids file"
+                    detail=f"Invalid IDS file type: {ids_file.filename or 'unknown'}. Expected .ids file",
                 )
 
             ids_content = await ids_file.read()
@@ -785,28 +876,31 @@ async def validate_ifc_ids(
                 raise HTTPException(status_code=413, detail="IDS file too large")
 
             ids_filename = ids_file.filename
-            ids_path = job_dir / ids_filename
+            ids_path = job_dir / "specification.ids"
             with open(ids_path, "wb") as f:
                 f.write(ids_content)
 
         elif ids_standard:
             # Use bundled standard IDS
-            ids_path = get_bundled_ids(ids_standard)
-            if not ids_path:
-                raise HTTPException(status_code=400, detail=f"Unknown standard: {ids_standard}")
+            try:
+                ids_path = get_bundled_ids(ids_standard.lower())
+            except ValueError:
+                raise HTTPException(
+                    status_code=400, detail=f"Invalid IDS standard: {ids_standard}"
+                ) from None
             ids_filename = f"{ids_standard}.ids"
 
         else:
             raise HTTPException(
                 status_code=400,
-                detail="Either provide IDS file or specify a standard"
+                detail="Either provide ids_file or specify ids_standard",
             )
 
         # Check if we can accept more concurrent jobs
         if not job_manager.can_accept_job():
             raise HTTPException(
                 status_code=503,
-                detail="Server at capacity. Too many concurrent validation jobs. Please try again later."
+                detail="Server at capacity. Too many concurrent validation jobs. Please try again later.",
             )
 
         # Cleanup old completed/failed jobs before creating new one
@@ -824,6 +918,8 @@ async def validate_ifc_ids(
             job_id=job_id,
             ifc_path=ifc_path,
             ids_path=ids_path,
+            ifc_filename=ifc_file.filename,
+            ids_filename=ids_filename,
         )
 
         return JSONResponse(
@@ -833,7 +929,7 @@ async def validate_ifc_ids(
                 "status": "pending",
                 "message": "Validation job queued",
                 "status_url": f"/api/v1/jobs/{job_id}",
-            }
+            },
         )
 
     except HTTPException:
@@ -846,7 +942,7 @@ async def validate_ifc_ids(
         if job_dir.exists():
             shutil.rmtree(job_dir)
         logger.error(f"Error in validation endpoint: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from None
 
 
 @app.get("/api/v1/jobs/{job_id}")
@@ -860,6 +956,7 @@ async def get_job_status(job_id: str) -> JobStatusResponse:
     Returns:
         Job status with results if completed
     """
+    job_manager.cleanup_expired()
     # Get job info
     job = job_manager.get_job(job_id)
     if not job:
@@ -873,11 +970,12 @@ async def download_bcf(job_id: str):
     """Download validation results as BCF 2.1 .bcfzip.
 
     Generates a BCF 2.1 ZIP archive where each failed element becomes
-    a BCF topic. Importable in BIMcollab, Solibri, Navisworks, etc.
+    a BCF topic, importable in compatible issue-management tools.
 
     Args:
         job_id: UUID of the completed validation job
     """
+    job_manager.cleanup_expired()
     job = job_manager.get_job(job_id)
     if not job:
         raise HTTPException(status_code=404, detail=f"Job not found: {job_id}")
@@ -968,7 +1066,7 @@ async def upload_model(
     except ValueError as e:
         # Clean up file on error
         file_path.unlink(missing_ok=True)
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from None
 
     return JSONResponse(
         status_code=201,
@@ -1049,7 +1147,12 @@ async def get_element_properties(model_id: str, global_id: str):
 # ==========================================================================
 
 # Mount frontend static files if the build exists
-_frontend_dist = Path(__file__).resolve().parent.parent / "viewer" / "dist"
+_frontend_dist_env = os.environ.get("VIEWER_DIST_PATH")
+_frontend_dist = (
+    Path(_frontend_dist_env)
+    if _frontend_dist_env
+    else Path(__file__).resolve().parent.parent / "viewer" / "dist"
+)
 if _frontend_dist.is_dir():
     # Serve index.html for SPA routes (catch-all must be last)
     @app.get("/{full_path:path}")

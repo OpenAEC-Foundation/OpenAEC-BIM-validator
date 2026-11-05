@@ -23,8 +23,9 @@ function createMockFile(
   sizeInBytes: number = 1024,
   type: string = 'application/octet-stream'
 ): File {
-  const content = new Array(sizeInBytes).fill('a').join('');
-  return new File([content], name, { type });
+  const file = new File(['fixture'], name, { type });
+  Object.defineProperty(file, 'size', { value: sizeInBytes });
+  return file;
 }
 
 describe('FileUpload', () => {
@@ -81,7 +82,7 @@ describe('FileUpload', () => {
 
   describe('File Selection via Picker', () => {
     it('should accept valid .ifc file', async () => {
-      const user = userEvent.setup();
+    const user = userEvent.setup({ applyAccept: false });
       render(<FileUpload onFileSelect={mockOnFileSelect} />);
 
       const file = createMockFile('building.ifc', 1024);
@@ -95,7 +96,7 @@ describe('FileUpload', () => {
     });
 
     it('should accept .IFC file with uppercase extension', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ applyAccept: false });
       render(<FileUpload onFileSelect={mockOnFileSelect} />);
 
       const file = createMockFile('BUILDING.IFC', 1024);
@@ -109,7 +110,7 @@ describe('FileUpload', () => {
     });
 
     it('should reject non-.ifc file', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ applyAccept: false });
       render(<FileUpload onFileSelect={mockOnFileSelect} />);
 
       const file = createMockFile('document.pdf', 1024);
@@ -126,7 +127,7 @@ describe('FileUpload', () => {
     });
 
     it('should reject files with similar but incorrect extension', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ applyAccept: false });
       render(<FileUpload onFileSelect={mockOnFileSelect} />);
 
       const file = createMockFile('model.ifc.txt', 1024);
@@ -145,7 +146,7 @@ describe('FileUpload', () => {
 
   describe('File Size Validation', () => {
     it('should reject files larger than 500MB', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ applyAccept: false });
       render(<FileUpload onFileSelect={mockOnFileSelect} />);
 
       // Create a file larger than 500MB (500 * 1024 * 1024 bytes)
@@ -164,7 +165,7 @@ describe('FileUpload', () => {
     });
 
     it('should accept files at exactly 500MB', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ applyAccept: false });
       render(<FileUpload onFileSelect={mockOnFileSelect} />);
 
       // Create a file exactly at 500MB
@@ -180,7 +181,7 @@ describe('FileUpload', () => {
     });
 
     it('should accept files smaller than 500MB', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ applyAccept: false });
       render(<FileUpload onFileSelect={mockOnFileSelect} />);
 
       // Create a 100MB file
@@ -195,7 +196,7 @@ describe('FileUpload', () => {
     });
 
     it('should use custom maxSize when provided', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ applyAccept: false });
       // Set max size to 10MB
       render(
         <FileUpload
@@ -286,7 +287,7 @@ describe('FileUpload', () => {
 
   describe('Selected File Display', () => {
     it('should display selected file name and size', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ applyAccept: false });
       render(<FileUpload onFileSelect={mockOnFileSelect} />);
 
       const file = createMockFile('my_building.ifc', 45.2 * 1024 * 1024);
@@ -301,7 +302,7 @@ describe('FileUpload', () => {
     });
 
     it('should show clear button when file is selected', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ applyAccept: false });
       render(
         <FileUpload
           onFileSelect={mockOnFileSelect}
@@ -322,7 +323,7 @@ describe('FileUpload', () => {
     });
 
     it('should clear file and call onFileClear when clear button clicked', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ applyAccept: false });
       render(
         <FileUpload
           onFileSelect={mockOnFileSelect}
@@ -349,7 +350,7 @@ describe('FileUpload', () => {
 
   describe('Disabled State', () => {
     it('should not allow file selection when disabled', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ applyAccept: false });
       render(<FileUpload onFileSelect={mockOnFileSelect} disabled={true} />);
 
       const file = createMockFile('building.ifc', 1024);
@@ -378,7 +379,7 @@ describe('FileUpload', () => {
     });
 
     it('should not show clear button when disabled', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ applyAccept: false });
       const { rerender } = render(
         <FileUpload
           onFileSelect={mockOnFileSelect}
@@ -429,7 +430,7 @@ describe('FileUpload', () => {
 
   describe('Keyboard Accessibility', () => {
     it('should trigger file picker on Enter key', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ applyAccept: false });
       render(<FileUpload onFileSelect={mockOnFileSelect} />);
 
       const dropZone = screen.getByRole('button', {
@@ -448,7 +449,7 @@ describe('FileUpload', () => {
     });
 
     it('should trigger file picker on Space key', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ applyAccept: false });
       render(<FileUpload onFileSelect={mockOnFileSelect} />);
 
       const dropZone = screen.getByRole('button', {
@@ -468,7 +469,7 @@ describe('FileUpload', () => {
 
   describe('Custom Accept Prop', () => {
     it('should accept custom file extension', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ applyAccept: false });
       render(
         <FileUpload
           onFileSelect={mockOnFileSelect}
@@ -488,7 +489,7 @@ describe('FileUpload', () => {
     });
 
     it('should reject files not matching custom accept', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ applyAccept: false });
       render(
         <FileUpload
           onFileSelect={mockOnFileSelect}
@@ -513,7 +514,7 @@ describe('FileUpload', () => {
 
   describe('Error Handling', () => {
     it('should clear error when valid file is selected after error', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ applyAccept: false });
       render(<FileUpload onFileSelect={mockOnFileSelect} />);
 
       const input = document.querySelector(
@@ -539,7 +540,7 @@ describe('FileUpload', () => {
     });
 
     it('should display error with alert role for accessibility', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ applyAccept: false });
       render(<FileUpload onFileSelect={mockOnFileSelect} />);
 
       const file = createMockFile('document.pdf', 1024);

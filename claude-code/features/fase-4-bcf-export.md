@@ -19,7 +19,7 @@ Geen Python BCF generator. Integratie-logica in TypeScript voor de validator web
 
 **Lange termijn:** een gedeelde Rust `bcf-client` crate (apart project) die herbruikbaar is in:
 - Tauri desktop app (native)
-- Solibri plugin
+- externe BIM-tool plugin
 - Revit plugin
 - CLI tools
 - Browser via WASM
@@ -244,7 +244,7 @@ validation-results.bcf/
 
 - [ ] Topics correct aangemaakt op platform
 - [ ] GlobalId's komen overeen met IFC elementen
-- [ ] BCF ZIP importeerbaar in BIMcollab
+- [ ] BCF ZIP importeerbaar in externe BIM-tool
 - [ ] BCF ZIP importeerbaar in Revit (via BCF plugin)
 - [ ] Viewpoint selection werkt in ontvangende tool
 - [ ] Labels en priority correct gemapped
@@ -282,7 +282,7 @@ validation-results.bcf/
 ## Later (niet in scope fase 4)
 
 - **Rust `bcf-client` crate** — gedeelde API client voor alle platformen:
-  - Compileert naar native (Tauri, Solibri plugin, Revit plugin, CLI)
+  - Compileert naar native (Tauri, externe BIM-tool plugin, Revit plugin, CLI)
   - Compileert naar WASM (browser, vervangt TypeScript client)
   - Leeft in eigen repo of als crate in openaec-bcf-platform workspace
 - Snapshot generatie (canvas capture → PNG upload)
@@ -290,5 +290,5 @@ validation-results.bcf/
 - Automatische push na validatie (zonder handmatige stap)
 - Power BI-achtige dashboards op BCF Platform
 - SSO doorverbinding (zelfde Authentik voor validator + platform)
-- Solibri plugin — upload BCF issues naar platform
+- externe BIM-tool plugin — upload BCF issues naar platform
 - Revit plugin — download + upload BCF issues

@@ -34,7 +34,7 @@ Documenteer beslissing met rationale.
 - Bestudeer BCF 2.1 specificatie
 - Analyseer structuur van .bcf/.bcfzip files
 - Identificeer vereiste velden voor viewpoints
-- Test import in BIMcollab of andere BCF viewer
+- Test import in externe BIM-tool of andere BCF viewer
 
 ### Spec 0.5 - Go/No-Go Decision
 Documenteer bevindingen en maak go/no-go beslissing gebaseerd op:

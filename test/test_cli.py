@@ -18,6 +18,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from click.utils import strip_ansi
 from typer.testing import CliRunner
 
 from ifc_validator.cli import app
@@ -88,9 +89,12 @@ class TestCLIHelp:
         result = runner.invoke(app, ["--help"])
 
         assert result.exit_code == 0
-        assert "ifc-validate" in result.output.lower() or "validate" in result.output.lower()
-        assert "--ids" in result.output
-        assert "--output" in result.output
+        assert (
+            "ifc-validate" in strip_ansi(result.output).lower()
+            or "validate" in strip_ansi(result.output).lower()
+        )
+        assert "--ids" in strip_ansi(result.output)
+        assert "--output" in strip_ansi(result.output)
 
     def test_help_shows_ifc_file_argument(self, runner):
         """Test that help shows IFC file as required argument."""
@@ -98,34 +102,38 @@ class TestCLIHelp:
 
         assert result.exit_code == 0
         # Check for IFC file argument in help
-        assert "ifc" in result.output.lower()
+        assert "ifc" in strip_ansi(result.output).lower()
 
     def test_help_shows_required_ids_option(self, runner):
         """Test that help shows --ids as required option."""
         result = runner.invoke(app, ["--help"])
 
         assert result.exit_code == 0
-        assert "--ids" in result.output
+        assert "--ids" in strip_ansi(result.output)
         # The -i short option should also be shown
-        assert "-i" in result.output
+        assert "-i" in strip_ansi(result.output)
 
     def test_help_shows_output_formats(self, runner):
         """Test that help shows output format options."""
         result = runner.invoke(app, ["--help"])
 
         assert result.exit_code == 0
-        assert "--output" in result.output
-        assert "-o" in result.output
+        assert "--output" in strip_ansi(result.output)
+        assert "-o" in strip_ansi(result.output)
         # Should mention available formats
-        output_lower = result.output.lower()
-        assert "console" in output_lower or "json" in output_lower or "html" in output_lower
+        output_lower = strip_ansi(result.output).lower()
+        assert (
+            "console" in output_lower
+            or "json" in output_lower
+            or "html" in output_lower
+        )
 
     def test_version_flag(self, runner):
         """Test that --version flag displays version information."""
         result = runner.invoke(app, ["--version"])
 
         assert result.exit_code == 0
-        assert "version" in result.output.lower()
+        assert "version" in strip_ansi(result.output).lower()
 
 
 # =============================================================================
@@ -147,8 +155,11 @@ class TestFileNotFound:
         )
 
         assert result.exit_code == 1
-        assert "error" in result.output.lower()
-        assert "not found" in result.output.lower() or "nonexistent" in result.output.lower()
+        assert "error" in strip_ansi(result.output).lower()
+        assert (
+            "not found" in strip_ansi(result.output).lower()
+            or "nonexistent" in strip_ansi(result.output).lower()
+        )
 
     def test_ids_file_not_found(self, runner, sample_ifc_path):
         """Test that error is shown when IDS file doesn't exist."""
@@ -161,8 +172,11 @@ class TestFileNotFound:
         )
 
         assert result.exit_code == 1
-        assert "error" in result.output.lower()
-        assert "not found" in result.output.lower() or "nonexistent" in result.output.lower()
+        assert "error" in strip_ansi(result.output).lower()
+        assert (
+            "not found" in strip_ansi(result.output).lower()
+            or "nonexistent" in strip_ansi(result.output).lower()
+        )
 
     def test_both_files_not_found(self, runner):
         """Test that error is shown when both files don't exist."""
@@ -172,7 +186,7 @@ class TestFileNotFound:
         )
 
         assert result.exit_code == 1
-        assert "error" in result.output.lower()
+        assert "error" in strip_ansi(result.output).lower()
 
     def test_file_not_found_message_includes_path(self, runner, sample_ids_path):
         """Test that error message includes the missing file path."""
@@ -187,7 +201,10 @@ class TestFileNotFound:
 
         assert result.exit_code == 1
         # Error message should include the file path
-        assert "model.ifc" in result.output or "missing" in result.output.lower()
+        assert (
+            "model.ifc" in strip_ansi(result.output)
+            or "missing" in strip_ansi(result.output).lower()
+        )
 
 
 # =============================================================================
@@ -198,7 +215,9 @@ class TestFileNotFound:
 class TestIFCExtensionValidation:
     """Test validation of IFC file extensions."""
 
-    def test_reject_invalid_ifc_extension(self, runner, sample_ids_path, temp_invalid_extension_file):
+    def test_reject_invalid_ifc_extension(
+        self, runner, sample_ids_path, temp_invalid_extension_file
+    ):
         """Test that files without valid IFC extension are rejected."""
         if not sample_ids_path.exists():
             pytest.skip(f"Sample IDS file not found: {sample_ids_path}")
@@ -209,7 +228,7 @@ class TestIFCExtensionValidation:
         )
 
         assert result.exit_code == 1
-        output_lower = result.output.lower()
+        output_lower = strip_ansi(result.output).lower()
         assert "error" in output_lower
         # Should mention extension issue
         assert "extension" in output_lower or "invalid" in output_lower
@@ -227,7 +246,7 @@ class TestIFCExtensionValidation:
         )
 
         # Should not have extension error
-        output_lower = result.output.lower()
+        output_lower = strip_ansi(result.output).lower()
         assert "invalid" not in output_lower or "extension" not in output_lower
 
     def test_case_insensitive_ifc_extension(self, runner, sample_ids_path):
@@ -238,7 +257,9 @@ class TestIFCExtensionValidation:
         # Create a temp file with uppercase extension
         with tempfile.NamedTemporaryFile(suffix=".IFC", delete=False) as f:
             # Write minimal IFC content
-            f.write(b"ISO-10303-21;\nHEADER;\nENDSEC;\nDATA;\nENDSEC;\nEND-ISO-10303-21;")
+            f.write(
+                b"ISO-10303-21;\nHEADER;\nENDSEC;\nDATA;\nENDSEC;\nEND-ISO-10303-21;"
+            )
             temp_path = f.name
 
         try:
@@ -248,7 +269,7 @@ class TestIFCExtensionValidation:
             )
 
             # Should not fail with extension validation error
-            output_lower = result.output.lower()
+            output_lower = strip_ansi(result.output).lower()
             # It might fail for parse error but not extension error
             if "extension" in output_lower:
                 assert "valid" in output_lower or ".ifc" in output_lower
@@ -265,7 +286,9 @@ class TestIFCExtensionValidation:
 class TestIDSExtensionValidation:
     """Test validation of IDS file extensions."""
 
-    def test_reject_invalid_ids_extension(self, runner, sample_ifc_path, temp_invalid_ids_extension_file):
+    def test_reject_invalid_ids_extension(
+        self, runner, sample_ifc_path, temp_invalid_ids_extension_file
+    ):
         """Test that files without .ids extension are rejected."""
         if not sample_ifc_path.exists():
             pytest.skip(f"Sample IFC file not found: {sample_ifc_path}")
@@ -276,7 +299,7 @@ class TestIDSExtensionValidation:
         )
 
         assert result.exit_code == 1
-        output_lower = result.output.lower()
+        output_lower = strip_ansi(result.output).lower()
         assert "error" in output_lower
         # Should mention extension issue
         assert "extension" in output_lower or "invalid" in output_lower
@@ -294,7 +317,7 @@ class TestIDSExtensionValidation:
         )
 
         # Should not have IDS extension error
-        output_lower = result.output.lower()
+        output_lower = strip_ansi(result.output).lower()
         # If there's an extension error, it shouldn't be about .ids
         if "extension" in output_lower and "invalid" in output_lower:
             assert ".ids" not in output_lower
@@ -331,7 +354,10 @@ class TestMissingArguments:
         # Should fail - missing required --ids option
         assert result.exit_code != 0
         # Error should mention --ids
-        assert "--ids" in result.output or "required" in result.output.lower()
+        assert (
+            "--ids" in strip_ansi(result.output)
+            or "required" in strip_ansi(result.output).lower()
+        )
 
 
 # =============================================================================
@@ -342,7 +368,9 @@ class TestMissingArguments:
 class TestExitCodes:
     """Test exit codes for various scenarios."""
 
-    def test_exit_code_0_on_validation_pass(self, runner, sample_ifc_path, sample_ids_path):
+    def test_exit_code_0_on_validation_pass(
+        self, runner, sample_ifc_path, sample_ids_path
+    ):
         """Test that exit code 0 is returned when validation passes."""
         if not sample_ifc_path.exists():
             pytest.skip(f"Sample IFC file not found: {sample_ifc_path}")
@@ -357,7 +385,9 @@ class TestExitCodes:
         # sample.ifc has wall with 'W-001' which should pass the naming convention
         assert result.exit_code == 0
 
-    def test_exit_code_1_on_validation_fail(self, runner, sample_fail_ifc_path, sample_ids_path):
+    def test_exit_code_1_on_validation_fail(
+        self, runner, sample_fail_ifc_path, sample_ids_path
+    ):
         """Test that exit code 1 is returned when validation fails."""
         if not sample_fail_ifc_path.exists():
             pytest.skip(f"Sample fail IFC file not found: {sample_fail_ifc_path}")
@@ -381,7 +411,9 @@ class TestExitCodes:
 
         assert result.exit_code == 1
 
-    def test_exit_code_1_on_invalid_extension(self, runner, sample_ids_path, temp_invalid_extension_file):
+    def test_exit_code_1_on_invalid_extension(
+        self, runner, sample_ids_path, temp_invalid_extension_file
+    ):
         """Test that exit code 1 is returned for invalid file extension."""
         if not sample_ids_path.exists():
             pytest.skip(f"Sample IDS file not found: {sample_ids_path}")
@@ -415,7 +447,10 @@ class TestOutputFormats:
         )
 
         # Console output should have readable text, not JSON
-        assert "{" not in result.output[:50] or '"' not in result.output[:50]
+        assert (
+            "{" not in strip_ansi(result.output)[:50]
+            or '"' not in strip_ansi(result.output)[:50]
+        )
 
     def test_json_output_format(self, runner, sample_ifc_path, sample_ids_path):
         """Test that --output json produces JSON output."""
@@ -430,8 +465,10 @@ class TestOutputFormats:
         )
 
         # Should contain JSON structure
-        assert "{" in result.output
-        assert "overall_pass" in result.output or "timestamp" in result.output
+        assert "{" in strip_ansi(result.output)
+        assert "overall_pass" in strip_ansi(result.output) or "timestamp" in strip_ansi(
+            result.output
+        )
 
     def test_html_output_format(self, runner, sample_ifc_path, sample_ids_path):
         """Test that --output html produces HTML output file."""
@@ -448,16 +485,22 @@ class TestOutputFormats:
                 app,
                 [
                     str(sample_ifc_path),
-                    "--ids", str(sample_ids_path),
-                    "--output", "html",
-                    "--html-output", str(html_output_path),
+                    "--ids",
+                    str(sample_ids_path),
+                    "--output",
+                    "html",
+                    "--html-output",
+                    str(html_output_path),
                 ],
             )
 
             # Should succeed or mention HTML
             if result.exit_code == 0:
                 # Check that HTML file was created
-                assert html_output_path.exists() or "html" in result.output.lower()
+                assert (
+                    html_output_path.exists()
+                    or "html" in strip_ansi(result.output).lower()
+                )
 
     def test_invalid_output_format(self, runner, sample_ifc_path, sample_ids_path):
         """Test that invalid output format is rejected."""
@@ -468,7 +511,13 @@ class TestOutputFormats:
 
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), "--ids", str(sample_ids_path), "--output", "invalid"],
+            [
+                str(sample_ifc_path),
+                "--ids",
+                str(sample_ids_path),
+                "--output",
+                "invalid",
+            ],
         )
 
         # Should fail with invalid output format
@@ -487,7 +536,7 @@ class TestOutputFormats:
         )
 
         # Should produce JSON output
-        assert "{" in result.output
+        assert "{" in strip_ansi(result.output)
 
 
 # =============================================================================
@@ -509,12 +558,18 @@ class TestErrorMessages:
         )
 
         assert result.exit_code == 1
-        output_lower = result.output.lower()
+        output_lower = strip_ansi(result.output).lower()
         # Error message should be clear about what happened
         assert "error" in output_lower
-        assert "not found" in output_lower or "does not exist" in output_lower or "does_not_exist" in output_lower
+        assert (
+            "not found" in output_lower
+            or "does not exist" in output_lower
+            or "does_not_exist" in output_lower
+        )
 
-    def test_invalid_extension_error_is_clear(self, runner, sample_ids_path, temp_invalid_extension_file):
+    def test_invalid_extension_error_is_clear(
+        self, runner, sample_ids_path, temp_invalid_extension_file
+    ):
         """Test that invalid extension error message is clear."""
         if not sample_ids_path.exists():
             pytest.skip(f"Sample IDS file not found: {sample_ids_path}")
@@ -525,7 +580,7 @@ class TestErrorMessages:
         )
 
         assert result.exit_code == 1
-        output_lower = result.output.lower()
+        output_lower = strip_ansi(result.output).lower()
         # Error message should mention extension
         assert "extension" in output_lower or "invalid" in output_lower
 
@@ -541,7 +596,7 @@ class TestErrorMessages:
 
         assert result.exit_code == 1
         # Error should be in output
-        assert "error" in result.output.lower()
+        assert "error" in strip_ansi(result.output).lower()
 
 
 # =============================================================================
@@ -566,7 +621,10 @@ class TestShortOptions:
 
         # Should work just like --ids
         # Either passes validation or fails for other reasons, not missing --ids
-        assert "--ids" not in result.output.lower() or "required" not in result.output.lower()
+        assert (
+            "--ids" not in strip_ansi(result.output).lower()
+            or "required" not in strip_ansi(result.output).lower()
+        )
 
 
 # =============================================================================
@@ -627,7 +685,9 @@ class TestTyperExitUsage:
 class TestCLIIntegration:
     """Integration-style tests for complete CLI workflows."""
 
-    def test_full_validation_workflow_pass(self, runner, sample_ifc_path, sample_ids_path):
+    def test_full_validation_workflow_pass(
+        self, runner, sample_ifc_path, sample_ids_path
+    ):
         """Test complete validation workflow with passing model."""
         if not sample_ifc_path.exists():
             pytest.skip(f"Sample IFC file not found: {sample_ifc_path}")
@@ -641,10 +701,16 @@ class TestCLIIntegration:
 
         assert result.exit_code == 0
         # Should show some validation output
-        output_lower = result.output.lower()
-        assert "pass" in output_lower or "success" in output_lower or "validation" in output_lower
+        output_lower = strip_ansi(result.output).lower()
+        assert (
+            "pass" in output_lower
+            or "success" in output_lower
+            or "validation" in output_lower
+        )
 
-    def test_full_validation_workflow_fail(self, runner, sample_fail_ifc_path, sample_ids_path):
+    def test_full_validation_workflow_fail(
+        self, runner, sample_fail_ifc_path, sample_ids_path
+    ):
         """Test complete validation workflow with failing model."""
         if not sample_fail_ifc_path.exists():
             pytest.skip(f"Sample fail IFC file not found: {sample_fail_ifc_path}")
@@ -658,8 +724,12 @@ class TestCLIIntegration:
 
         assert result.exit_code == 1
         # Should show failure information
-        output_lower = result.output.lower()
-        assert "fail" in output_lower or "error" in output_lower or "validation" in output_lower
+        output_lower = strip_ansi(result.output).lower()
+        assert (
+            "fail" in output_lower
+            or "error" in output_lower
+            or "validation" in output_lower
+        )
 
     def test_json_output_is_valid_json(self, runner, sample_ifc_path, sample_ids_path):
         """Test that JSON output is parseable JSON."""
@@ -677,9 +747,11 @@ class TestCLIIntegration:
 
         # Should be valid JSON
         try:
-            data = json.loads(result.output)
+            data = json.loads(strip_ansi(result.output))
             assert isinstance(data, dict)
             # Should have expected fields
             assert "overall_pass" in data or "timestamp" in data
         except json.JSONDecodeError:
-            pytest.fail(f"CLI JSON output is not valid JSON: {result.output[:200]}")
+            pytest.fail(
+                f"CLI JSON output is not valid JSON: {strip_ansi(result.output)[:200]}"
+            )

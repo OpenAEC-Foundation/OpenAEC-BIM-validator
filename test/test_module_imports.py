@@ -13,8 +13,6 @@ import sys
 import warnings
 from pathlib import Path
 
-import pytest
-
 # Add project root to path for imports (same pattern as test_ids_validator.py)
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -96,13 +94,11 @@ class TestModuleImports:
 
             # Filter out any deprecation warnings from third-party libraries
             module_warnings = [
-                warning
-                for warning in w
-                if "ids_validator" in str(warning.filename)
+                warning for warning in w if "ids_validator" in str(warning.filename)
             ]
-            assert len(module_warnings) == 0, (
-                f"Import produced warnings: {[str(warning.message) for warning in module_warnings]}"
-            )
+            assert (
+                len(module_warnings) == 0
+            ), f"Import produced warnings: {[str(warning.message) for warning in module_warnings]}"
 
     def test_ids_validator_instantiation(self):
         """Test that IDSValidator can be instantiated without errors."""
@@ -135,16 +131,43 @@ if __name__ == "__main__":
 
     test_instance = TestModuleImports()
     tests = [
-        ("test_import_ids_validator_class", test_instance.test_import_ids_validator_class),
+        (
+            "test_import_ids_validator_class",
+            test_instance.test_import_ids_validator_class,
+        ),
         ("test_import_validate_function", test_instance.test_import_validate_function),
-        ("test_import_report_to_dict_function", test_instance.test_import_report_to_dict_function),
-        ("test_import_entity_failure_dataclass", test_instance.test_import_entity_failure_dataclass),
-        ("test_import_specification_result_dataclass", test_instance.test_import_specification_result_dataclass),
-        ("test_import_validation_report_dataclass", test_instance.test_import_validation_report_dataclass),
-        ("test_import_all_public_exports", test_instance.test_import_all_public_exports),
-        ("test_module_has_no_import_warnings", test_instance.test_module_has_no_import_warnings),
-        ("test_ids_validator_instantiation", test_instance.test_ids_validator_instantiation),
-        ("test_get_capabilities_works_after_import", test_instance.test_get_capabilities_works_after_import),
+        (
+            "test_import_report_to_dict_function",
+            test_instance.test_import_report_to_dict_function,
+        ),
+        (
+            "test_import_entity_failure_dataclass",
+            test_instance.test_import_entity_failure_dataclass,
+        ),
+        (
+            "test_import_specification_result_dataclass",
+            test_instance.test_import_specification_result_dataclass,
+        ),
+        (
+            "test_import_validation_report_dataclass",
+            test_instance.test_import_validation_report_dataclass,
+        ),
+        (
+            "test_import_all_public_exports",
+            test_instance.test_import_all_public_exports,
+        ),
+        (
+            "test_module_has_no_import_warnings",
+            test_instance.test_module_has_no_import_warnings,
+        ),
+        (
+            "test_ids_validator_instantiation",
+            test_instance.test_ids_validator_instantiation,
+        ),
+        (
+            "test_get_capabilities_works_after_import",
+            test_instance.test_get_capabilities_works_after_import,
+        ),
     ]
 
     passed = 0

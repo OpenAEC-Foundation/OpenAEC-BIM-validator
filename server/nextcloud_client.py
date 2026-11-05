@@ -88,7 +88,9 @@ class NextcloudClient:
         timeout: float = 30.0,
     ) -> None:
         self._base_url = base_url.rstrip("/")
-        self._webdav_root = f"{self._base_url}/remote.php/dav/files/{quote(username, safe='')}"
+        self._webdav_root = (
+            f"{self._base_url}/remote.php/dav/files/{quote(username, safe='')}"
+        )
         self._client = httpx.AsyncClient(
             auth=httpx.BasicAuth(username, password),
             timeout=timeout,
@@ -155,17 +157,13 @@ class NextcloudClient:
         """
         # Try new path first
         try:
-            return await self.download_from(
-                project_name, filename, DIR_VALIDATION
-            )
+            return await self.download_from(project_name, filename, DIR_VALIDATION)
         except NextcloudError as exc:
             if exc.status_code != 404:
                 raise
 
         # Fallback to legacy path
-        return await self.download_from(
-            project_name, filename, LEGACY_OUTPUT_SUBDIR
-        )
+        return await self.download_from(project_name, filename, LEGACY_OUTPUT_SUBDIR)
 
     async def upload_file(
         self, project_name: str, filename: str, content: bytes
@@ -204,10 +202,7 @@ class NextcloudClient:
             filename: Name of the file to delete.
         """
         # Try new path first
-        new_path = (
-            f"{self._tool_path(project_name)}"
-            f"/{quote(filename, safe='')}"
-        )
+        new_path = f"{self._tool_path(project_name)}" f"/{quote(filename, safe='')}"
         url = f"{self._webdav_root}/{new_path}"
 
         try:
@@ -218,21 +213,16 @@ class NextcloudClient:
         if resp.status_code == 404:
             # Fallback: try legacy path
             legacy_path = (
-                f"{self._legacy_tool_path(project_name)}"
-                f"/{quote(filename, safe='')}"
+                f"{self._legacy_tool_path(project_name)}" f"/{quote(filename, safe='')}"
             )
             legacy_url = f"{self._webdav_root}/{legacy_path}"
             try:
                 resp = await self._client.delete(legacy_url)
             except httpx.HTTPError as exc:
-                raise NextcloudError(
-                    f"Connection error: {exc}"
-                ) from exc
+                raise NextcloudError(f"Connection error: {exc}") from exc
 
             if resp.status_code == 404:
-                raise NextcloudError(
-                    f"File not found: {filename}", status_code=404
-                )
+                raise NextcloudError(f"File not found: {filename}", status_code=404)
             if resp.status_code >= 400:
                 raise NextcloudError(
                     f"Delete failed: {resp.status_code}",
@@ -272,9 +262,7 @@ class NextcloudClient:
 
     # ── New project container model ──────────────────────────────
 
-    async def list_files_at(
-        self, project_name: str, subdir: str
-    ) -> list[DavItem]:
+    async def list_files_at(self, project_name: str, subdir: str) -> list[DavItem]:
         """List files in an arbitrary subdirectory of a project.
 
         Args:
@@ -312,9 +300,7 @@ class NextcloudClient:
         # Fallback to legacy path
         return await self.list_files_at(project_name, LEGACY_BIM_SUBDIR)
 
-    async def list_validation_files(
-        self, project_name: str
-    ) -> list[DavItem]:
+    async def list_validation_files(self, project_name: str) -> list[DavItem]:
         """List validation output files.
 
         Falls back to legacy 99_overige_documenten/bim-validator/ if
@@ -330,9 +316,7 @@ class NextcloudClient:
         if items:
             return items
         # Fallback to legacy path
-        return await self.list_files_at(
-            project_name, LEGACY_OUTPUT_SUBDIR
-        )
+        return await self.list_files_at(project_name, LEGACY_OUTPUT_SUBDIR)
 
     async def upload_to(
         self,
@@ -355,9 +339,7 @@ class NextcloudClient:
         path = f"{PROJECTS_ROOT}/{safe_project}/{subdir}"
         await self.ensure_directory(path)
 
-        url = (
-            f"{self._webdav_root}/{path}/{quote(filename, safe='')}"
-        )
+        url = f"{self._webdav_root}/{path}/{quote(filename, safe='')}"
         try:
             resp = await self._client.put(url, content=content)
         except httpx.HTTPError as exc:
@@ -395,10 +377,7 @@ class NextcloudClient:
             Raw file bytes.
         """
         safe_project = quote(project_name, safe="")
-        path = (
-            f"{PROJECTS_ROOT}/{safe_project}/{subdir}"
-            f"/{quote(filename, safe='')}"
-        )
+        path = f"{PROJECTS_ROOT}/{safe_project}/{subdir}" f"/{quote(filename, safe='')}"
         url = f"{self._webdav_root}/{path}"
 
         try:
@@ -407,9 +386,7 @@ class NextcloudClient:
             raise NextcloudError(f"Connection error: {exc}") from exc
 
         if resp.status_code == 404:
-            raise NextcloudError(
-                f"File not found: {filename}", status_code=404
-            )
+            raise NextcloudError(f"File not found: {filename}", status_code=404)
         if resp.status_code >= 400:
             raise NextcloudError(
                 f"Download failed: {resp.status_code}",
@@ -420,9 +397,7 @@ class NextcloudClient:
 
     # ── Manifest operations ───────────────────────────────────────
 
-    async def list_manifests(
-        self, project_name: str
-    ) -> list[dict[str, Any]]:
+    async def list_manifests(self, project_name: str) -> list[dict[str, Any]]:
         """List all .wefc manifest files in a project root.
 
         Performs a PROPFIND on the project directory and filters for
@@ -446,11 +421,13 @@ class NextcloudClient:
         manifests: list[dict[str, Any]] = []
         for item in items:
             if not item.is_collection and item.name.endswith(".wefc"):
-                manifests.append({
-                    "name": item.name,
-                    "size": item.content_length,
-                    "last_modified": item.last_modified,
-                })
+                manifests.append(
+                    {
+                        "name": item.name,
+                        "size": item.content_length,
+                        "last_modified": item.last_modified,
+                    }
+                )
         return manifests
 
     async def read_manifest(
@@ -468,9 +445,7 @@ class NextcloudClient:
             Parsed manifest dict, or None if it does not exist.
         """
         safe_project = quote(project_name, safe="")
-        path = (
-            f"{PROJECTS_ROOT}/{safe_project}/{quote(name, safe='')}"
-        )
+        path = f"{PROJECTS_ROOT}/{safe_project}/{quote(name, safe='')}"
         url = f"{self._webdav_root}/{path}"
 
         try:
@@ -533,9 +508,7 @@ class NextcloudClient:
             name: Manifest filename (default: project.wefc).
         """
         safe_project = quote(project_name, safe="")
-        path = (
-            f"{PROJECTS_ROOT}/{safe_project}/{quote(name, safe='')}"
-        )
+        path = f"{PROJECTS_ROOT}/{safe_project}/{quote(name, safe='')}"
         url = f"{self._webdav_root}/{path}"
 
         # Ensure header has fileId on new manifests
@@ -547,9 +520,7 @@ class NextcloudClient:
         content = json.dumps(data, indent=2, ensure_ascii=False)
 
         try:
-            resp = await self._client.put(
-                url, content=content.encode("utf-8")
-            )
+            resp = await self._client.put(url, content=content.encode("utf-8"))
         except httpx.HTTPError as exc:
             raise NextcloudError(f"Connection error: {exc}") from exc
 
@@ -610,9 +581,7 @@ class NextcloudClient:
             data.append(obj)
 
         manifest["data"] = data
-        manifest["header"]["timestamp"] = (
-            datetime.now(timezone.utc).isoformat()
-        )
+        manifest["header"]["timestamp"] = datetime.now(timezone.utc).isoformat()
 
         await self.write_manifest(project_name, manifest, name)
         return manifest
@@ -631,14 +600,9 @@ class NextcloudClient:
     def _legacy_tool_path(self, project_name: str) -> str:
         """Build the legacy path for backward compatibility reads."""
         safe_project = quote(project_name, safe="")
-        return (
-            f"{PROJECTS_ROOT}/{safe_project}/"
-            f"99_overige_documenten/{TOOL_SLUG}"
-        )
+        return f"{PROJECTS_ROOT}/{safe_project}/" f"99_overige_documenten/{TOOL_SLUG}"
 
-    async def _propfind(
-        self, path: str, depth: str = "1"
-    ) -> httpx.Response:
+    async def _propfind(self, path: str, depth: str = "1") -> httpx.Response:
         """Execute a PROPFIND request.
 
         Args:
@@ -726,8 +690,7 @@ class NextcloudClient:
             # Detect collection
             restype = prop.find("d:resourcetype", DAV_NS)
             is_collection = (
-                restype is not None
-                and restype.find("d:collection", DAV_NS) is not None
+                restype is not None and restype.find("d:collection", DAV_NS) is not None
             )
 
             # Extract name from href (last path segment)
@@ -741,11 +704,15 @@ class NextcloudClient:
 
             # Content length
             length_el = prop.find("d:getcontentlength", DAV_NS)
-            content_length = int(length_el.text) if length_el is not None and length_el.text else 0
+            content_length = (
+                int(length_el.text) if length_el is not None and length_el.text else 0
+            )
 
             # Last modified
             modified_el = prop.find("d:getlastmodified", DAV_NS)
-            last_modified = modified_el.text if modified_el is not None and modified_el.text else ""
+            last_modified = (
+                modified_el.text if modified_el is not None and modified_el.text else ""
+            )
 
             # Skip the directory itself (base path)
             # Compare decoded versions to handle URL-encoded paths

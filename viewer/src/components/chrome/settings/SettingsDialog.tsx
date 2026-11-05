@@ -6,10 +6,14 @@ import Modal from "../Modal";
 import ThemedSelect from "../ThemedSelect";
 import "../ThemedSelect.css";
 import "./SettingsDialog.css";
+import { APP_VERSION } from "../../../version";
 
 const THEME_OPTIONS = [
-  { value: "light", labelKey: "appearance.light", swatches: ["#3E3636", "#D97706", "#F5F0EB", "#B45309"] },
-  { value: "openaec", labelKey: "appearance.dark", swatches: ["#1a1a2e", "#D97706", "#C4B199", "#B45309"] },
+  { value: "light", labelKey: "appearance.light", swatches: ["#FAFAF9", "#D97706", "#36363E", "#E7E5E4"] },
+  { value: "forge", labelKey: "appearance.forge", swatches: ["#36363E", "#D97706", "#FAFAF9", "#44444C"] },
+  { value: "openaec", labelKey: "appearance.dark", swatches: ["#27272A", "#D97706", "#FAFAF9", "#1C1917"] },
+  { value: "blueprint", labelKey: "appearance.blueprint", swatches: ["#0F1B2D", "#60A5FA", "#F1F5F9", "#1E293B"] },
+  { value: "contrast", labelKey: "appearance.contrast", swatches: ["#000000", "#FFD700", "#FFFFFF", "#333333"] },
 ];
 
 const TAB_IDS = ["general", "appearance", "about"] as const;
@@ -243,7 +247,7 @@ function AboutTabContent() {
     <div className="settings-section">
       <h3>{t("about.appName")}</h3>
       <div style={{ fontSize: 11, lineHeight: 1.8 }}>
-        <p><strong>{t("about.version")}:</strong> 0.1.0</p>
+        <p><strong>{t("about.version")}:</strong> {APP_VERSION}</p>
         <p><strong>{t("about.framework")}:</strong> React + TypeScript + That Open Engine</p>
         <p><strong>{t("about.license")}:</strong> MIT</p>
         <p style={{ marginTop: 8, color: "var(--theme-dialog-content-secondary)" }}>

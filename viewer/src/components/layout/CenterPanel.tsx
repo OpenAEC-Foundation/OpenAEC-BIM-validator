@@ -113,7 +113,7 @@ export function CenterPanel() {
         } else {
           console.log("[bridge] highlight", selectedId);
           currentEngine.clearIsolation();
-          currentEngine.highlightByGlobalIds([selectedId], "#44B6A8");
+          currentEngine.highlightByGlobalIds([selectedId], "#D97706");
         }
       } else {
         console.log("[bridge] clear all");

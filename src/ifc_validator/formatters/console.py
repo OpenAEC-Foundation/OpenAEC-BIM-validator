@@ -21,7 +21,6 @@ from rich.text import Text
 
 from ifc_validator.models import SpecificationResult, ValidationResult
 
-
 # Console instance for output
 console = Console()
 
@@ -76,7 +75,7 @@ def _truncate(text: Optional[str], max_length: int = 60) -> str:
         return ""
     if len(text) <= max_length:
         return text
-    return text[:max_length - 3] + "..."
+    return text[: max_length - 3] + "..."
 
 
 def _create_summary_panel(result: ValidationResult) -> Panel:
@@ -117,11 +116,21 @@ def _create_summary_panel(result: ValidationResult) -> Panel:
 
     # Passed count with color
     passed_color = "green" if result.passed_specifications > 0 else "dim"
-    lines.append(f"  Passed: [{passed_color}]{result.passed_specifications}[/{passed_color}]")
+    lines.append(
+        f"  Passed: [{passed_color}]{result.passed_specifications}[/{passed_color}]"
+    )
 
     # Failed count with color
     failed_color = "red" if result.failed_specifications > 0 else "dim"
-    lines.append(f"  Failed: [{failed_color}]{result.failed_specifications}[/{failed_color}]")
+    lines.append(
+        f"  Failed: [{failed_color}]{result.failed_specifications}[/{failed_color}]"
+    )
+
+    # Not-checkable count (honesty rule: never hide unevaluated specs)
+    if result.not_checkable_specifications > 0:
+        lines.append(
+            f"  Not checkable: [yellow]{result.not_checkable_specifications}[/yellow]"
+        )
 
     # Pass rate with color based on value
     rate = result.pass_rate_percent
@@ -164,7 +173,7 @@ def _create_specifications_table(result: ValidationResult) -> Table:
 
     # Define columns
     table.add_column("#", style="dim", width=4, justify="right")
-    table.add_column("Status", width=10, justify="center")
+    table.add_column("Status", width=13, justify="center")
     table.add_column("Specification", min_width=30)
     table.add_column("Applicable", justify="right", width=10)
     table.add_column("Passed", justify="right", width=10)
@@ -172,18 +181,32 @@ def _create_specifications_table(result: ValidationResult) -> Table:
 
     # Add rows for each specification
     for i, spec in enumerate(result.specifications, 1):
-        status = _get_status_text(spec.passed)
+        if spec.status == "not_checkable":
+            status = Text("? NOT CHECKED", style="yellow")
+        else:
+            status = _get_status_text(spec.passed)
 
         # Format name with description if available
         name = spec.name
         if spec.description:
             desc = _truncate(spec.description, 50)
             name = f"{name}\n[dim]{desc}[/dim]"
+        if spec.status == "not_checkable" and spec.not_checkable_reason:
+            reason = _truncate(spec.not_checkable_reason, 60)
+            name = f"{name}\n[yellow]{reason}[/yellow]"
 
         # Format counts with colors
         applicable = str(spec.applicable_count)
-        passed = f"[green]{spec.passed_count}[/green]" if spec.passed_count > 0 else str(spec.passed_count)
-        failed = f"[red]{spec.failed_count}[/red]" if spec.failed_count > 0 else str(spec.failed_count)
+        passed = (
+            f"[green]{spec.passed_count}[/green]"
+            if spec.passed_count > 0
+            else str(spec.passed_count)
+        )
+        failed = (
+            f"[red]{spec.failed_count}[/red]"
+            if spec.failed_count > 0
+            else str(spec.failed_count)
+        )
 
         table.add_row(
             str(i),
@@ -197,7 +220,9 @@ def _create_specifications_table(result: ValidationResult) -> Table:
     return table
 
 
-def _create_failures_panel(spec: SpecificationResult, spec_index: int) -> Optional[Panel]:
+def _create_failures_panel(
+    spec: SpecificationResult, spec_index: int
+) -> Optional[Panel]:
     """Create a panel showing failed entities for a specification.
 
     Args:

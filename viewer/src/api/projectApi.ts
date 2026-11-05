@@ -6,9 +6,10 @@
  */
 
 import type { SpatialNode, ElementProperties } from "../types/project";
+import { API_ORIGIN } from "./apiBase";
 
 /** Base URL for v2 API endpoints */
-const API_V2 = "/api/v2";
+const API_V2 = `${API_ORIGIN}/api/v2`;
 
 /** API error class */
 export class ProjectApiError extends Error {

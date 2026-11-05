@@ -10,8 +10,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Union
 
-from ifc_validator.engine.file_utils import validate_ifc_file, validate_ids_file
-from ifc_validator.engine.parser import load_ifc_model, load_ids_specification
+from ifc_validator.engine.file_utils import validate_ids_file, validate_ifc_file
+from ifc_validator.engine.parser import load_ids_specification, load_ifc_model
 from ifc_validator.models import (
     EntityFailure,
     SpecificationResult,
@@ -92,22 +92,50 @@ def validate(
     if hasattr(ids_file, "info") and ids_file.info is not None:
         ids_title = getattr(ids_file.info, "title", None)
 
-    # Run validation — modifies ids_file.specifications in-place
+    # Run validation — modifies ids_file.specifications in-place.
+    # should_filter_version=True skips specifications whose ifcVersion does
+    # not cover the model schema; their status stays None and they are
+    # reported as "not_checkable" below (honesty rule: never a silent
+    # pass or fail for something the engine did not evaluate).
     start_time = time.time()
-    ids_file.validate(ifc_model)
+    ids_file.validate(ifc_model, should_filter_version=True)
     validation_time = time.time() - start_time
 
     # Collect specification results
     spec_results = []
     passed_specs = 0
     failed_specs = 0
+    not_checkable_specs = 0
 
     for spec in ids_file.specifications:
-        spec_name = (
-            spec.name if spec.name is not None else "Unnamed Specification"
-        )
-        passed = spec.status if hasattr(spec, "status") else True
+        spec_name = spec.name if spec.name is not None else "Unnamed Specification"
         description = getattr(spec, "description", None)
+
+        status = getattr(spec, "status", True)
+        if status is None:
+            versions = ", ".join(getattr(spec, "ifcVersion", None) or [])
+            if versions:
+                reason = (
+                    f"Specification applies to {versions}, "
+                    f"but the model is {ifc_schema}"
+                )
+            else:
+                reason = "Specification was not evaluated by the engine"
+            spec_results.append(
+                SpecificationResult(
+                    name=spec_name,
+                    description=description,
+                    passed=False,
+                    status="not_checkable",
+                    not_checkable_reason=reason,
+                    applicable_count=0,
+                    passed_count=0,
+                    failed_count=0,
+                )
+            )
+            not_checkable_specs += 1
+            continue
+        passed = status
 
         # ALWAYS wrap in list() for safe iteration
         applicable_entities = []
@@ -120,20 +148,13 @@ def validate(
 
         # CRITICAL: use failed_entities, NOT failed_elements
         failed_entities = []
-        if (
-            hasattr(spec, "failed_entities")
-            and spec.failed_entities is not None
-        ):
+        if hasattr(spec, "failed_entities") and spec.failed_entities is not None:
             failed_entities = list(spec.failed_entities)
         failed_count = len(failed_entities)
 
-        passed_count = (
-            applicable_count - failed_count if applicable_count > 0 else 0
-        )
+        passed_count = applicable_count - failed_count if applicable_count > 0 else 0
 
-        failures = [
-            _extract_entity_failure(entity) for entity in failed_entities
-        ]
+        failures = [_extract_entity_failure(entity) for entity in failed_entities]
 
         spec_result = SpecificationResult(
             name=spec_name,
@@ -151,9 +172,11 @@ def validate(
         else:
             failed_specs += 1
 
-    # Calculate pass rate
+    # Pass rate over checkable specifications only — not-checkable specs
+    # carry no signal and must not dilute or inflate the rate
     total_specs = len(ids_file.specifications)
-    pass_rate = (passed_specs / total_specs * 100) if total_specs > 0 else 0.0
+    checkable_specs = total_specs - not_checkable_specs
+    pass_rate = (passed_specs / checkable_specs * 100) if checkable_specs > 0 else 0.0
 
     overall_pass = failed_specs == 0
 
@@ -168,6 +191,7 @@ def validate(
         total_specifications=total_specs,
         passed_specifications=passed_specs,
         failed_specifications=failed_specs,
+        not_checkable_specifications=not_checkable_specs,
         pass_rate_percent=round(pass_rate, 1),
         specifications=spec_results,
         overall_pass=overall_pass,

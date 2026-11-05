@@ -15,8 +15,6 @@ Usage:
 import os
 import sys
 import tempfile
-
-
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -36,8 +34,8 @@ from src.ifc_validator.validator import (
     _extract_entity_failure,
     check_memory_available,
     get_memory_info,
-    load_ifc_model,
     load_ids_specification,
+    load_ifc_model,
     validate,
     validate_file_exists,
     validate_ids_extension,
@@ -45,7 +43,6 @@ from src.ifc_validator.validator import (
     validate_ifc_extension,
     validate_ifc_file,
 )
-
 
 # =============================================================================
 # Test Fixtures
@@ -324,12 +321,17 @@ class TestCombinedValidation:
         if not sample_ifc_path.exists():
             pytest.skip(f"Sample IFC file not found: {sample_ifc_path}")
 
-        with patch("ifc_validator.engine.file_utils.check_memory_available", return_value=False):
-            with patch("ifc_validator.engine.file_utils.get_memory_info", return_value={
-                "file_size_mb": 100,
-                "required_memory_mb": 1000,
-                "available_memory_mb": 500,
-            }):
+        with patch(
+            "ifc_validator.engine.file_utils.check_memory_available", return_value=False
+        ):
+            with patch(
+                "ifc_validator.engine.file_utils.get_memory_info",
+                return_value={
+                    "file_size_mb": 100,
+                    "required_memory_mb": 1000,
+                    "available_memory_mb": 500,
+                },
+            ):
                 with pytest.raises(MemoryError) as exc_info:
                     validate_ifc_file(sample_ifc_path)
 
@@ -553,7 +555,10 @@ class TestValidationWorkflow:
             with pytest.raises(RuntimeError) as exc_info:
                 load_ifc_model(temp_path)
 
-            assert "parse" in str(exc_info.value).lower() or "failed" in str(exc_info.value).lower()
+            assert (
+                "parse" in str(exc_info.value).lower()
+                or "failed" in str(exc_info.value).lower()
+            )
         finally:
             if os.path.exists(temp_path):
                 os.unlink(temp_path)
@@ -576,7 +581,10 @@ class TestValidationWorkflow:
             with pytest.raises(RuntimeError) as exc_info:
                 load_ids_specification(temp_path)
 
-            assert "parse" in str(exc_info.value).lower() or "failed" in str(exc_info.value).lower()
+            assert (
+                "parse" in str(exc_info.value).lower()
+                or "failed" in str(exc_info.value).lower()
+            )
         finally:
             if os.path.exists(temp_path):
                 os.unlink(temp_path)
@@ -677,7 +685,9 @@ class TestValidationWorkflow:
         with pytest.raises(FileNotFoundError):
             validate("/nonexistent/model.ifc", sample_ids_path)
 
-    def test_validate_invalid_extension(self, temp_invalid_extension_file, sample_ids_path):
+    def test_validate_invalid_extension(
+        self, temp_invalid_extension_file, sample_ids_path
+    ):
         """Test validate raises ValueError for invalid extension."""
         if not sample_ids_path.exists():
             pytest.skip(f"Sample IDS file not found: {sample_ids_path}")
@@ -700,7 +710,13 @@ class TestFailedEntitiesNotElements:
 
     def test_validator_code_uses_failed_entities(self):
         """Verify validator.py uses failed_entities, not failed_elements."""
-        validator_file = Path(__file__).parent.parent / "src" / "ifc_validator" / "engine" / "validator.py"
+        validator_file = (
+            Path(__file__).parent.parent
+            / "src"
+            / "ifc_validator"
+            / "engine"
+            / "validator.py"
+        )
 
         if not validator_file.exists():
             pytest.skip(f"Validator file not found: {validator_file}")
@@ -722,12 +738,17 @@ class TestFailedEntitiesNotElements:
             # Check for failed_elements in actual code
             if "failed_elements" in line and not stripped.startswith("#"):
                 # This is an error unless it's in a comment
-                if not any(comment_marker in line.split("failed_elements")[0] for comment_marker in ["#", '"""', "'''"]):
+                if not any(
+                    comment_marker in line.split("failed_elements")[0]
+                    for comment_marker in ["#", '"""', "'''"]
+                ):
                     pytest.fail(
                         f"Line {i} uses 'failed_elements' instead of 'failed_entities': {line.strip()}"
                     )
 
-    def test_validation_result_uses_correct_attribute(self, sample_fail_ifc_path, sample_ids_path):
+    def test_validation_result_uses_correct_attribute(
+        self, sample_fail_ifc_path, sample_ids_path
+    ):
         """Test that validation correctly extracts failed entities."""
         if not sample_fail_ifc_path.exists():
             pytest.skip(f"Sample fail IFC file not found: {sample_fail_ifc_path}")
@@ -745,8 +766,12 @@ class TestFailedEntitiesNotElements:
 
         # Check that failures are populated
         for spec in failed_specs:
-            assert spec.failed_count > 0, f"Failed spec '{spec.name}' should have failed_count > 0"
-            assert len(spec.failures) > 0, f"Failed spec '{spec.name}' should have failure details"
+            assert (
+                spec.failed_count > 0
+            ), f"Failed spec '{spec.name}' should have failed_count > 0"
+            assert (
+                len(spec.failures) > 0
+            ), f"Failed spec '{spec.name}' should have failure details"
 
             # Verify failure details are EntityFailure instances
             for failure in spec.failures:
@@ -833,7 +858,11 @@ class TestPassRateCalculation:
         result = validate(sample_fail_ifc_path, sample_ids_path)
 
         # Verify pass rate calculation
-        expected_rate = (result.passed_specifications / result.total_specifications * 100) if result.total_specifications > 0 else 0.0
+        expected_rate = (
+            (result.passed_specifications / result.total_specifications * 100)
+            if result.total_specifications > 0
+            else 0.0
+        )
         assert abs(result.pass_rate_percent - expected_rate) < 0.1
 
 
@@ -867,7 +896,9 @@ class TestEdgeCases:
         result = validate(sample_ifc_path, sample_ids_path)
         assert isinstance(result, ValidationResult)
 
-    def test_specification_with_none_description(self, sample_ifc_path, sample_ids_path):
+    def test_specification_with_none_description(
+        self, sample_ifc_path, sample_ids_path
+    ):
         """Test handling specifications with None description."""
         if not sample_ifc_path.exists():
             pytest.skip(f"Sample IFC file not found: {sample_ifc_path}")
@@ -881,7 +912,9 @@ class TestEdgeCases:
             # Should not raise error even if description is None
             assert spec.name is not None  # Name should have default
 
-    def test_overall_pass_false_when_any_spec_fails(self, sample_fail_ifc_path, sample_ids_path):
+    def test_overall_pass_false_when_any_spec_fails(
+        self, sample_fail_ifc_path, sample_ids_path
+    ):
         """Test overall_pass is False when any specification fails."""
         if not sample_fail_ifc_path.exists():
             pytest.skip(f"Sample fail IFC file not found: {sample_fail_ifc_path}")

@@ -148,7 +148,9 @@ class IfcParser:
         model: ifcopenshell.file,
     ) -> SpatialNode:
         """Recursively build a spatial tree node."""
-        name = getattr(element, "Name", None) or getattr(element, "LongName", None) or ""
+        name = (
+            getattr(element, "Name", None) or getattr(element, "LongName", None) or ""
+        )
         global_id = getattr(element, "GlobalId", "") or ""
 
         node = SpatialNode(
@@ -185,9 +187,7 @@ class IfcParser:
 
         return node
 
-    def get_element_properties(
-        self, model: ifcopenshell.file, global_id: str
-    ) -> dict:
+    def get_element_properties(self, model: ifcopenshell.file, global_id: str) -> dict:
         """Get all properties for an element by GlobalId.
 
         Returns property sets, type properties, and material info.
@@ -215,9 +215,7 @@ class IfcParser:
                 if key == "id":
                     continue
                 prop_dict[key] = value
-            result["propertySets"].append(
-                {"name": pset_name, "properties": prop_dict}
-            )
+            result["propertySets"].append({"name": pset_name, "properties": prop_dict})
 
         # Extract type properties
         element_type = ifcopenshell.util.element.get_type(element)
@@ -279,9 +277,7 @@ class ProjectManager:
             raise ValueError(f"Project not found: {project_id}")
 
         if len(project.models) >= MAX_MODELS_PER_PROJECT:
-            raise ValueError(
-                f"Maximum {MAX_MODELS_PER_PROJECT} models per project"
-            )
+            raise ValueError(f"Maximum {MAX_MODELS_PER_PROJECT} models per project")
 
         # Detect format
         fmt = "ifcx" if file_name.lower().endswith(".ifcx") else "ifc"
@@ -302,12 +298,8 @@ class ProjectManager:
                 try:
                     ifc_model = parser.open(file_path)
                     model_record.ifc_model = ifc_model
-                    model_record.spatial_tree = parser.get_spatial_tree(
-                        ifc_model
-                    )
-                    logger.info(
-                        f"Model loaded: {file_name} (project {project_id})"
-                    )
+                    model_record.spatial_tree = parser.get_spatial_tree(ifc_model)
+                    logger.info(f"Model loaded: {file_name} (project {project_id})")
                 except Exception as e:
                     logger.error(f"Failed to parse {file_name}: {e}")
                 break
@@ -325,9 +317,7 @@ class ProjectManager:
         project.models = [m for m in project.models if m.id != model_id]
         return len(project.models) < original_count
 
-    def get_spatial_tree(
-        self, model_id: str
-    ) -> dict | None:
+    def get_spatial_tree(self, model_id: str) -> dict | None:
         """Get the spatial tree for a model."""
         for project in self._projects.values():
             for model in project.models:
@@ -337,17 +327,13 @@ class ProjectManager:
                     return None
         return None
 
-    def get_element_properties(
-        self, model_id: str, global_id: str
-    ) -> dict | None:
+    def get_element_properties(self, model_id: str, global_id: str) -> dict | None:
         """Get element properties by model ID and GlobalId."""
         for project in self._projects.values():
             for model in project.models:
                 if model.id == model_id and model.ifc_model:
                     parser = IfcParser()
-                    result = parser.get_element_properties(
-                        model.ifc_model, global_id
-                    )
+                    result = parser.get_element_properties(model.ifc_model, global_id)
                     result["modelId"] = model_id
                     return result
         return None

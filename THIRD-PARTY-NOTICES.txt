@@ -1,0 +1,14 @@
+OpenAEC BIM Validator dependency notices
+
+The application source is MIT licensed. Dependencies retain their own licenses.
+IfcOpenShell, ifctester, ifcpatch and ifcclash identify their Python distributions
+as LGPL v3 or later. Source: https://github.com/IfcOpenShell/IfcOpenShell
+Their Python and native library modules are distributed separately and remain
+replaceable in the server installation and desktop server/_internal directory.
+
+Runtime builds generate a full THIRD-PARTY-NOTICES.txt using
+scripts/third_party_notices.py, including versions, package metadata and bundled
+license texts. Consult that version-specific inventory for binary distributions.
+
+WebView2Loader.dll is distributed under the Microsoft Edge WebView2 SDK license.
+https://www.nuget.org/packages/Microsoft.Web.WebView2

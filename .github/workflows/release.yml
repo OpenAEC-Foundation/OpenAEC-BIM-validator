@@ -1,0 +1,233 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing vYYYY.W.N tag
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+env:
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: viewer/package-lock.json
+      - run: python scripts/version.py --check --tag "$RELEASE_TAG"
+      - run: pip install -e '.[dev]' -r server/requirements.txt -c requirements-release.txt build
+      - run: python -m pytest test tests server/tests
+      - run: npm ci && npm run test:run && npm run build
+        working-directory: viewer
+      - run: python -m build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python
+          path: dist/*
+  image:
+    needs: check
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/openaec-foundation/openaec-bim-validator
+          tags: type=raw,value=${{ env.RELEASE_TAG }}
+          labels: |
+            org.opencontainers.image.licenses=MIT
+      - id: version
+        run: |
+          echo "number=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "revision=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/openaec-foundation/openaec-bim-validator:${{ steps.version.outputs.number }}
+          labels: |
+            ${{ steps.meta.outputs.labels }}
+            org.opencontainers.image.version=${{ steps.version.outputs.number }}
+            org.opencontainers.image.revision=${{ steps.version.outputs.revision }}
+          provenance: true
+          sbom: true
+      - name: Smoke-test the published digest
+        env:
+          IMAGE: ghcr.io/openaec-foundation/openaec-bim-validator@${{ steps.build.outputs.digest }}
+        run: |
+          docker run -d --name smoke -p 127.0.0.1:18000:8000 "$IMAGE"
+          trap 'docker logs smoke; docker rm -f smoke' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail http://127.0.0.1:18000/health; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+  windows:
+    needs: check
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: viewer/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: viewer/src-tauri
+      - name: Build headless server
+        run: |
+          pip install -e . -r server/requirements.txt -r installer/requirements-build.txt -c requirements-release.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed' }
+          python -m PyInstaller --noconfirm --distpath installer/dist_tauri --workpath installer/build installer/pyinstaller_server_headless.spec
+          if ($LASTEXITCODE -ne 0) { throw 'Server build failed' }
+          New-Item -ItemType Directory -Force viewer/src-tauri/server | Out-Null
+          Copy-Item installer/dist_tauri/bim-validator-server/* viewer/src-tauri/server -Recurse -Force
+          python scripts/third_party_notices.py > viewer/src-tauri/server/THIRD-PARTY-NOTICES.txt
+      - name: Build desktop
+        working-directory: viewer
+        run: |
+          npm ci
+          if ($LASTEXITCODE -ne 0) { throw 'npm ci failed' }
+          npx tauri build --no-bundle
+          if ($LASTEXITCODE -ne 0) { throw 'Desktop build failed' }
+          # Apply NSIS bundle metadata before signing the application binary.
+          npx tauri bundle --bundles nsis
+      - name: Stage executables for signing
+        run: |
+          cargo metadata --locked --format-version 1 --manifest-path viewer/src-tauri/Cargo.toml > cargo-metadata.json
+          node scripts/dependency-notices.mjs viewer/node_modules cargo-metadata.json > viewer/src-tauri/server/FRONTEND-RUST-NOTICES.txt
+          New-Item -ItemType Directory -Force sign | Out-Null
+          # Tauri restores the unpatched build output after bundling. Sign the
+          # already-patched payload, so final bundling cannot change its bytes.
+          $firstInstaller = @(Get-ChildItem viewer/src-tauri/target/release/bundle/nsis/*.exe)
+          if ($firstInstaller.Count -ne 1) { throw 'Expected exactly one preliminary installer' }
+          7z x $firstInstaller[0].FullName -opreliminary-payload -y
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot extract preliminary installer' }
+          $patched = @(Get-ChildItem preliminary-payload -Recurse -File -Filter openaec-bim-validator.exe)
+          if ($patched.Count -ne 1) { throw 'Cannot locate patched application' }
+          Copy-Item $patched[0].FullName sign/
+          Copy-Item viewer/src-tauri/server/bim-validator-server.exe sign/
+      - name: Sign application and server
+        uses: azure/trusted-signing-action@v0.5.0
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.AZURE_ENDPOINT }}
+          trusted-signing-account-name: ${{ secrets.AZURE_TRUSTED_SIGNING_ACCOUNT_NAME }}
+          certificate-profile-name: ${{ secrets.AZURE_CERTIFICATE_PROFILE_NAME }}
+          files-folder: ${{ github.workspace }}\sign
+          files-folder-filter: exe
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+      - name: Package signed executables
+        run: |
+          Copy-Item sign/openaec-bim-validator.exe viewer/src-tauri/target/release/ -Force
+          Copy-Item sign/bim-validator-server.exe viewer/src-tauri/server/ -Force
+          Set-Location viewer
+          npx tauri bundle --bundles nsis
+      - name: Sign installer
+        uses: azure/trusted-signing-action@v0.5.0
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.AZURE_ENDPOINT }}
+          trusted-signing-account-name: ${{ secrets.AZURE_TRUSTED_SIGNING_ACCOUNT_NAME }}
+          certificate-profile-name: ${{ secrets.AZURE_CERTIFICATE_PROFILE_NAME }}
+          files-folder: ${{ github.workspace }}\viewer\src-tauri\target\release\bundle\nsis
+          files-folder-filter: exe
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+      - name: Verify signatures and timestamps
+        run: |
+          $installers = @(Get-ChildItem viewer/src-tauri/target/release/bundle/nsis/*.exe)
+          if ($installers.Count -ne 1) { throw 'Expected exactly one installer' }
+          7z x $installers[0].FullName -overify-installer -y
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect installer payload' }
+          $payload = @(Get-ChildItem verify-installer -Recurse -File | Where-Object { $_.Name -in @('openaec-bim-validator.exe', 'bim-validator-server.exe') })
+          if ($payload.Count -ne 2) { throw 'Installer must contain application and server' }
+          $files = $payload + $installers
+          $evidence = foreach ($file in $files) {
+            $signature = Get-AuthenticodeSignature -LiteralPath $file.FullName
+            if ($signature.Status -ne 'Valid' -or -not $signature.TimeStamperCertificate) { throw "Invalid or untimestamped signature: $file" }
+            [PSCustomObject]@{ File=$file.Name; Status=$signature.Status.ToString(); Signer=$signature.SignerCertificate.Subject; Thumbprint=$signature.SignerCertificate.Thumbprint; TimestampSigner=$signature.TimeStamperCertificate.Subject }
+          }
+          $evidence | ConvertTo-Json | Set-Content signing-evidence.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            viewer/src-tauri/target/release/bundle/nsis/*.exe
+            signing-evidence.json
+            viewer/src-tauri/server/THIRD-PARTY-NOTICES.txt
+            viewer/src-tauri/server/FRONTEND-RUST-NOTICES.txt
+  publish:
+    needs: [check, image, windows]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Flatten artifacts and calculate checksums
+        run: |
+          mkdir release
+          find artifacts -type f -exec cp {} release/ \;
+          cd release
+          sha256sum * > SHA256SUMS
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: release/*
+      - name: Publish prerelease with verified evidence
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_DIGEST: ${{ needs.image.outputs.digest }}
+        run: |
+          printf 'Windows x64 installer: Authenticode signed and timestamp verified. See signing-evidence.json.\n\nContainer: ghcr.io/openaec-foundation/openaec-bim-validator@%s\n\nPython package and source archive have GitHub build attestations. Native macOS/Linux desktop installers and a public native SDK are not included.\n' "$IMAGE_DIGEST" > notes.md
+          gh release create "$RELEASE_TAG" release/* --verify-tag --prerelease --title "$RELEASE_TAG" --notes-file notes.md

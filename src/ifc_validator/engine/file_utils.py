@@ -41,9 +41,7 @@ def validate_file_exists(
         raise FileNotFoundError(f"{file_type} file not found: {file_path}")
 
     if not path.is_file():
-        raise FileNotFoundError(
-            f"{file_type} path is not a file: {file_path}"
-        )
+        raise FileNotFoundError(f"{file_type} path is not a file: {file_path}")
 
     return path
 

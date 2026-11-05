@@ -11,7 +11,6 @@ Supports the new project container model:
 - project.wefc manifest for linking objects
 """
 
-import json
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -44,10 +43,9 @@ from server.nextcloud_client import (
     NextcloudError,
     get_nc_client,
 )
-from server.tenant_config import TenantConfig, get_tenant, get_tenants
+from server.tenant_config import TenantConfig, get_tenants
 from server.volume_reader import (
     LEGACY_BIM_SUBDIR,
-    LEGACY_OUTPUT_SUBDIR,
     VolumeReader,
 )
 
@@ -63,9 +61,7 @@ def _resolve_tenant(tenant: str | None = None) -> TenantConfig:
     """Resolve tenant from parameter, falling back to default."""
     registry = get_tenants()
     if not registry.is_configured:
-        raise HTTPException(
-            503, "Cloud storage is not configured (no tenants)"
-        )
+        raise HTTPException(503, "Cloud storage is not configured (no tenants)")
 
     slug = tenant or DEFAULT_TENANT
     config = registry.get(slug)
@@ -82,9 +78,7 @@ def _get_reader(config: TenantConfig) -> VolumeReader:
 def _nc_error_to_http(exc: Exception) -> HTTPException:
     """Convert a NextcloudError to an HTTPException."""
     if isinstance(exc, NextcloudError) and exc.status_code:
-        return HTTPException(
-            status_code=exc.status_code, detail=str(exc)
-        )
+        return HTTPException(status_code=exc.status_code, detail=str(exc))
     return HTTPException(status_code=502, detail=str(exc))
 
 
@@ -128,10 +122,7 @@ async def cloud_list_projects(tenant: str | None = Query(None)):
     if reader.available:
         projects = reader.list_projects()
         return CloudProjectsResponse(
-            projects=[
-                CloudProjectItem(name=p.name, last_modified="")
-                for p in projects
-            ]
+            projects=[CloudProjectItem(name=p.name, last_modified="") for p in projects]
         )
 
     # Fallback: WebDAV
@@ -155,9 +146,7 @@ async def cloud_list_projects(tenant: str | None = Query(None)):
 @router.get("/projects/{project}/files")
 async def cloud_list_files(
     project: str,
-    category: str = Query(
-        "output", pattern="^(bim|output)$"
-    ),
+    category: str = Query("output", pattern="^(bim|output)$"),
     tenant: str | None = Query(None),
 ):
     """List files in a project directory.
@@ -223,9 +212,7 @@ async def cloud_list_files(
 async def cloud_download_file(
     project: str,
     filename: str,
-    category: str = Query(
-        "output", pattern="^(bim|output)$"
-    ),
+    category: str = Query("output", pattern="^(bim|output)$"),
     tenant: str | None = Query(None),
 ):
     """Download a file from a project.
@@ -239,9 +226,7 @@ async def cloud_download_file(
     # Fast path: stream from volume mount (get_file_path has fallback)
     if reader.available:
         subdir = DIR_MODELS if category == "bim" else DIR_VALIDATION
-        file_path = reader.get_file_path(
-            project, filename, subdir
-        )
+        file_path = reader.get_file_path(project, filename, subdir)
         if file_path:
             return FileResponse(
                 path=str(file_path),
@@ -256,9 +241,7 @@ async def cloud_download_file(
         if category == "bim":
             # Try models/ then 70_BIM/
             try:
-                content = await client.download_from(
-                    project, filename, DIR_MODELS
-                )
+                content = await client.download_from(project, filename, DIR_MODELS)
             except NextcloudError as exc:
                 if exc.status_code != 404:
                     raise
@@ -266,9 +249,7 @@ async def cloud_download_file(
                     project, filename, LEGACY_BIM_SUBDIR
                 )
         else:
-            content = await client.download_file(
-                project, filename
-            )
+            content = await client.download_file(project, filename)
     except Exception as exc:
         raise _nc_error_to_http(exc) from exc
 
@@ -276,9 +257,7 @@ async def cloud_download_file(
         content=content,
         media_type="application/octet-stream",
         headers={
-            "Content-Disposition": (
-                f'attachment; filename="{filename}"'
-            ),
+            "Content-Disposition": (f'attachment; filename="{filename}"'),
         },
     )
 
@@ -312,9 +291,7 @@ async def cloud_upload_file(
     except Exception as exc:
         raise _nc_error_to_http(exc) from exc
 
-    return CloudUploadResponse(
-        success=True, project=project, filename=filename
-    )
+    return CloudUploadResponse(success=True, project=project, filename=filename)
 
 
 # ── File delete (write — always via WebDAV) ────────────────────
@@ -367,9 +344,7 @@ async def cloud_save_validation(
 
     content = await file.read()
     try:
-        await client.upload_to_validation(
-            project, filename, content
-        )
+        await client.upload_to_validation(project, filename, content)
     except Exception as exc:
         raise _nc_error_to_http(exc) from exc
 
@@ -388,9 +363,7 @@ async def cloud_save_validation(
         validation_obj["model"] = f"wfc://{model_guid}"
 
     try:
-        await client.upsert_manifest_object(
-            project, validation_obj
-        )
+        await client.upsert_manifest_object(project, validation_obj)
     except Exception as exc:
         # Manifest update is best-effort; log but don't fail
         logger.warning(
@@ -399,9 +372,7 @@ async def cloud_save_validation(
             exc,
         )
 
-    return CloudUploadResponse(
-        success=True, project=project, filename=filename
-    )
+    return CloudUploadResponse(success=True, project=project, filename=filename)
 
 
 # ── Manifests (multi-manifest API — ADR-001) ────────────────────
@@ -488,9 +459,7 @@ async def cloud_get_manifest_by_name(
         raise _nc_error_to_http(exc) from exc
 
     if manifest is None:
-        raise HTTPException(
-            404, f"Manifest not found: {project}/{name}"
-        )
+        raise HTTPException(404, f"Manifest not found: {project}/{name}")
 
     return JSONResponse(content=manifest)
 
@@ -520,9 +489,7 @@ async def cloud_upsert_manifest_object(
     client = get_nc_client(config)
 
     try:
-        manifest = await client.upsert_manifest_object(
-            project, obj, name
-        )
+        manifest = await client.upsert_manifest_object(project, obj, name)
     except Exception as exc:
         raise _nc_error_to_http(exc) from exc
 
@@ -542,9 +509,7 @@ async def cloud_get_manifest(
     Backward-compatible alias — redirects to the multi-manifest
     endpoint with name='project.wefc'.
     """
-    return await cloud_get_manifest_by_name(
-        project, "project.wefc", tenant
-    )
+    return await cloud_get_manifest_by_name(project, "project.wefc", tenant)
 
 
 @router.put("/projects/{project}/manifest")
@@ -568,9 +533,7 @@ async def cloud_put_manifest(
 
     # Ensure header timestamp is current
     if "header" in manifest:
-        manifest["header"]["timestamp"] = (
-            datetime.now(timezone.utc).isoformat()
-        )
+        manifest["header"]["timestamp"] = datetime.now(timezone.utc).isoformat()
         manifest["header"]["application"] = "bim-validator"
 
     try:

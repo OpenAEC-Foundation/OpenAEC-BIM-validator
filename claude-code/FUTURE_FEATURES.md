@@ -62,7 +62,7 @@
 - Revit BCF plugin — download issues vanuit BCF Platform
 - Revit add-in voor direct valideren
 - ArchiCAD add-on
-- BIMcollab Zoom plugin
+- externe BIM-tool Zoom plugin
 - ACC/BIM 360 connector
 
 ### Reporting

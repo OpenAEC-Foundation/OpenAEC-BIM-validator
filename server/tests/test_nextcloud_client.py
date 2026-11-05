@@ -11,7 +11,6 @@ Tests cover:
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import httpx
 import pytest
 
 from server.nextcloud_client import (
@@ -81,9 +80,7 @@ class TestListModels:
     """Test list_models with new-path-first, legacy fallback."""
 
     @pytest.mark.asyncio
-    async def test_returns_new_path_files(
-        self, nc_client: NextcloudClient
-    ) -> None:
+    async def test_returns_new_path_files(self, nc_client: NextcloudClient) -> None:
         """When models/ has files, return those."""
         mock_items = [MagicMock(is_collection=False, name="model.ifc")]
         with patch.object(
@@ -95,9 +92,7 @@ class TestListModels:
             assert result == mock_items
 
     @pytest.mark.asyncio
-    async def test_falls_back_to_legacy(
-        self, nc_client: NextcloudClient
-    ) -> None:
+    async def test_falls_back_to_legacy(self, nc_client: NextcloudClient) -> None:
         """When models/ is empty, fall back to 70_BIM/."""
         legacy_items = [MagicMock(is_collection=False, name="old.ifc")]
         with patch.object(
@@ -120,9 +115,7 @@ class TestListValidationFiles:
     """Test list_validation_files with fallback."""
 
     @pytest.mark.asyncio
-    async def test_returns_new_path_files(
-        self, nc_client: NextcloudClient
-    ) -> None:
+    async def test_returns_new_path_files(self, nc_client: NextcloudClient) -> None:
         mock_items = [MagicMock(is_collection=False)]
         with patch.object(
             nc_client, "list_files_at", new_callable=AsyncMock
@@ -133,15 +126,13 @@ class TestListValidationFiles:
             assert result == mock_items
 
     @pytest.mark.asyncio
-    async def test_falls_back_to_legacy(
-        self, nc_client: NextcloudClient
-    ) -> None:
+    async def test_falls_back_to_legacy(self, nc_client: NextcloudClient) -> None:
         legacy_items = [MagicMock(is_collection=False)]
         with patch.object(
             nc_client, "list_files_at", new_callable=AsyncMock
         ) as mock_list:
             mock_list.side_effect = [[], legacy_items]
-            result = await nc_client.list_validation_files("Proj")
+            await nc_client.list_validation_files("Proj")
             assert mock_list.call_count == 2
             assert mock_list.call_args_list[1][0] == (
                 "Proj",
@@ -156,23 +147,17 @@ class TestDownloadFileFallback:
     """Test download_file tries new path then legacy."""
 
     @pytest.mark.asyncio
-    async def test_downloads_from_new_path(
-        self, nc_client: NextcloudClient
-    ) -> None:
+    async def test_downloads_from_new_path(self, nc_client: NextcloudClient) -> None:
         with patch.object(
             nc_client, "download_from", new_callable=AsyncMock
         ) as mock_dl:
             mock_dl.return_value = b"content"
             result = await nc_client.download_file("Proj", "test.json")
-            mock_dl.assert_called_once_with(
-                "Proj", "test.json", DIR_VALIDATION
-            )
+            mock_dl.assert_called_once_with("Proj", "test.json", DIR_VALIDATION)
             assert result == b"content"
 
     @pytest.mark.asyncio
-    async def test_falls_back_on_404(
-        self, nc_client: NextcloudClient
-    ) -> None:
+    async def test_falls_back_on_404(self, nc_client: NextcloudClient) -> None:
         with patch.object(
             nc_client, "download_from", new_callable=AsyncMock
         ) as mock_dl:
@@ -203,9 +188,7 @@ class TestManifestOperations:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_read_manifest_parses_json(
-        self, nc_client: NextcloudClient
-    ) -> None:
+    async def test_read_manifest_parses_json(self, nc_client: NextcloudClient) -> None:
         manifest = {"header": {"schema": "WeFC"}, "data": []}
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -216,9 +199,7 @@ class TestManifestOperations:
         assert result == manifest
 
     @pytest.mark.asyncio
-    async def test_write_manifest(
-        self, nc_client: NextcloudClient
-    ) -> None:
+    async def test_write_manifest(self, nc_client: NextcloudClient) -> None:
         manifest = {"header": {"schema": "WeFC"}, "data": []}
         mock_resp = MagicMock()
         mock_resp.status_code = 201
@@ -250,9 +231,7 @@ class TestManifestOperations:
                 new_callable=AsyncMock,
             ) as mock_write,
         ):
-            result = await nc_client.upsert_manifest_object(
-                "Proj", obj
-            )
+            result = await nc_client.upsert_manifest_object("Proj", obj)
             assert result["header"]["schema"] == "WeFC"
             assert len(result["data"]) == 1
             assert result["data"][0]["guid"] == "test-guid-123"
@@ -295,16 +274,12 @@ class TestManifestOperations:
                 new_callable=AsyncMock,
             ),
         ):
-            result = await nc_client.upsert_manifest_object(
-                "Proj", updated_obj
-            )
+            result = await nc_client.upsert_manifest_object("Proj", updated_obj)
             assert len(result["data"]) == 1
             assert result["data"][0]["name"] == "Updated"
 
     @pytest.mark.asyncio
-    async def test_upsert_appends_new_object(
-        self, nc_client: NextcloudClient
-    ) -> None:
+    async def test_upsert_appends_new_object(self, nc_client: NextcloudClient) -> None:
         existing_manifest = {
             "header": {
                 "schema": "WeFC",
@@ -338,7 +313,5 @@ class TestManifestOperations:
                 new_callable=AsyncMock,
             ),
         ):
-            result = await nc_client.upsert_manifest_object(
-                "Proj", new_obj
-            )
+            result = await nc_client.upsert_manifest_object("Proj", new_obj)
             assert len(result["data"]) == 2

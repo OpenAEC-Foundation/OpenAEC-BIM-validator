@@ -7,12 +7,15 @@
 import { useStore } from "../../store";
 import type { RightPanelTab } from "../../types/project";
 import { ValidationPanel } from "../validation/ValidationPanel";
+import { ClashPanel } from "../clash/ClashPanel";
+import { QualityPanel } from "../quality/QualityPanel";
 import { BcfPanel } from "../bcf/BcfPanel";
 
 /** Tab configuration */
 const TABS: { id: RightPanelTab; label: string }[] = [
   { id: "validation", label: "Validatie" },
   { id: "clashes", label: "Clashes" },
+  { id: "quality", label: "Kwaliteit" },
   { id: "bcf", label: "BCF" },
 ];
 
@@ -46,13 +49,9 @@ export function RightPanel() {
       <div className="panel__content">
         {activeTab === "validation" && <ValidationPanel />}
 
-        {activeTab === "clashes" && (
-          <div className="empty-state">
-            <p className="empty-state__text">
-              Clash detection — binnenkort beschikbaar
-            </p>
-          </div>
-        )}
+        {activeTab === "clashes" && <ClashPanel />}
+
+        {activeTab === "quality" && <QualityPanel />}
 
         {activeTab === "bcf" && <BcfPanel />}
       </div>

@@ -1,0 +1,121 @@
+.clash-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.clash-panel__heading {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--theme-text-muted);
+  margin: 0 0 8px;
+}
+
+.clash-panel__config {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.clash-panel__label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--theme-text-muted);
+}
+
+.clash-panel__select {
+  background: var(--theme-dialog-input-bg);
+  color: var(--theme-text);
+  border: 1px solid var(--theme-border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.clash-panel__btn {
+  border: 1px solid var(--theme-border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  background: var(--theme-dialog-input-bg);
+  color: var(--theme-text);
+}
+
+.clash-panel__btn--primary {
+  background: var(--theme-accent);
+  border-color: var(--theme-accent);
+  color: var(--theme-btn-primary-text);
+  font-weight: 600;
+}
+
+.clash-panel__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.clash-panel__error {
+  color: var(--theme-danger-color);
+  font-size: 12px;
+  margin: 4px 0 0;
+}
+
+.clash-panel__summary {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.clash-panel__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.clash-panel__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--theme-border);
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.clash-panel__type {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--domain-warning);
+  min-width: 68px;
+}
+
+.clash-panel__element {
+  background: none;
+  border: none;
+  color: var(--theme-accent);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.clash-panel__element:hover {
+  color: var(--theme-accent-hover);
+}
+
+.clash-panel__vs {
+  color: var(--theme-text-muted);
+}

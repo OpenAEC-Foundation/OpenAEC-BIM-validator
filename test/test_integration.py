@@ -19,14 +19,14 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from click.utils import strip_ansi
 from typer.testing import CliRunner
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from ifc_validator.cli import app
-from ifc_validator.validator import validate, ValidationResult
-
+from ifc_validator.validator import ValidationResult, validate
 
 # =============================================================================
 # Test Fixtures
@@ -85,7 +85,9 @@ class TestEndToEndValidationPass:
             [str(sample_ifc_path), "--ids", str(sample_ids_path)],
         )
 
-        assert result.exit_code == 0, f"Expected exit code 0, got {result.exit_code}. Output: {result.output}"
+        assert (
+            result.exit_code == 0
+        ), f"Expected exit code 0, got {result.exit_code}. Output: {strip_ansi(result.output)}"
 
     def test_validation_pass_console_output_shows_success(
         self, runner, sample_ifc_path, sample_ids_path
@@ -102,9 +104,13 @@ class TestEndToEndValidationPass:
         )
 
         assert result.exit_code == 0
-        output_lower = result.output.lower()
+        output_lower = strip_ansi(result.output).lower()
         # Should indicate pass status
-        assert "pass" in output_lower or "success" in output_lower or "validation" in output_lower
+        assert (
+            "pass" in output_lower
+            or "success" in output_lower
+            or "validation" in output_lower
+        )
 
     def test_validation_pass_console_output_contains_file_info(
         self, runner, sample_ifc_path, sample_ids_path
@@ -122,8 +128,8 @@ class TestEndToEndValidationPass:
 
         assert result.exit_code == 0
         # Should show file names
-        assert "sample.ifc" in result.output
-        assert "sample.ids" in result.output
+        assert "sample.ifc" in strip_ansi(result.output)
+        assert "sample.ids" in strip_ansi(result.output)
 
     def test_validation_pass_console_output_shows_specification(
         self, runner, sample_ifc_path, sample_ids_path
@@ -141,7 +147,9 @@ class TestEndToEndValidationPass:
 
         assert result.exit_code == 0
         # Should show specification name from sample.ids
-        assert "Wall" in result.output or "Naming" in result.output
+        assert "Wall" in strip_ansi(result.output) or "Naming" in strip_ansi(
+            result.output
+        )
 
 
 # =============================================================================
@@ -166,7 +174,9 @@ class TestEndToEndValidationFail:
             [str(sample_fail_ifc_path), "--ids", str(sample_ids_path)],
         )
 
-        assert result.exit_code == 1, f"Expected exit code 1, got {result.exit_code}. Output: {result.output}"
+        assert (
+            result.exit_code == 1
+        ), f"Expected exit code 1, got {result.exit_code}. Output: {strip_ansi(result.output)}"
 
     def test_validation_fail_console_output_shows_failure(
         self, runner, sample_fail_ifc_path, sample_ids_path
@@ -183,7 +193,7 @@ class TestEndToEndValidationFail:
         )
 
         assert result.exit_code == 1
-        output_lower = result.output.lower()
+        output_lower = strip_ansi(result.output).lower()
         # Should indicate failure status
         assert "fail" in output_lower
 
@@ -203,8 +213,10 @@ class TestEndToEndValidationFail:
 
         assert result.exit_code == 1
         # Should show entity information (either wall name or type)
-        output_lower = result.output.lower()
-        assert "wall" in output_lower or "bad" in output_lower or "entity" in output_lower
+        output_lower = strip_ansi(result.output).lower()
+        assert (
+            "wall" in output_lower or "bad" in output_lower or "entity" in output_lower
+        )
 
 
 # =============================================================================
@@ -215,9 +227,7 @@ class TestEndToEndValidationFail:
 class TestJSONOutputFormat:
     """Test JSON output format correctness."""
 
-    def test_json_output_is_valid_json(
-        self, runner, sample_ifc_path, sample_ids_path
-    ):
+    def test_json_output_is_valid_json(self, runner, sample_ifc_path, sample_ids_path):
         """Test that --output json produces valid JSON."""
         if not sample_ifc_path.exists():
             pytest.skip(f"Sample IFC file not found: {sample_ifc_path}")
@@ -232,10 +242,12 @@ class TestJSONOutputFormat:
         assert result.exit_code == 0
         # Should be parseable JSON
         try:
-            data = json.loads(result.output)
+            data = json.loads(strip_ansi(result.output))
             assert isinstance(data, dict)
         except json.JSONDecodeError as e:
-            pytest.fail(f"JSON output is not valid: {e}. Output: {result.output[:500]}")
+            pytest.fail(
+                f"JSON output is not valid: {e}. Output: {strip_ansi(result.output)[:500]}"
+            )
 
     def test_json_output_has_required_fields(
         self, runner, sample_ifc_path, sample_ids_path
@@ -251,7 +263,7 @@ class TestJSONOutputFormat:
             [str(sample_ifc_path), "--ids", str(sample_ids_path), "--output", "json"],
         )
 
-        data = json.loads(result.output)
+        data = json.loads(strip_ansi(result.output))
 
         # Required fields per spec
         required_fields = [
@@ -286,7 +298,7 @@ class TestJSONOutputFormat:
             [str(sample_ifc_path), "--ids", str(sample_ids_path), "--output", "json"],
         )
 
-        data = json.loads(result.output)
+        data = json.loads(strip_ansi(result.output))
         assert data["overall_pass"] is True
 
     def test_json_output_overall_pass_false_for_failing_model(
@@ -300,10 +312,16 @@ class TestJSONOutputFormat:
 
         result = runner.invoke(
             app,
-            [str(sample_fail_ifc_path), "--ids", str(sample_ids_path), "--output", "json"],
+            [
+                str(sample_fail_ifc_path),
+                "--ids",
+                str(sample_ids_path),
+                "--output",
+                "json",
+            ],
         )
 
-        data = json.loads(result.output)
+        data = json.loads(strip_ansi(result.output))
         assert data["overall_pass"] is False
 
     def test_json_output_specifications_structure(
@@ -320,7 +338,7 @@ class TestJSONOutputFormat:
             [str(sample_ifc_path), "--ids", str(sample_ids_path), "--output", "json"],
         )
 
-        data = json.loads(result.output)
+        data = json.loads(strip_ansi(result.output))
         assert isinstance(data["specifications"], list)
         assert len(data["specifications"]) > 0
 
@@ -344,10 +362,16 @@ class TestJSONOutputFormat:
 
         result = runner.invoke(
             app,
-            [str(sample_fail_ifc_path), "--ids", str(sample_ids_path), "--output", "json"],
+            [
+                str(sample_fail_ifc_path),
+                "--ids",
+                str(sample_ids_path),
+                "--output",
+                "json",
+            ],
         )
 
-        data = json.loads(result.output)
+        data = json.loads(strip_ansi(result.output))
 
         # Find failed specifications
         failed_specs = [s for s in data["specifications"] if not s["passed"]]
@@ -374,7 +398,7 @@ class TestJSONOutputFormat:
             [str(sample_ifc_path), "-i", str(sample_ids_path), "-o", "json"],
         )
 
-        data = json.loads(result.output)
+        data = json.loads(strip_ansi(result.output))
         assert data["overall_pass"] is True
 
 
@@ -386,9 +410,7 @@ class TestJSONOutputFormat:
 class TestHTMLOutputFormat:
     """Test HTML output format correctness."""
 
-    def test_html_output_creates_file(
-        self, runner, sample_ifc_path, sample_ids_path
-    ):
+    def test_html_output_creates_file(self, runner, sample_ifc_path, sample_ids_path):
         """Test that --output html creates an HTML file."""
         if not sample_ifc_path.exists():
             pytest.skip(f"Sample IFC file not found: {sample_ifc_path}")
@@ -402,18 +424,21 @@ class TestHTMLOutputFormat:
                 app,
                 [
                     str(sample_ifc_path),
-                    "--ids", str(sample_ids_path),
-                    "--output", "html",
-                    "--html-output", str(html_output),
+                    "--ids",
+                    str(sample_ids_path),
+                    "--output",
+                    "html",
+                    "--html-output",
+                    str(html_output),
                 ],
             )
 
             assert result.exit_code == 0
-            assert html_output.exists(), f"HTML file not created. Output: {result.output}"
+            assert (
+                html_output.exists()
+            ), f"HTML file not created. Output: {strip_ansi(result.output)}"
 
-    def test_html_output_is_valid_html(
-        self, runner, sample_ifc_path, sample_ids_path
-    ):
+    def test_html_output_is_valid_html(self, runner, sample_ifc_path, sample_ids_path):
         """Test that HTML output is valid HTML document."""
         if not sample_ifc_path.exists():
             pytest.skip(f"Sample IFC file not found: {sample_ifc_path}")
@@ -427,9 +452,12 @@ class TestHTMLOutputFormat:
                 app,
                 [
                     str(sample_ifc_path),
-                    "--ids", str(sample_ids_path),
-                    "--output", "html",
-                    "--html-output", str(html_output),
+                    "--ids",
+                    str(sample_ids_path),
+                    "--output",
+                    "html",
+                    "--html-output",
+                    str(html_output),
                 ],
             )
 
@@ -460,9 +488,12 @@ class TestHTMLOutputFormat:
                 app,
                 [
                     str(sample_ifc_path),
-                    "--ids", str(sample_ids_path),
-                    "--output", "html",
-                    "--html-output", str(html_output),
+                    "--ids",
+                    str(sample_ids_path),
+                    "--output",
+                    "html",
+                    "--html-output",
+                    str(html_output),
                 ],
             )
 
@@ -490,9 +521,12 @@ class TestHTMLOutputFormat:
                 app,
                 [
                     str(sample_fail_ifc_path),
-                    "--ids", str(sample_ids_path),
-                    "--output", "html",
-                    "--html-output", str(html_output),
+                    "--ids",
+                    str(sample_ids_path),
+                    "--output",
+                    "html",
+                    "--html-output",
+                    str(html_output),
                 ],
             )
 
@@ -521,15 +555,19 @@ class TestHTMLOutputFormat:
                     app,
                     [
                         str(sample_ifc_path),
-                        "--ids", str(sample_ids_path),
-                        "--output", "html",
+                        "--ids",
+                        str(sample_ids_path),
+                        "--output",
+                        "html",
                     ],
                 )
 
                 assert result.exit_code == 0
                 # Default filename should be <ifc_stem>_report.html
                 expected_file = Path(tmpdir) / "sample_report.html"
-                assert expected_file.exists(), f"Expected {expected_file} to be created. Output: {result.output}"
+                assert (
+                    expected_file.exists()
+                ), f"Expected {expected_file} to be created. Output: {strip_ansi(result.output)}"
             finally:
                 os.chdir(original_cwd)
 
@@ -542,9 +580,7 @@ class TestHTMLOutputFormat:
 class TestConsoleOutputFormat:
     """Test console (default) output format."""
 
-    def test_console_is_default_format(
-        self, runner, sample_ifc_path, sample_ids_path
-    ):
+    def test_console_is_default_format(self, runner, sample_ifc_path, sample_ids_path):
         """Test that console is the default output format."""
         if not sample_ifc_path.exists():
             pytest.skip(f"Sample IFC file not found: {sample_ifc_path}")
@@ -559,7 +595,7 @@ class TestConsoleOutputFormat:
         # Default should be console, not JSON (which would start with { )
         assert result.exit_code == 0
         # Console output has Rich formatting, not raw JSON
-        assert not result.output.strip().startswith("{")
+        assert not strip_ansi(result.output).strip().startswith("{")
 
     def test_console_output_has_substantial_content(
         self, runner, sample_ifc_path, sample_ids_path
@@ -577,7 +613,7 @@ class TestConsoleOutputFormat:
 
         assert result.exit_code == 0
         # Should have substantial output (tables, panels, etc.)
-        assert len(result.output) > 100
+        assert len(strip_ansi(result.output)) > 100
 
     def test_console_output_explicit_format(
         self, runner, sample_ifc_path, sample_ids_path
@@ -590,12 +626,18 @@ class TestConsoleOutputFormat:
 
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), "--ids", str(sample_ids_path), "--output", "console"],
+            [
+                str(sample_ifc_path),
+                "--ids",
+                str(sample_ids_path),
+                "--output",
+                "console",
+            ],
         )
 
         assert result.exit_code == 0
         # Should be console format, not JSON
-        assert not result.output.strip().startswith("{")
+        assert not strip_ansi(result.output).strip().startswith("{")
 
 
 # =============================================================================
@@ -646,7 +688,9 @@ class TestTyperExitUsage:
 
             # Check for sys.exit usage in actual code
             if "sys.exit(" in line:
-                pytest.fail(f"Line {i}: CLI uses sys.exit() instead of typer.Exit(): {line.strip()}")
+                pytest.fail(
+                    f"Line {i}: CLI uses sys.exit() instead of typer.Exit(): {line.strip()}"
+                )
 
     def test_exit_code_propagates_correctly_on_pass(
         self, runner, sample_ifc_path, sample_ids_path
@@ -715,7 +759,7 @@ class TestErrorScenarios:
         )
 
         assert result.exit_code == 1
-        assert "error" in result.output.lower()
+        assert "error" in strip_ansi(result.output).lower()
 
     def test_missing_ids_file_returns_exit_1(self, runner, sample_ifc_path):
         """Test that missing IDS file returns exit code 1."""
@@ -728,11 +772,9 @@ class TestErrorScenarios:
         )
 
         assert result.exit_code == 1
-        assert "error" in result.output.lower()
+        assert "error" in strip_ansi(result.output).lower()
 
-    def test_invalid_ifc_extension_returns_exit_1(
-        self, runner, sample_ids_path
-    ):
+    def test_invalid_ifc_extension_returns_exit_1(self, runner, sample_ids_path):
         """Test that invalid IFC extension returns exit code 1."""
         if not sample_ids_path.exists():
             pytest.skip(f"Sample IDS file not found: {sample_ids_path}")
@@ -748,16 +790,14 @@ class TestErrorScenarios:
             )
 
             assert result.exit_code == 1
-            output_lower = result.output.lower()
+            output_lower = strip_ansi(result.output).lower()
             assert "error" in output_lower
             assert "extension" in output_lower or "invalid" in output_lower
         finally:
             if os.path.exists(temp_path):
                 os.unlink(temp_path)
 
-    def test_invalid_ids_extension_returns_exit_1(
-        self, runner, sample_ifc_path
-    ):
+    def test_invalid_ids_extension_returns_exit_1(self, runner, sample_ifc_path):
         """Test that invalid IDS extension returns exit code 1."""
         if not sample_ifc_path.exists():
             pytest.skip(f"Sample IFC file not found: {sample_ifc_path}")
@@ -773,7 +813,7 @@ class TestErrorScenarios:
             )
 
             assert result.exit_code == 1
-            output_lower = result.output.lower()
+            output_lower = strip_ansi(result.output).lower()
             assert "error" in output_lower
         finally:
             if os.path.exists(temp_path):
@@ -790,7 +830,13 @@ class TestErrorScenarios:
 
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), "--ids", str(sample_ids_path), "--output", "invalid"],
+            [
+                str(sample_ifc_path),
+                "--ids",
+                str(sample_ids_path),
+                "--output",
+                "invalid",
+            ],
         )
 
         # Typer should reject invalid enum value
@@ -820,9 +866,7 @@ class TestValidatorIntegration:
         assert result.ifc_file == sample_ifc_path.name
         assert result.ids_file == sample_ids_path.name
 
-    def test_validate_function_passing_model(
-        self, sample_ifc_path, sample_ids_path
-    ):
+    def test_validate_function_passing_model(self, sample_ifc_path, sample_ids_path):
         """Test validate function with passing model."""
         if not sample_ifc_path.exists():
             pytest.skip(f"Sample IFC file not found: {sample_ifc_path}")
@@ -864,9 +908,7 @@ class TestValidatorIntegration:
         assert result.ifc_schema is not None
         assert "IFC" in result.ifc_schema.upper()
 
-    def test_validate_function_includes_timing(
-        self, sample_ifc_path, sample_ids_path
-    ):
+    def test_validate_function_includes_timing(self, sample_ifc_path, sample_ids_path):
         """Test that validate function includes timing information."""
         if not sample_ifc_path.exists():
             pytest.skip(f"Sample IFC file not found: {sample_ifc_path}")
@@ -892,19 +934,17 @@ class TestCLIOptions:
         result = runner.invoke(app, ["--help"])
 
         assert result.exit_code == 0
-        assert "--ids" in result.output
-        assert "--output" in result.output
+        assert "--ids" in strip_ansi(result.output)
+        assert "--output" in strip_ansi(result.output)
 
     def test_version_flag_shows_version(self, runner):
         """Test that --version shows version information."""
         result = runner.invoke(app, ["--version"])
 
         assert result.exit_code == 0
-        assert "version" in result.output.lower()
+        assert "version" in strip_ansi(result.output).lower()
 
-    def test_short_ids_option_works(
-        self, runner, sample_ifc_path, sample_ids_path
-    ):
+    def test_short_ids_option_works(self, runner, sample_ifc_path, sample_ids_path):
         """Test that -i works as alias for --ids."""
         if not sample_ifc_path.exists():
             pytest.skip(f"Sample IFC file not found: {sample_ifc_path}")

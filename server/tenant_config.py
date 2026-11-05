@@ -18,9 +18,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-TENANTS_CONFIG_PATH = os.environ.get(
-    "TENANTS_CONFIG", "/etc/openaec/tenants.json"
-)
+TENANTS_CONFIG_PATH = os.environ.get("TENANTS_CONFIG", "/etc/openaec/tenants.json")
 
 
 @dataclass(frozen=True)
@@ -110,7 +108,8 @@ def load_tenants(config_path: str | None = None) -> TenantsRegistry:
         if not service_pass:
             logger.warning(
                 "Tenant %s: password env var %s not set — skipping",
-                slug, pass_env,
+                slug,
+                pass_env,
             )
             continue
 

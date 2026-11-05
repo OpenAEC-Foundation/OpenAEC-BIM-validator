@@ -746,9 +746,9 @@ def test_load_real_ifc_file():
     assert parser.is_loaded is True, "Parser should be loaded after successful load()"
     assert parser.file_path == test_file, "file_path should match loaded file"
     assert parser.schema is not None, "Schema should be detected"
-    assert parser.schema in parser.SUPPORTED_SCHEMAS, (
-        f"Schema {parser.schema} should be supported"
-    )
+    assert (
+        parser.schema in parser.SUPPORTED_SCHEMAS
+    ), f"Schema {parser.schema} should be supported"
     assert parser.ifc_file is not None, "ifc_file should be populated"
 
     # Test 2: Schema detection for this specific file (IFC4X3)
@@ -759,9 +759,9 @@ def test_load_real_ifc_file():
     assert stats is not None, "Memory stats should be populated after load"
     assert stats.file_size > 0, "File size should be positive"
     assert stats.memory_before > 0, "Memory before should be positive"
-    assert stats.memory_after >= stats.memory_before, (
-        "Memory after should be >= memory before"
-    )
+    assert (
+        stats.memory_after >= stats.memory_before
+    ), "Memory after should be >= memory before"
     assert stats.memory_used >= 0, "Memory used should be non-negative"
     assert stats.memory_multiplier >= 0, "Memory multiplier should be non-negative"
 
@@ -1112,9 +1112,7 @@ class TestIfcParsingErrors:
 
     def test_runtime_error_during_parsing(self, parser, temp_ifc2x3_file):
         """Test RuntimeError raised during ifcopenshell.open()."""
-        with patch(
-            "ifcopenshell.open", side_effect=RuntimeError("C++ layer error")
-        ):
+        with patch("ifcopenshell.open", side_effect=RuntimeError("C++ layer error")):
             with pytest.raises(ValueError) as exc_info:
                 parser.load(str(temp_ifc2x3_file))
 
@@ -1199,33 +1197,25 @@ class TestFormatParseError:
 
     def test_format_error_unexpected_token(self, parser):
         """Test error formatting for unexpected token errors."""
-        result = parser._format_parse_error(
-            "test.ifc", "Unexpected token at line 42"
-        )
+        result = parser._format_parse_error("test.ifc", "Unexpected token at line 42")
         assert "test.ifc" in result
         assert "STEP syntax" in result
 
     def test_format_error_syntax_error(self, parser):
         """Test error formatting for syntax errors."""
-        result = parser._format_parse_error(
-            "test.ifc", "syntax error near entity #123"
-        )
+        result = parser._format_parse_error("test.ifc", "syntax error near entity #123")
         assert "test.ifc" in result
         assert "syntax errors" in result
 
     def test_format_error_duplicate_id(self, parser):
         """Test error formatting for duplicate ID errors."""
-        result = parser._format_parse_error(
-            "test.ifc", "Duplicate id #456 found"
-        )
+        result = parser._format_parse_error("test.ifc", "Duplicate id #456 found")
         assert "test.ifc" in result
         assert "duplicate entity ids" in result.lower()
 
     def test_format_error_invalid_entity(self, parser):
         """Test error formatting for invalid entity errors."""
-        result = parser._format_parse_error(
-            "test.ifc", "Invalid entity IFCFAKEENTITY"
-        )
+        result = parser._format_parse_error("test.ifc", "Invalid entity IFCFAKEENTITY")
         assert "test.ifc" in result
         assert "invalid" in result.lower()
 

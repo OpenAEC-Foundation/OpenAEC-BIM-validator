@@ -3,11 +3,13 @@
 # ==============================================
 
 # --- Stage 1: Build frontend ---
-FROM node:20-slim AS frontend-build
+FROM node:22-slim AS frontend-build
 WORKDIR /app/viewer
-COPY viewer/package.json viewer/package-lock.json* ./
-RUN npm install
+COPY viewer/package.json viewer/package-lock.json ./
+RUN npm ci
 COPY viewer/ ./
+COPY scripts/dependency-notices.mjs /app/scripts/dependency-notices.mjs
+RUN node /app/scripts/dependency-notices.mjs /app/viewer/node_modules > /app/FRONTEND-NOTICES.txt
 
 # OIDC config baked into frontend at build time
 ARG VITE_OIDC_AUTHORITY=https://auth.open-aec.com/application/o/bim-validator-oidc/
@@ -30,12 +32,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install Python dependencies
 COPY server/requirements.txt ./server/requirements.txt
-RUN pip install --no-cache-dir -r server/requirements.txt
+COPY requirements-release.txt ./requirements-release.txt
+RUN pip install --no-cache-dir -r requirements-release.txt
 
 # Install the ifc_validator package
-COPY pyproject.toml ./
+COPY pyproject.toml README.md LICENSE ./
 COPY src/ ./src/
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir --no-deps -e .
+
+COPY scripts/third_party_notices.py ./scripts/third_party_notices.py
+RUN python scripts/third_party_notices.py > /app/THIRD-PARTY-NOTICES.txt
 
 # Copy server code
 COPY server/ ./server/
@@ -45,9 +51,16 @@ COPY ids-bestanden/ ./ids-bestanden/
 
 # Copy built frontend from stage 1
 COPY --from=frontend-build /app/viewer/dist ./viewer/dist
+COPY --from=frontend-build /app/FRONTEND-NOTICES.txt ./FRONTEND-NOTICES.txt
 
 # Create temp directories and persistent project storage
-RUN mkdir -p /tmp/ifc_uploads /tmp/ifc_processed /tmp/ids_validation_jobs /data/projects
+RUN useradd --uid 10001 --create-home validator \
+    && mkdir -p /tmp/ifc_uploads /tmp/ifc_processed /tmp/ids_validation_jobs /data/projects \
+    && chown -R validator:validator /data /tmp/ifc_uploads /tmp/ifc_processed /tmp/ids_validation_jobs
+
+ENV DATABASE_URL=sqlite+aiosqlite:////data/bimvalidator.db
+ENV PROJECT_FILES_DIR=/data/projects
+USER validator
 
 EXPOSE 8000
 

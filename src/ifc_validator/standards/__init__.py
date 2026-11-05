@@ -32,9 +32,9 @@ from ifc_validator.standards.resolver import (
 )
 
 __all__ = [
-    'STANDARD_SHORTCUTS',
-    'get_bundled_ids',
-    'get_standard_filename',
-    'is_shortcut',
-    'list_available_standards',
+    "STANDARD_SHORTCUTS",
+    "get_bundled_ids",
+    "get_standard_filename",
+    "is_shortcut",
+    "list_available_standards",
 ]

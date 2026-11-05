@@ -89,9 +89,7 @@ class SpecificationResult(BaseModel):
     Contains nested RequirementResult objects for detailed requirement-level data.
     """
 
-    specification_name: str = Field(
-        ..., description="Name of the IDS specification"
-    )
+    specification_name: str = Field(..., description="Name of the IDS specification")
     severity: SeverityLevel = Field(
         ..., description="Severity level from IDS (error, warning, info)"
     )
@@ -101,9 +99,7 @@ class SpecificationResult(BaseModel):
     total_requirements: int = Field(
         ..., description="Total requirements in specification"
     )
-    failed_requirements: int = Field(
-        ..., description="Number of failed requirements"
-    )
+    failed_requirements: int = Field(..., description="Number of failed requirements")
     requirements: list[RequirementResult] = Field(
         default_factory=list, description="Per-requirement validation results"
     )
@@ -120,9 +116,7 @@ class ValidationResult(BaseModel):
     success: bool = Field(
         ..., description="Overall validation success (all specifications passed)"
     )
-    total_specifications: int = Field(
-        ..., description="Total specifications evaluated"
-    )
+    total_specifications: int = Field(..., description="Total specifications evaluated")
     failed_specifications: int = Field(
         ..., description="Number of failed specifications"
     )
@@ -135,9 +129,7 @@ class ValidationResult(BaseModel):
     specifications: list[SpecificationResult] = Field(
         default_factory=list, description="Per-specification validation results"
     )
-    ifc_file_name: Optional[str] = Field(
-        None, description="Name of validated IFC file"
-    )
+    ifc_file_name: Optional[str] = Field(None, description="Name of validated IFC file")
     ids_file_name: Optional[str] = Field(
         None, description="Name of IDS specification file"
     )

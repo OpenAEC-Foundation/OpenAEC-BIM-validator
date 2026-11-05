@@ -30,13 +30,13 @@
 
 /* Resize handles between panels */
 .resize-handle {
-  background-color: var(--theme-border, #e0e0e0);
+  background-color: var(--theme-border);
   transition: background-color 150ms ease;
 }
 
 .resize-handle:hover,
 .resize-handle[data-resize-handle-active] {
-  background-color: var(--theme-accent, #D97706);
+  background-color: var(--theme-accent);
 }
 
 .resize-handle--horizontal {
@@ -55,7 +55,7 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background-color: var(--theme-bg-lighter, #44444C);
+  background-color: var(--theme-bg-lighter);
 }
 
 .panel__header {
@@ -63,8 +63,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 4px 8px;
-  border-bottom: 1px solid var(--theme-border, #e0e0e0);
-  background-color: var(--theme-bg-lighter, #44444C);
+  border-bottom: 1px solid var(--theme-border);
+  background-color: var(--theme-bg-lighter);
   flex-shrink: 0;
 }
 
@@ -76,7 +76,7 @@
   margin: 0;
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--theme-text, #333);
+  color: var(--theme-text);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -98,8 +98,8 @@
 /* Tab bar for right panel */
 .tab-bar {
   display: flex;
-  border-bottom: 1px solid var(--theme-border, #e0e0e0);
-  background-color: var(--theme-bg-lighter, #44444C);
+  border-bottom: 1px solid var(--theme-border);
+  background-color: var(--theme-bg-lighter);
   flex-shrink: 0;
 }
 
@@ -110,7 +110,7 @@
   background: none;
   font-size: 0.75rem;
   font-weight: 500;
-  color: var(--theme-text-secondary, #666);
+  color: var(--theme-text-secondary);
   cursor: pointer;
   border-bottom: 2px solid transparent;
   transition: all 150ms ease;
@@ -119,13 +119,13 @@
 }
 
 .tab-bar__tab:hover {
-  color: var(--theme-text, #333);
-  background-color: var(--theme-hover, rgba(0,0,0,0.05));
+  color: var(--theme-text);
+  background-color: var(--theme-hover);
 }
 
 .tab-bar__tab--active {
-  color: var(--theme-accent, #D97706);
-  border-bottom-color: var(--theme-accent, #D97706);
+  color: var(--theme-accent);
+  border-bottom-color: var(--theme-accent);
 }
 
 .tab-bar__badge {
@@ -139,7 +139,7 @@
   font-size: 10px;
   font-weight: 700;
   line-height: 1;
-  color: #ffffff;
+  color: var(--theme-btn-primary-text);
   background-color: var(--color-primary);
   border-radius: var(--radius-full);
   font-variant-numeric: tabular-nums;
@@ -150,7 +150,7 @@
   position: relative;
   width: 100%;
   height: 100%;
-  background-color: var(--domain-viewer-bg, #1a1a2e);
+  background-color: var(--domain-viewer-bg);
   overflow: hidden;
 }
 
@@ -190,7 +190,7 @@
   justify-content: center;
   height: 100%;
   padding: 16px;
-  color: var(--theme-text-secondary, #666);
+  color: var(--theme-text-secondary);
   text-align: center;
 }
 

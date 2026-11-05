@@ -31,7 +31,6 @@ from server.job_manager import (
     JobStatusResponse,
 )
 
-
 # =============================================================================
 # Test Fixtures
 # =============================================================================
@@ -86,9 +85,9 @@ class TestJobCreation:
         """
         job = job_manager.create_job()
 
-        assert isinstance(job, JobInfo), (
-            f"create_job() should return JobInfo, got {type(job).__name__}"
-        )
+        assert isinstance(
+            job, JobInfo
+        ), f"create_job() should return JobInfo, got {type(job).__name__}"
 
     def test_create_job_returns_valid_uuid(self, job_manager: JobManager) -> None:
         """Test that created job has a valid UUID4 job_id.
@@ -99,9 +98,9 @@ class TestJobCreation:
         job = job_manager.create_job()
 
         # Verify job_id is a non-empty string
-        assert isinstance(job.job_id, str), (
-            f"job_id should be str, got {type(job.job_id).__name__}"
-        )
+        assert isinstance(
+            job.job_id, str
+        ), f"job_id should be str, got {type(job.job_id).__name__}"
         assert len(job.job_id) > 0, "job_id should not be empty"
 
         # Verify it's a valid UUID by parsing it
@@ -112,11 +111,13 @@ class TestJobCreation:
             pytest.fail(f"job_id '{job.job_id}' is not a valid UUID: {e}")
 
         # Verify it's a UUID version 4
-        assert parsed_uuid.version == 4, (
-            f"job_id should be UUID4, got version {parsed_uuid.version}"
-        )
+        assert (
+            parsed_uuid.version == 4
+        ), f"job_id should be UUID4, got version {parsed_uuid.version}"
 
-    def test_create_job_initial_status_is_pending(self, job_manager: JobManager) -> None:
+    def test_create_job_initial_status_is_pending(
+        self, job_manager: JobManager
+    ) -> None:
         """Test that new jobs have pending status.
 
         Acceptance Criteria:
@@ -124,9 +125,9 @@ class TestJobCreation:
         """
         job = job_manager.create_job()
 
-        assert job.status == JobStatus.PENDING, (
-            f"New job status should be PENDING, got {job.status}"
-        )
+        assert (
+            job.status == JobStatus.PENDING
+        ), f"New job status should be PENDING, got {job.status}"
 
     def test_create_job_has_created_at_timestamp(self, job_manager: JobManager) -> None:
         """Test that new jobs have created_at timestamp.
@@ -140,14 +141,14 @@ class TestJobCreation:
         after = datetime.now(timezone.utc)
 
         # Verify created_at is a datetime
-        assert isinstance(job.created_at, datetime), (
-            f"created_at should be datetime, got {type(job.created_at).__name__}"
-        )
+        assert isinstance(
+            job.created_at, datetime
+        ), f"created_at should be datetime, got {type(job.created_at).__name__}"
 
         # Verify created_at is within expected range
-        assert before <= job.created_at <= after, (
-            f"created_at {job.created_at} should be between {before} and {after}"
-        )
+        assert (
+            before <= job.created_at <= after
+        ), f"created_at {job.created_at} should be between {before} and {after}"
 
     def test_create_job_optional_fields_are_none(self, job_manager: JobManager) -> None:
         """Test that new jobs have None for optional fields.
@@ -178,9 +179,9 @@ class TestJobCreation:
         job_ids = [job.job_id for job in jobs]
 
         # Verify all IDs are unique
-        assert len(set(job_ids)) == num_jobs, (
-            f"Expected {num_jobs} unique job IDs, got {len(set(job_ids))}"
-        )
+        assert (
+            len(set(job_ids)) == num_jobs
+        ), f"Expected {num_jobs} unique job IDs, got {len(set(job_ids))}"
 
 
 # =============================================================================
@@ -215,9 +216,9 @@ class TestJobRetrieval:
         unknown_id = str(uuid.uuid4())
         result = job_manager.get_job(unknown_id)
 
-        assert result is None, (
-            f"get_job() should return None for unknown ID, got {result}"
-        )
+        assert (
+            result is None
+        ), f"get_job() should return None for unknown ID, got {result}"
 
     def test_get_job_returns_job_info_instance(self, job_manager: JobManager) -> None:
         """Test that get_job returns a JobInfo instance.
@@ -228,9 +229,9 @@ class TestJobRetrieval:
         job = job_manager.create_job()
         retrieved = job_manager.get_job(job.job_id)
 
-        assert isinstance(retrieved, JobInfo), (
-            f"get_job should return JobInfo, got {type(retrieved).__name__}"
-        )
+        assert isinstance(
+            retrieved, JobInfo
+        ), f"get_job should return JobInfo, got {type(retrieved).__name__}"
 
     def test_get_job_preserves_all_fields(self, job_manager: JobManager) -> None:
         """Test that get_job preserves all job fields.
@@ -273,13 +274,11 @@ class TestJobLifecycle:
         updated_job = job_manager.start_job(job.job_id)
 
         assert updated_job is not None, "start_job should return updated job"
-        assert updated_job.status == JobStatus.PROCESSING, (
-            f"Status should be PROCESSING after start_job, got {updated_job.status}"
-        )
+        assert (
+            updated_job.status == JobStatus.PROCESSING
+        ), f"Status should be PROCESSING after start_job, got {updated_job.status}"
 
-    def test_start_job_sets_started_at_timestamp(
-        self, job_manager: JobManager
-    ) -> None:
+    def test_start_job_sets_started_at_timestamp(self, job_manager: JobManager) -> None:
         """Test that start_job sets started_at timestamp.
 
         Acceptance Criteria:
@@ -292,12 +291,12 @@ class TestJobLifecycle:
         updated_job = job_manager.start_job(job.job_id)
         after = datetime.now(timezone.utc)
 
-        assert updated_job.started_at is not None, (
-            "started_at should be set after start_job"
-        )
-        assert before <= updated_job.started_at <= after, (
-            f"started_at {updated_job.started_at} should be between {before} and {after}"
-        )
+        assert (
+            updated_job.started_at is not None
+        ), "started_at should be set after start_job"
+        assert (
+            before <= updated_job.started_at <= after
+        ), f"started_at {updated_job.started_at} should be between {before} and {after}"
 
     def test_start_job_returns_none_for_unknown_id(
         self, job_manager: JobManager
@@ -328,12 +327,12 @@ class TestJobLifecycle:
         updated_job = job_manager.complete_job(job.job_id, test_result)
 
         assert updated_job is not None, "complete_job should return updated job"
-        assert updated_job.status == JobStatus.COMPLETED, (
-            f"Status should be COMPLETED, got {updated_job.status}"
-        )
-        assert updated_job.result == test_result, (
-            f"Result should be stored, got {updated_job.result}"
-        )
+        assert (
+            updated_job.status == JobStatus.COMPLETED
+        ), f"Status should be COMPLETED, got {updated_job.status}"
+        assert (
+            updated_job.result == test_result
+        ), f"Result should be stored, got {updated_job.result}"
 
     def test_complete_job_sets_completed_at_timestamp(
         self, job_manager: JobManager
@@ -350,9 +349,9 @@ class TestJobLifecycle:
         updated_job = job_manager.complete_job(job.job_id, {"result": "test"})
         after = datetime.now(timezone.utc)
 
-        assert updated_job.completed_at is not None, (
-            "completed_at should be set after complete_job"
-        )
+        assert (
+            updated_job.completed_at is not None
+        ), "completed_at should be set after complete_job"
         assert before <= updated_job.completed_at <= after
 
     def test_complete_job_returns_none_for_unknown_id(
@@ -368,9 +367,7 @@ class TestJobLifecycle:
 
         assert result is None, "complete_job should return None for unknown ID"
 
-    def test_fail_job_changes_status_to_failed(
-        self, job_manager: JobManager
-    ) -> None:
+    def test_fail_job_changes_status_to_failed(self, job_manager: JobManager) -> None:
         """Test that fail_job changes status to FAILED.
 
         Acceptance Criteria:
@@ -384,12 +381,12 @@ class TestJobLifecycle:
         updated_job = job_manager.fail_job(job.job_id, error_message)
 
         assert updated_job is not None, "fail_job should return updated job"
-        assert updated_job.status == JobStatus.FAILED, (
-            f"Status should be FAILED, got {updated_job.status}"
-        )
-        assert updated_job.error == error_message, (
-            f"Error message should be stored, got {updated_job.error}"
-        )
+        assert (
+            updated_job.status == JobStatus.FAILED
+        ), f"Status should be FAILED, got {updated_job.status}"
+        assert (
+            updated_job.error == error_message
+        ), f"Error message should be stored, got {updated_job.error}"
 
     def test_fail_job_sets_completed_at_timestamp(
         self, job_manager: JobManager
@@ -406,9 +403,9 @@ class TestJobLifecycle:
         updated_job = job_manager.fail_job(job.job_id, "Error occurred")
         after = datetime.now(timezone.utc)
 
-        assert updated_job.completed_at is not None, (
-            "completed_at should be set after fail_job"
-        )
+        assert (
+            updated_job.completed_at is not None
+        ), "completed_at should be set after fail_job"
         assert before <= updated_job.completed_at <= after
 
     def test_fail_job_returns_none_for_unknown_id(
@@ -424,9 +421,7 @@ class TestJobLifecycle:
 
         assert result is None, "fail_job should return None for unknown ID"
 
-    def test_full_lifecycle_pending_to_completed(
-        self, job_manager: JobManager
-    ) -> None:
+    def test_full_lifecycle_pending_to_completed(self, job_manager: JobManager) -> None:
         """Test full job lifecycle: pending -> processing -> completed.
 
         Acceptance Criteria:
@@ -447,9 +442,7 @@ class TestJobLifecycle:
         assert job.status == JobStatus.COMPLETED
         assert job.result == {"result": "success"}
 
-    def test_full_lifecycle_pending_to_failed(
-        self, job_manager: JobManager
-    ) -> None:
+    def test_full_lifecycle_pending_to_failed(self, job_manager: JobManager) -> None:
         """Test full job lifecycle: pending -> processing -> failed.
 
         Acceptance Criteria:
@@ -488,9 +481,7 @@ class TestJobUpdate:
         job = job_manager.create_job()
 
         updated_job = job_manager.update_job(
-            job.job_id,
-            status=JobStatus.PROCESSING,
-            progress="Processing step 1"
+            job.job_id, status=JobStatus.PROCESSING, progress="Processing step 1"
         )
 
         assert updated_job is not None
@@ -614,14 +605,16 @@ class TestExpirationCleanup:
         future_time = datetime.now(timezone.utc) + timedelta(seconds=2)
         with patch("server.job_manager.datetime") as mock_datetime:
             mock_datetime.now.return_value = future_time
-            mock_datetime.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
+            mock_datetime.side_effect = lambda *args, **kwargs: datetime(
+                *args, **kwargs
+            )
 
             removed_count = job_manager_short_ttl.cleanup_expired()
 
         assert removed_count == 1, f"Should remove 1 job, removed {removed_count}"
-        assert job_manager_short_ttl.get_job(job.job_id) is None, (
-            "Expired job should be removed"
-        )
+        assert (
+            job_manager_short_ttl.get_job(job.job_id) is None
+        ), "Expired job should be removed"
 
     def test_cleanup_expired_removes_old_failed_jobs(
         self, job_manager_short_ttl: JobManager
@@ -640,7 +633,9 @@ class TestExpirationCleanup:
         future_time = datetime.now(timezone.utc) + timedelta(seconds=2)
         with patch("server.job_manager.datetime") as mock_datetime:
             mock_datetime.now.return_value = future_time
-            mock_datetime.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
+            mock_datetime.side_effect = lambda *args, **kwargs: datetime(
+                *args, **kwargs
+            )
 
             removed_count = job_manager_short_ttl.cleanup_expired()
 
@@ -665,7 +660,9 @@ class TestExpirationCleanup:
         )
         with patch("server.job_manager.datetime") as mock_datetime:
             mock_datetime.now.return_value = future_time
-            mock_datetime.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
+            mock_datetime.side_effect = lambda *args, **kwargs: datetime(
+                *args, **kwargs
+            )
 
             removed_count = job_manager_short_ttl.cleanup_expired()
 
@@ -688,11 +685,15 @@ class TestExpirationCleanup:
         future_time = datetime.now(timezone.utc) + timedelta(seconds=2)
         with patch("server.job_manager.datetime") as mock_datetime:
             mock_datetime.now.return_value = future_time
-            mock_datetime.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
+            mock_datetime.side_effect = lambda *args, **kwargs: datetime(
+                *args, **kwargs
+            )
 
             removed_count = job_manager_short_ttl.cleanup_expired()
 
-        assert removed_count == 0, "Active pending job should not be removed within stuck TTL"
+        assert (
+            removed_count == 0
+        ), "Active pending job should not be removed within stuck TTL"
         assert job_manager_short_ttl.get_job(job.job_id) is not None
 
     def test_cleanup_expired_preserves_recent_jobs(
@@ -712,9 +713,9 @@ class TestExpirationCleanup:
         removed_count = job_manager.cleanup_expired()
 
         assert removed_count == 0, "Should not remove recent job"
-        assert job_manager.get_job(job.job_id) is not None, (
-            "Recent job should be preserved"
-        )
+        assert (
+            job_manager.get_job(job.job_id) is not None
+        ), "Recent job should be preserved"
 
     def test_cleanup_expired_returns_zero_for_no_expired_jobs(
         self, job_manager: JobManager
@@ -804,9 +805,7 @@ class TestConcurrentJobLimits:
         # Both jobs are now completed/failed - should accept new jobs
         assert job_manager_limited.can_accept_job() is True
 
-    def test_active_job_count_property(
-        self, job_manager_limited: JobManager
-    ) -> None:
+    def test_active_job_count_property(self, job_manager_limited: JobManager) -> None:
         """Test active_job_count property returns correct count.
 
         Acceptance Criteria:
@@ -830,9 +829,7 @@ class TestConcurrentJobLimits:
         job_manager_limited.complete_job(job1.job_id, {"result": "test"})
         assert job_manager_limited.active_job_count == 1
 
-    def test_total_job_count_property(
-        self, job_manager: JobManager
-    ) -> None:
+    def test_total_job_count_property(self, job_manager: JobManager) -> None:
         """Test total_job_count property returns count of all jobs.
 
         Acceptance Criteria:
@@ -840,7 +837,7 @@ class TestConcurrentJobLimits:
         """
         assert job_manager.total_job_count == 0
 
-        job1 = job_manager.create_job()
+        job_manager.create_job()
         assert job_manager.total_job_count == 1
 
         job2 = job_manager.create_job()
@@ -871,9 +868,9 @@ class TestJobStatusEnum:
         expected_statuses = ["pending", "processing", "completed", "failed"]
 
         for status in expected_statuses:
-            assert hasattr(JobStatus, status.upper()), (
-                f"JobStatus should have {status.upper()} value"
-            )
+            assert hasattr(
+                JobStatus, status.upper()
+            ), f"JobStatus should have {status.upper()} value"
 
     def test_job_status_values_are_strings(self) -> None:
         """Test that JobStatus values are lowercase strings.
@@ -904,7 +901,7 @@ class TestJobInfoModel:
         job = JobInfo(
             job_id="test-123",
             status=JobStatus.PENDING,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(timezone.utc),
         )
 
         assert job.job_id == "test-123"
@@ -920,7 +917,7 @@ class TestJobInfoModel:
         job = JobInfo(
             job_id="test-123",
             status=JobStatus.PENDING,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(timezone.utc),
         )
 
         assert job.started_at is None
@@ -938,7 +935,7 @@ class TestJobInfoModel:
         original = JobInfo(
             job_id="test-123",
             status=JobStatus.PENDING,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(timezone.utc),
         )
 
         updated = original.model_copy(update={"status": JobStatus.PROCESSING})
@@ -965,7 +962,7 @@ class TestJobStatusResponse:
         job = JobInfo(
             job_id="test-123",
             status=JobStatus.PENDING,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(timezone.utc),
         )
 
         response = JobStatusResponse.from_job_info(job)
@@ -985,7 +982,7 @@ class TestJobStatusResponse:
             status=JobStatus.PROCESSING,
             created_at=datetime.now(timezone.utc),
             started_at=datetime.now(timezone.utc),
-            progress="Processing step 2 of 5..."
+            progress="Processing step 2 of 5...",
         )
 
         response = JobStatusResponse.from_job_info(job)
@@ -1007,7 +1004,7 @@ class TestJobStatusResponse:
             created_at=start_time,
             started_at=start_time,
             completed_at=complete_time,
-            result={"validation": "passed"}
+            result={"validation": "passed"},
         )
 
         response = JobStatusResponse.from_job_info(job)
@@ -1028,7 +1025,7 @@ class TestJobStatusResponse:
             created_at=datetime.now(timezone.utc),
             started_at=datetime.now(timezone.utc),
             completed_at=datetime.now(timezone.utc),
-            error="Validation failed: Invalid IFC file"
+            error="Validation failed: Invalid IFC file",
         )
 
         response = JobStatusResponse.from_job_info(job)
@@ -1043,11 +1040,7 @@ class TestJobStatusResponse:
         """
         timestamp = datetime(2026, 1, 6, 12, 0, 0, tzinfo=timezone.utc)
 
-        job = JobInfo(
-            job_id="test-123",
-            status=JobStatus.PENDING,
-            created_at=timestamp
-        )
+        job = JobInfo(job_id="test-123", status=JobStatus.PENDING, created_at=timestamp)
 
         response = JobStatusResponse.from_job_info(job)
 
@@ -1086,9 +1079,7 @@ class TestEdgeCases:
 
         assert manager._max_concurrent_jobs == custom_max
 
-    def test_complete_job_with_complex_result(
-        self, job_manager: JobManager
-    ) -> None:
+    def test_complete_job_with_complex_result(self, job_manager: JobManager) -> None:
         """Test completing job with complex nested result data.
 
         Acceptance Criteria:
@@ -1098,19 +1089,12 @@ class TestEdgeCases:
         job_manager.start_job(job.job_id)
 
         complex_result = {
-            "summary": {
-                "total_specifications": 12,
-                "passed": 10,
-                "failed": 2
-            },
+            "summary": {"total_specifications": 12, "passed": 10, "failed": 2},
             "specifications": [
                 {"name": "Spec 1", "passed": True, "failures": []},
-                {"name": "Spec 2", "passed": False, "failures": [1, 2, 3]}
+                {"name": "Spec 2", "passed": False, "failures": [1, 2, 3]},
             ],
-            "metadata": {
-                "ifc_file": "test.ifc",
-                "ids_file": "test.ids"
-            }
+            "metadata": {"ifc_file": "test.ifc", "ids_file": "test.ids"},
         }
 
         updated_job = job_manager.complete_job(job.job_id, complex_result)
@@ -1119,9 +1103,7 @@ class TestEdgeCases:
         assert updated_job.result["summary"]["total_specifications"] == 12
         assert len(updated_job.result["specifications"]) == 2
 
-    def test_fail_job_with_long_error_message(
-        self, job_manager: JobManager
-    ) -> None:
+    def test_fail_job_with_long_error_message(self, job_manager: JobManager) -> None:
         """Test failing job with long error message.
 
         Acceptance Criteria:

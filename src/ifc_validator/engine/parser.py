@@ -234,9 +234,7 @@ class IFCParser:
             raise FileNotFoundError(f"IFC file not found: {file_path}")
 
         if path.is_dir():
-            raise IsADirectoryError(
-                f"Path is a directory, not a file: {file_path}"
-            )
+            raise IsADirectoryError(f"Path is a directory, not a file: {file_path}")
 
         try:
             with open(path, "rb") as f:
@@ -246,9 +244,7 @@ class IFCParser:
                 f"Permission denied: cannot read file: {file_path}"
             ) from e
         except OSError as e:
-            raise OSError(
-                f"Cannot access file: {file_path}. Error: {e}"
-            ) from e
+            raise OSError(f"Cannot access file: {file_path}. Error: {e}") from e
 
         file_size = path.stat().st_size
         if file_size == 0:
@@ -281,9 +277,7 @@ class IFCParser:
             ) from e
         except ifcopenshell.Error as e:
             error_msg = str(e)
-            raise ValueError(
-                self._format_parse_error(file_path, error_msg)
-            ) from e
+            raise ValueError(self._format_parse_error(file_path, error_msg)) from e
         except RuntimeError as e:
             raise ValueError(
                 f"Failed to parse IFC file '{file_path}': {e}. "
@@ -353,10 +347,7 @@ class IFCParser:
     def __repr__(self) -> str:
         """Return a string representation of the parser."""
         if self.is_loaded:
-            return (
-                f"IFCParser(file='{self._file_path}', "
-                f"schema='{self._schema}')"
-            )
+            return f"IFCParser(file='{self._file_path}', " f"schema='{self._schema}')"
         return "IFCParser(not loaded)"
 
 

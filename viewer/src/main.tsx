@@ -12,6 +12,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 
 // Styles
+import './styles/fonts.css';
 import './themes.css';
 import './styles/brand.css';
 import './styles/responsive.css';

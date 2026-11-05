@@ -21,7 +21,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -37,7 +37,6 @@ from server.main import (
     app,
     uploaded_files,
 )
-
 
 # =============================================================================
 # Test Fixtures
@@ -59,7 +58,13 @@ def sample_ifc_content():
 @pytest.fixture
 def uploaded_file_id(client, sample_ifc_content):
     """Upload a file and return its file_id for testing."""
-    files = {"ifc_file": ("test_model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream")}
+    files = {
+        "ifc_file": (
+            "test_model.ifc",
+            io.BytesIO(sample_ifc_content),
+            "application/octet-stream",
+        )
+    }
     response = client.post("/api/upload", files=files)
     assert response.status_code == 200
     return response.json()["file_id"]
@@ -83,6 +88,11 @@ def cleanup_uploaded_files():
 class TestRootEndpoint:
     """Test root endpoint (/)."""
 
+    @pytest.fixture(autouse=True)
+    def api_only(self):
+        with patch("server.main.Path.is_file", return_value=False):
+            yield
+
     def test_root_returns_200(self, client):
         """Test that root endpoint returns 200 status."""
         response = client.get("/")
@@ -100,7 +110,9 @@ class TestRootEndpoint:
         data = response.json()
         assert "service" in data
         assert "version" in data
-        assert data["version"] == "1.0.0"
+        from ifc_validator import __version__
+
+        assert data["version"] == __version__
 
     def test_root_returns_endpoints_info(self, client):
         """Test that root endpoint returns available endpoints."""
@@ -204,20 +216,38 @@ class TestUploadEndpoint:
 
     def test_upload_valid_ifc_returns_200(self, client, sample_ifc_content):
         """Test that uploading a valid IFC file returns 200."""
-        files = {"ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream")}
+        files = {
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            )
+        }
         response = client.post("/api/upload", files=files)
         assert response.status_code == 200
 
     def test_upload_returns_success_true(self, client, sample_ifc_content):
         """Test that successful upload returns success=True."""
-        files = {"ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream")}
+        files = {
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            )
+        }
         response = client.post("/api/upload", files=files)
         data = response.json()
         assert data["success"] is True
 
     def test_upload_returns_file_id(self, client, sample_ifc_content):
         """Test that successful upload returns a file_id."""
-        files = {"ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream")}
+        files = {
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            )
+        }
         response = client.post("/api/upload", files=files)
         data = response.json()
         assert "file_id" in data
@@ -225,14 +255,26 @@ class TestUploadEndpoint:
 
     def test_upload_returns_filename(self, client, sample_ifc_content):
         """Test that successful upload returns original filename."""
-        files = {"ifc_file": ("test_model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream")}
+        files = {
+            "ifc_file": (
+                "test_model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            )
+        }
         response = client.post("/api/upload", files=files)
         data = response.json()
         assert data["filename"] == "test_model.ifc"
 
     def test_upload_returns_file_size(self, client, sample_ifc_content):
         """Test that successful upload returns file size."""
-        files = {"ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream")}
+        files = {
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            )
+        }
         response = client.post("/api/upload", files=files)
         data = response.json()
         assert data["file_size"] == len(sample_ifc_content)
@@ -240,7 +282,13 @@ class TestUploadEndpoint:
 
     def test_upload_returns_upload_time(self, client, sample_ifc_content):
         """Test that successful upload returns upload time."""
-        files = {"ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream")}
+        files = {
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            )
+        }
         response = client.post("/api/upload", files=files)
         data = response.json()
         assert "upload_time_ms" in data
@@ -248,14 +296,26 @@ class TestUploadEndpoint:
 
     def test_upload_returns_status_uploaded(self, client, sample_ifc_content):
         """Test that successful upload returns status=uploaded."""
-        files = {"ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream")}
+        files = {
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            )
+        }
         response = client.post("/api/upload", files=files)
         data = response.json()
         assert data["status"] == "uploaded"
 
     def test_upload_returns_next_step(self, client, sample_ifc_content):
         """Test that successful upload returns next step hint."""
-        files = {"ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream")}
+        files = {
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            )
+        }
         response = client.post("/api/upload", files=files)
         data = response.json()
         assert "next_step" in data
@@ -263,7 +323,9 @@ class TestUploadEndpoint:
 
     def test_upload_invalid_extension_returns_400(self, client):
         """Test that uploading non-IFC file returns 400."""
-        files = {"ifc_file": ("model.txt", io.BytesIO(b"not an ifc file"), "text/plain")}
+        files = {
+            "ifc_file": ("model.txt", io.BytesIO(b"not an ifc file"), "text/plain")
+        }
         response = client.post("/api/upload", files=files)
         assert response.status_code == 400
         assert "Invalid file type" in response.json()["detail"]
@@ -277,13 +339,25 @@ class TestUploadEndpoint:
 
     def test_upload_case_insensitive_extension(self, client, sample_ifc_content):
         """Test that upload accepts .IFC extension (case insensitive)."""
-        files = {"ifc_file": ("MODEL.IFC", io.BytesIO(sample_ifc_content), "application/octet-stream")}
+        files = {
+            "ifc_file": (
+                "MODEL.IFC",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            )
+        }
         response = client.post("/api/upload", files=files)
         assert response.status_code == 200
 
     def test_upload_tracks_file(self, client, sample_ifc_content):
         """Test that uploaded file is tracked in uploaded_files."""
-        files = {"ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream")}
+        files = {
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            )
+        }
         response = client.post("/api/upload", files=files)
         file_id = response.json()["file_id"]
         assert file_id in uploaded_files
@@ -291,7 +365,13 @@ class TestUploadEndpoint:
 
     def test_upload_file_with_spaces_in_name(self, client, sample_ifc_content):
         """Test that file names with spaces are handled correctly."""
-        files = {"ifc_file": ("my model file.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream")}
+        files = {
+            "ifc_file": (
+                "my model file.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            )
+        }
         response = client.post("/api/upload", files=files)
         assert response.status_code == 200
         data = response.json()
@@ -372,7 +452,13 @@ class TestListFilesEndpoint:
         """Test that list files includes all uploaded files."""
         # Upload multiple files
         for i in range(3):
-            files = {"ifc_file": (f"model_{i}.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream")}
+            files = {
+                "ifc_file": (
+                    f"model_{i}.ifc",
+                    io.BytesIO(sample_ifc_content),
+                    "application/octet-stream",
+                )
+            }
             client.post("/api/upload", files=files)
 
         response = client.get("/api/files")
@@ -444,7 +530,13 @@ class TestCleanupFilesEndpoint:
         # Upload multiple files
         file_ids = []
         for i in range(3):
-            files = {"ifc_file": (f"model_{i}.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream")}
+            files = {
+                "ifc_file": (
+                    f"model_{i}.ifc",
+                    io.BytesIO(sample_ifc_content),
+                    "application/octet-stream",
+                )
+            }
             response = client.post("/api/upload", files=files)
             file_ids.append(response.json()["file_id"])
 
@@ -470,7 +562,9 @@ class TestProcessEndpoint:
         assert response.status_code == 404
 
     @patch("server.main.ifc_processor")
-    def test_process_success_returns_200(self, mock_processor, client, uploaded_file_id):
+    def test_process_success_returns_200(
+        self, mock_processor, client, uploaded_file_id
+    ):
         """Test that successful processing returns 200."""
         mock_result = ProcessingResult(
             success=True,
@@ -490,7 +584,9 @@ class TestProcessEndpoint:
         assert response.status_code == 200
 
     @patch("server.main.ifc_processor")
-    def test_process_returns_success_true(self, mock_processor, client, uploaded_file_id):
+    def test_process_returns_success_true(
+        self, mock_processor, client, uploaded_file_id
+    ):
         """Test that successful processing returns success=True."""
         mock_result = ProcessingResult(
             success=True,
@@ -554,7 +650,9 @@ class TestProcessEndpoint:
         assert data["format"] == "json-mesh"
 
     @patch("server.main.ifc_processor")
-    def test_process_returns_processing_time(self, mock_processor, client, uploaded_file_id):
+    def test_process_returns_processing_time(
+        self, mock_processor, client, uploaded_file_id
+    ):
         """Test that processing returns processing time."""
         mock_result = ProcessingResult(
             success=True,
@@ -600,7 +698,9 @@ class TestProcessEndpoint:
         assert data["stats"]["output_size_bytes"] == 5000
 
     @patch("server.main.ifc_processor")
-    def test_process_json_mesh_returns_geometry(self, mock_processor, client, uploaded_file_id):
+    def test_process_json_mesh_returns_geometry(
+        self, mock_processor, client, uploaded_file_id
+    ):
         """Test that json-mesh format returns geometry data."""
         mock_result = ProcessingResult(
             success=True,
@@ -622,7 +722,9 @@ class TestProcessEndpoint:
         assert "elements" in data["geometry"]
 
     @patch("server.main.ifc_processor")
-    def test_process_gltf_returns_download_path(self, mock_processor, client, uploaded_file_id):
+    def test_process_gltf_returns_download_path(
+        self, mock_processor, client, uploaded_file_id
+    ):
         """Test that gltf format returns download path."""
         mock_result = ProcessingResult(
             success=True,
@@ -644,7 +746,9 @@ class TestProcessEndpoint:
         assert f"/api/download/{uploaded_file_id}" in data["output_file"]
 
     @patch("server.main.ifc_processor")
-    def test_process_failure_returns_500(self, mock_processor, client, uploaded_file_id):
+    def test_process_failure_returns_500(
+        self, mock_processor, client, uploaded_file_id
+    ):
         """Test that processing failure returns 500."""
         mock_result = ProcessingResult(
             success=False,
@@ -665,7 +769,9 @@ class TestProcessEndpoint:
         assert "Failed to parse IFC file" in response.json()["detail"]
 
     @patch("server.main.ifc_processor")
-    def test_process_updates_file_tracking(self, mock_processor, client, uploaded_file_id):
+    def test_process_updates_file_tracking(
+        self, mock_processor, client, uploaded_file_id
+    ):
         """Test that processing updates file tracking info."""
         mock_result = ProcessingResult(
             success=True,
@@ -704,7 +810,9 @@ class TestProcessEndpoint:
             )
             mock_processor.process.return_value = mock_result
 
-            response = client.post(f"/api/process/{uploaded_file_id}?output_format=json-mesh")
+            response = client.post(
+                f"/api/process/{uploaded_file_id}?output_format=json-mesh"
+            )
             assert response.status_code == 200
             mock_processor.process.assert_called_once()
             call_kwargs = mock_processor.process.call_args
@@ -741,7 +849,9 @@ class TestDownloadEndpoint:
         assert "not yet processed" in response.json()["detail"]
 
     @patch("server.main.ifc_processor")
-    def test_download_processed_file_returns_200(self, mock_processor, client, uploaded_file_id):
+    def test_download_processed_file_returns_200(
+        self, mock_processor, client, uploaded_file_id
+    ):
         """Test that downloading processed file returns 200."""
         # Create a temp file to serve as processed output
         with tempfile.NamedTemporaryFile(suffix=".glb", delete=False) as f:
@@ -775,7 +885,9 @@ class TestDownloadEndpoint:
                 os.unlink(temp_path)
 
     @patch("server.main.ifc_processor")
-    def test_download_glb_returns_correct_media_type(self, mock_processor, client, uploaded_file_id):
+    def test_download_glb_returns_correct_media_type(
+        self, mock_processor, client, uploaded_file_id
+    ):
         """Test that downloading .glb file returns correct media type."""
         with tempfile.NamedTemporaryFile(suffix=".glb", delete=False) as f:
             f.write(b"glTF binary content")
@@ -804,7 +916,9 @@ class TestDownloadEndpoint:
                 os.unlink(temp_path)
 
     @patch("server.main.ifc_processor")
-    def test_download_gltf_returns_correct_media_type(self, mock_processor, client, uploaded_file_id):
+    def test_download_gltf_returns_correct_media_type(
+        self, mock_processor, client, uploaded_file_id
+    ):
         """Test that downloading .gltf file returns correct media type."""
         with tempfile.NamedTemporaryFile(suffix=".gltf", delete=False) as f:
             f.write(b'{"asset": {"version": "2.0"}}')
@@ -833,7 +947,9 @@ class TestDownloadEndpoint:
                 os.unlink(temp_path)
 
     @patch("server.main.ifc_processor")
-    def test_download_deleted_processed_file_returns_404(self, mock_processor, client, uploaded_file_id):
+    def test_download_deleted_processed_file_returns_404(
+        self, mock_processor, client, uploaded_file_id
+    ):
         """Test that downloading deleted processed file returns 404."""
         with tempfile.NamedTemporaryFile(suffix=".glb", delete=False) as f:
             f.write(b"glTF binary content")
@@ -961,7 +1077,10 @@ class TestCORSConfiguration:
         assert response.status_code == 200
 
         # Verify CORS headers are present and allow the origin
-        assert response.headers.get("access-control-allow-origin") == "http://localhost:5173"
+        assert (
+            response.headers.get("access-control-allow-origin")
+            == "http://localhost:5173"
+        )
         assert "GET" in response.headers.get("access-control-allow-methods", "")
 
     def test_cors_allows_localhost_8080(self, client):
@@ -1004,19 +1123,37 @@ class TestEdgeCases:
     def test_very_long_filename(self, client, sample_ifc_content):
         """Test handling of very long filenames."""
         long_name = "a" * 200 + ".ifc"
-        files = {"ifc_file": (long_name, io.BytesIO(sample_ifc_content), "application/octet-stream")}
+        files = {
+            "ifc_file": (
+                long_name,
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            )
+        }
         response = client.post("/api/upload", files=files)
         assert response.status_code == 200
 
     def test_unicode_filename(self, client, sample_ifc_content):
         """Test handling of unicode characters in filename."""
-        files = {"ifc_file": ("模型文件.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream")}
+        files = {
+            "ifc_file": (
+                "模型文件.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            )
+        }
         response = client.post("/api/upload", files=files)
         assert response.status_code == 200
 
     def test_special_characters_filename(self, client, sample_ifc_content):
         """Test handling of special characters in filename."""
-        files = {"ifc_file": ("model-v1.2_final(2).ifc", io.BytesIO(sample_ifc_content), "application/octet-stream")}
+        files = {
+            "ifc_file": (
+                "model-v1.2_final(2).ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            )
+        }
         response = client.post("/api/upload", files=files)
         assert response.status_code == 200
 

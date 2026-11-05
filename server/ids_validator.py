@@ -328,7 +328,9 @@ def validate_ifc_against_ids(ifc_path: Path, ids_path: Path) -> ValidationReport
             failed_count = len(failed_entities)
 
             # Calculate passed count from applicable minus failed
-            passed_count = applicable_count - failed_count if applicable_count > 0 else 0
+            passed_count = (
+                applicable_count - failed_count if applicable_count > 0 else 0
+            )
 
             # Extract failure details for each failed entity
             failures = [extract_entity_failure(entity) for entity in failed_entities]

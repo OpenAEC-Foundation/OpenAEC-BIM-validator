@@ -33,7 +33,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from server.main import app, job_manager
 
-
 # =============================================================================
 # Test Fixtures
 # =============================================================================
@@ -136,15 +135,19 @@ class TestValidateEndpointSuccess:
         - POST with valid IFC and IDS files returns 202 status code
         """
         files = {
-            "ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream"),
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
             "ids_file": ("spec.ids", io.BytesIO(sample_ids_content), "application/xml"),
         }
 
         response = client.post("/api/v1/validate", files=files)
 
-        assert response.status_code == 202, (
-            f"Expected 202 Accepted, got {response.status_code}: {response.text}"
-        )
+        assert (
+            response.status_code == 202
+        ), f"Expected 202 Accepted, got {response.status_code}: {response.text}"
 
     def test_validate_returns_job_id(
         self, client, sample_ifc_content, sample_ids_content
@@ -156,7 +159,11 @@ class TestValidateEndpointSuccess:
         - job_id is a valid UUID4 string
         """
         files = {
-            "ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream"),
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
             "ids_file": ("spec.ids", io.BytesIO(sample_ids_content), "application/xml"),
         }
 
@@ -184,7 +191,11 @@ class TestValidateEndpointSuccess:
         - status value is 'pending'
         """
         files = {
-            "ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream"),
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
             "ids_file": ("spec.ids", io.BytesIO(sample_ids_content), "application/xml"),
         }
 
@@ -192,9 +203,9 @@ class TestValidateEndpointSuccess:
         data = response.json()
 
         assert "status" in data, "Response should contain status field"
-        assert data["status"] == "pending", (
-            f"Status should be 'pending', got '{data['status']}'"
-        )
+        assert (
+            data["status"] == "pending"
+        ), f"Status should be 'pending', got '{data['status']}'"
 
     def test_validate_returns_message(
         self, client, sample_ifc_content, sample_ids_content
@@ -206,7 +217,11 @@ class TestValidateEndpointSuccess:
         - message is a non-empty string
         """
         files = {
-            "ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream"),
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
             "ids_file": ("spec.ids", io.BytesIO(sample_ids_content), "application/xml"),
         }
 
@@ -216,9 +231,9 @@ class TestValidateEndpointSuccess:
         assert "message" in data, "Response should contain message field"
         assert isinstance(data["message"], str), "message should be a string"
         assert len(data["message"]) > 0, "message should not be empty"
-        assert "queued" in data["message"].lower(), (
-            "message should indicate job was queued"
-        )
+        assert (
+            "queued" in data["message"].lower()
+        ), "message should indicate job was queued"
 
     def test_validate_returns_status_url(
         self, client, sample_ifc_content, sample_ids_content
@@ -231,7 +246,11 @@ class TestValidateEndpointSuccess:
         - status_url points to /api/v1/jobs/{job_id}
         """
         files = {
-            "ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream"),
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
             "ids_file": ("spec.ids", io.BytesIO(sample_ids_content), "application/xml"),
         }
 
@@ -240,12 +259,12 @@ class TestValidateEndpointSuccess:
 
         assert "status_url" in data, "Response should contain status_url field"
         assert isinstance(data["status_url"], str), "status_url should be a string"
-        assert "/api/v1/jobs/" in data["status_url"], (
-            "status_url should point to jobs endpoint"
-        )
-        assert data["job_id"] in data["status_url"], (
-            "status_url should contain the job_id"
-        )
+        assert (
+            "/api/v1/jobs/" in data["status_url"]
+        ), "status_url should point to jobs endpoint"
+        assert (
+            data["job_id"] in data["status_url"]
+        ), "status_url should contain the job_id"
 
     def test_validate_response_has_all_required_fields(
         self, client, sample_ifc_content, sample_ids_content
@@ -256,7 +275,11 @@ class TestValidateEndpointSuccess:
         - Response contains: job_id, status, message, status_url
         """
         files = {
-            "ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream"),
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
             "ids_file": ("spec.ids", io.BytesIO(sample_ids_content), "application/xml"),
         }
 
@@ -277,7 +300,11 @@ class TestValidateEndpointSuccess:
         - Job status is pending
         """
         files = {
-            "ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream"),
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
             "ids_file": ("spec.ids", io.BytesIO(sample_ids_content), "application/xml"),
         }
 
@@ -298,15 +325,19 @@ class TestValidateEndpointSuccess:
         - File with .IFC extension is accepted
         """
         files = {
-            "ifc_file": ("MODEL.IFC", io.BytesIO(sample_ifc_content), "application/octet-stream"),
+            "ifc_file": (
+                "MODEL.IFC",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
             "ids_file": ("spec.ids", io.BytesIO(sample_ids_content), "application/xml"),
         }
 
         response = client.post("/api/v1/validate", files=files)
 
-        assert response.status_code == 202, (
-            f"Expected 202, got {response.status_code}: {response.text}"
-        )
+        assert (
+            response.status_code == 202
+        ), f"Expected 202, got {response.status_code}: {response.text}"
 
     def test_validate_accepts_case_insensitive_ids_extension(
         self, client, sample_ifc_content, sample_ids_content
@@ -317,15 +348,19 @@ class TestValidateEndpointSuccess:
         - File with .IDS extension is accepted
         """
         files = {
-            "ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream"),
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
             "ids_file": ("SPEC.IDS", io.BytesIO(sample_ids_content), "application/xml"),
         }
 
         response = client.post("/api/v1/validate", files=files)
 
-        assert response.status_code == 202, (
-            f"Expected 202, got {response.status_code}: {response.text}"
-        )
+        assert (
+            response.status_code == 202
+        ), f"Expected 202, got {response.status_code}: {response.text}"
 
 
 # =============================================================================
@@ -352,12 +387,12 @@ class TestValidateEndpointInvalidFileTypes:
 
         response = client.post("/api/v1/validate", files=files)
 
-        assert response.status_code == 400, (
-            f"Expected 400 for invalid IFC extension, got {response.status_code}"
-        )
-        assert "invalid" in response.json()["detail"].lower(), (
-            "Error should mention invalid file type"
-        )
+        assert (
+            response.status_code == 400
+        ), f"Expected 400 for invalid IFC extension, got {response.status_code}"
+        assert (
+            "invalid" in response.json()["detail"].lower()
+        ), "Error should mention invalid file type"
 
     def test_validate_invalid_ids_extension_returns_400(
         self, client, sample_ifc_content, sample_ids_content
@@ -369,18 +404,22 @@ class TestValidateEndpointInvalidFileTypes:
         - Error message mentions invalid file type
         """
         files = {
-            "ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream"),
-            "ids_file": ("spec.xml", io.BytesIO(sample_ids_content), "application/xml"),
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
+            "ids_file": ("spec.txt", io.BytesIO(sample_ids_content), "text/plain"),
         }
 
         response = client.post("/api/v1/validate", files=files)
 
-        assert response.status_code == 400, (
-            f"Expected 400 for invalid IDS extension, got {response.status_code}"
-        )
-        assert "invalid" in response.json()["detail"].lower(), (
-            "Error should mention invalid file type"
-        )
+        assert (
+            response.status_code == 400
+        ), f"Expected 400 for invalid IDS extension, got {response.status_code}"
+        assert (
+            "invalid" in response.json()["detail"].lower()
+        ), "Error should mention invalid file type"
 
     def test_validate_jpg_extension_returns_400(
         self, client, sample_ifc_content, sample_ids_content
@@ -408,7 +447,11 @@ class TestValidateEndpointInvalidFileTypes:
         - PDF file extension returns 400
         """
         files = {
-            "ifc_file": ("model.pdf", io.BytesIO(sample_ifc_content), "application/pdf"),
+            "ifc_file": (
+                "model.pdf",
+                io.BytesIO(sample_ifc_content),
+                "application/pdf",
+            ),
             "ids_file": ("spec.ids", io.BytesIO(sample_ids_content), "application/xml"),
         }
 
@@ -425,7 +468,11 @@ class TestValidateEndpointInvalidFileTypes:
         - File without extension returns 400
         """
         files = {
-            "ifc_file": ("model", io.BytesIO(sample_ifc_content), "application/octet-stream"),
+            "ifc_file": (
+                "model",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
             "ids_file": ("spec.ids", io.BytesIO(sample_ids_content), "application/xml"),
         }
 
@@ -450,9 +497,7 @@ class TestValidateEndpointInvalidFileTypes:
 
         assert response.status_code == 400
         detail = response.json()["detail"]
-        assert "bad_model.txt" in detail, (
-            "Error should include the invalid filename"
-        )
+        assert "bad_model.txt" in detail, "Error should include the invalid filename"
 
 
 # =============================================================================
@@ -463,9 +508,7 @@ class TestValidateEndpointInvalidFileTypes:
 class TestValidateEndpointEmptyFiles:
     """Test POST /api/v1/validate endpoint with empty or missing files."""
 
-    def test_validate_empty_ifc_file_returns_400(
-        self, client, sample_ids_content
-    ):
+    def test_validate_empty_ifc_file_returns_400(self, client, sample_ids_content):
         """Test that empty IFC file returns 400.
 
         Acceptance Criteria:
@@ -479,16 +522,14 @@ class TestValidateEndpointEmptyFiles:
 
         response = client.post("/api/v1/validate", files=files)
 
-        assert response.status_code == 400, (
-            f"Expected 400 for empty IFC file, got {response.status_code}"
-        )
-        assert "empty" in response.json()["detail"].lower(), (
-            "Error should mention empty file"
-        )
+        assert (
+            response.status_code == 400
+        ), f"Expected 400 for empty IFC file, got {response.status_code}"
+        assert (
+            "empty" in response.json()["detail"].lower()
+        ), "Error should mention empty file"
 
-    def test_validate_empty_ids_file_returns_400(
-        self, client, sample_ifc_content
-    ):
+    def test_validate_empty_ids_file_returns_400(self, client, sample_ifc_content):
         """Test that empty IDS file returns 400.
 
         Acceptance Criteria:
@@ -496,18 +537,22 @@ class TestValidateEndpointEmptyFiles:
         - Error message mentions empty file
         """
         files = {
-            "ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream"),
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
             "ids_file": ("spec.ids", io.BytesIO(b""), "application/xml"),
         }
 
         response = client.post("/api/v1/validate", files=files)
 
-        assert response.status_code == 400, (
-            f"Expected 400 for empty IDS file, got {response.status_code}"
-        )
-        assert "empty" in response.json()["detail"].lower(), (
-            "Error should mention empty file"
-        )
+        assert (
+            response.status_code == 400
+        ), f"Expected 400 for empty IDS file, got {response.status_code}"
+        assert (
+            "empty" in response.json()["detail"].lower()
+        ), "Error should mention empty file"
 
     def test_validate_missing_ifc_file_returns_422(self, client, sample_ids_content):
         """Test that missing IFC file returns 422.
@@ -521,9 +566,9 @@ class TestValidateEndpointEmptyFiles:
 
         response = client.post("/api/v1/validate", files=files)
 
-        assert response.status_code == 422, (
-            f"Expected 422 for missing IFC file, got {response.status_code}"
-        )
+        assert (
+            response.status_code == 422
+        ), f"Expected 422 for missing IFC file, got {response.status_code}"
 
     def test_validate_missing_ids_file_returns_400(self, client, sample_ifc_content):
         """Test that missing IDS file (without standard) returns 400.
@@ -533,14 +578,18 @@ class TestValidateEndpointEmptyFiles:
         - (Note: IDS is optional if 'standard' query param is provided)
         """
         files = {
-            "ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream"),
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
         }
 
         response = client.post("/api/v1/validate", files=files)
 
-        assert response.status_code == 400, (
-            f"Expected 400 for missing IDS file, got {response.status_code}"
-        )
+        assert (
+            response.status_code == 400
+        ), f"Expected 400 for missing IDS file, got {response.status_code}"
 
     def test_validate_no_files_returns_422(self, client):
         """Test that request with no files returns 422.
@@ -550,9 +599,9 @@ class TestValidateEndpointEmptyFiles:
         """
         response = client.post("/api/v1/validate")
 
-        assert response.status_code == 422, (
-            f"Expected 422 for no files, got {response.status_code}"
-        )
+        assert (
+            response.status_code == 422
+        ), f"Expected 422 for no files, got {response.status_code}"
 
 
 # =============================================================================
@@ -586,9 +635,9 @@ class TestValidateEndpointFilenameEdgeCases:
 
         response = client.post("/api/v1/validate", files=files)
 
-        assert response.status_code == 202, (
-            f"Expected 202, got {response.status_code}: {response.text}"
-        )
+        assert (
+            response.status_code == 202
+        ), f"Expected 202, got {response.status_code}: {response.text}"
 
     def test_validate_filename_with_unicode(
         self, client, sample_ifc_content, sample_ids_content
@@ -609,9 +658,9 @@ class TestValidateEndpointFilenameEdgeCases:
 
         response = client.post("/api/v1/validate", files=files)
 
-        assert response.status_code == 202, (
-            f"Expected 202, got {response.status_code}: {response.text}"
-        )
+        assert (
+            response.status_code == 202
+        ), f"Expected 202, got {response.status_code}: {response.text}"
 
     def test_validate_filename_with_special_chars(
         self, client, sample_ifc_content, sample_ids_content
@@ -636,9 +685,9 @@ class TestValidateEndpointFilenameEdgeCases:
 
         response = client.post("/api/v1/validate", files=files)
 
-        assert response.status_code == 202, (
-            f"Expected 202, got {response.status_code}: {response.text}"
-        )
+        assert (
+            response.status_code == 202
+        ), f"Expected 202, got {response.status_code}: {response.text}"
 
     def test_validate_long_filename(
         self, client, sample_ifc_content, sample_ids_content
@@ -660,9 +709,9 @@ class TestValidateEndpointFilenameEdgeCases:
 
         response = client.post("/api/v1/validate", files=files)
 
-        assert response.status_code == 202, (
-            f"Expected 202, got {response.status_code}: {response.text}"
-        )
+        assert (
+            response.status_code == 202
+        ), f"Expected 202, got {response.status_code}: {response.text}"
 
 
 # =============================================================================
@@ -683,7 +732,11 @@ class TestJobStatusEndpointBasics:
         """
         # Create a job first
         files = {
-            "ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream"),
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
             "ids_file": ("spec.ids", io.BytesIO(sample_ids_content), "application/xml"),
         }
         create_response = client.post("/api/v1/validate", files=files)
@@ -692,9 +745,9 @@ class TestJobStatusEndpointBasics:
         # Get job status
         response = client.get(f"/api/v1/jobs/{job_id}")
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert (
+            response.status_code == 200
+        ), f"Expected 200, got {response.status_code}: {response.text}"
 
     def test_job_status_returns_job_id_in_response(
         self, client, sample_ifc_content, sample_ids_content
@@ -706,7 +759,11 @@ class TestJobStatusEndpointBasics:
         """
         # Create a job first
         files = {
-            "ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream"),
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
             "ids_file": ("spec.ids", io.BytesIO(sample_ids_content), "application/xml"),
         }
         create_response = client.post("/api/v1/validate", files=files)
@@ -717,9 +774,9 @@ class TestJobStatusEndpointBasics:
         data = response.json()
 
         assert "job_id" in data, "Response should contain job_id"
-        assert data["job_id"] == job_id, (
-            f"job_id should match requested ID, got {data['job_id']}"
-        )
+        assert (
+            data["job_id"] == job_id
+        ), f"job_id should match requested ID, got {data['job_id']}"
 
     def test_job_status_returns_status_field(
         self, client, sample_ifc_content, sample_ids_content
@@ -732,7 +789,11 @@ class TestJobStatusEndpointBasics:
         """
         # Create a job first
         files = {
-            "ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream"),
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
             "ids_file": ("spec.ids", io.BytesIO(sample_ids_content), "application/xml"),
         }
         create_response = client.post("/api/v1/validate", files=files)
@@ -744,9 +805,9 @@ class TestJobStatusEndpointBasics:
 
         assert "status" in data, "Response should contain status field"
         valid_statuses = ["pending", "processing", "completed", "failed"]
-        assert data["status"] in valid_statuses, (
-            f"status should be one of {valid_statuses}, got '{data['status']}'"
-        )
+        assert (
+            data["status"] in valid_statuses
+        ), f"status should be one of {valid_statuses}, got '{data['status']}'"
 
     def test_job_status_returns_created_at(
         self, client, sample_ifc_content, sample_ids_content
@@ -759,7 +820,11 @@ class TestJobStatusEndpointBasics:
         """
         # Create a job first
         files = {
-            "ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream"),
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
             "ids_file": ("spec.ids", io.BytesIO(sample_ids_content), "application/xml"),
         }
         create_response = client.post("/api/v1/validate", files=files)
@@ -772,9 +837,9 @@ class TestJobStatusEndpointBasics:
         assert "created_at" in data, "Response should contain created_at field"
         assert data["created_at"] is not None, "created_at should not be None"
         # Verify it's a valid ISO timestamp by checking format
-        assert "T" in data["created_at"], (
-            "created_at should be ISO 8601 format (contain 'T')"
-        )
+        assert (
+            "T" in data["created_at"]
+        ), "created_at should be ISO 8601 format (contain 'T')"
 
 
 class TestJobStatusEndpointNotFound:
@@ -790,9 +855,9 @@ class TestJobStatusEndpointNotFound:
 
         response = client.get(f"/api/v1/jobs/{fake_job_id}")
 
-        assert response.status_code == 404, (
-            f"Expected 404 for unknown job_id, got {response.status_code}"
-        )
+        assert (
+            response.status_code == 404
+        ), f"Expected 404 for unknown job_id, got {response.status_code}"
 
     def test_unknown_job_id_returns_error_detail(self, client):
         """Test that 404 response includes error detail.
@@ -807,9 +872,9 @@ class TestJobStatusEndpointNotFound:
         data = response.json()
 
         assert "detail" in data, "404 response should contain detail"
-        assert "not found" in data["detail"].lower(), (
-            "Error detail should mention 'not found'"
-        )
+        assert (
+            "not found" in data["detail"].lower()
+        ), "Error detail should mention 'not found'"
 
     def test_unknown_job_id_includes_job_id_in_error(self, client):
         """Test that 404 error includes the requested job_id.
@@ -822,9 +887,9 @@ class TestJobStatusEndpointNotFound:
         response = client.get(f"/api/v1/jobs/{fake_job_id}")
         data = response.json()
 
-        assert fake_job_id in data["detail"], (
-            f"Error detail should include the requested job_id: {fake_job_id}"
-        )
+        assert (
+            fake_job_id in data["detail"]
+        ), f"Error detail should include the requested job_id: {fake_job_id}"
 
     def test_invalid_uuid_format_returns_404(self, client):
         """Test that invalid UUID format returns 404.
@@ -837,9 +902,9 @@ class TestJobStatusEndpointNotFound:
         response = client.get(f"/api/v1/jobs/{invalid_job_id}")
 
         # Should return 404 (job not found) since it won't match any stored job
-        assert response.status_code == 404, (
-            f"Expected 404 for invalid job_id format, got {response.status_code}"
-        )
+        assert (
+            response.status_code == 404
+        ), f"Expected 404 for invalid job_id format, got {response.status_code}"
 
 
 class TestJobStatusEndpointPendingJob:
@@ -858,9 +923,9 @@ class TestJobStatusEndpointPendingJob:
         response = client.get(f"/api/v1/jobs/{job.job_id}")
         data = response.json()
 
-        assert data["status"] == "pending", (
-            f"Job status should be pending, got '{data['status']}'"
-        )
+        assert (
+            data["status"] == "pending"
+        ), f"Job status should be pending, got '{data['status']}'"
 
     def test_pending_job_has_no_result(self, client):
         """Test that pending job has no result field populated.
@@ -875,9 +940,7 @@ class TestJobStatusEndpointPendingJob:
         response = client.get(f"/api/v1/jobs/{job.job_id}")
         data = response.json()
 
-        assert data.get("result") is None, (
-            "Pending job should not have result"
-        )
+        assert data.get("result") is None, "Pending job should not have result"
 
     def test_pending_job_has_no_started_at(self, client):
         """Test that pending job has no started_at timestamp.
@@ -892,9 +955,7 @@ class TestJobStatusEndpointPendingJob:
         response = client.get(f"/api/v1/jobs/{job.job_id}")
         data = response.json()
 
-        assert data.get("started_at") is None, (
-            "Pending job should not have started_at"
-        )
+        assert data.get("started_at") is None, "Pending job should not have started_at"
 
 
 class TestJobStatusEndpointCompletedJob:
@@ -925,9 +986,9 @@ class TestJobStatusEndpointCompletedJob:
         response = client.get(f"/api/v1/jobs/{job.job_id}")
         data = response.json()
 
-        assert data["status"] == "completed", (
-            f"Job status should be completed, got '{data['status']}'"
-        )
+        assert (
+            data["status"] == "completed"
+        ), f"Job status should be completed, got '{data['status']}'"
         assert "result" in data, "Completed job should have result field"
         assert data["result"] is not None, "Completed job result should not be None"
 
@@ -976,15 +1037,15 @@ class TestJobStatusEndpointCompletedJob:
         response = client.get(f"/api/v1/jobs/{job.job_id}")
         data = response.json()
 
-        assert "duration_seconds" in data, (
-            "Completed job should have duration_seconds field"
-        )
-        assert data["duration_seconds"] is not None, (
-            "duration_seconds should not be None"
-        )
-        assert data["duration_seconds"] >= 0, (
-            f"duration_seconds should be >= 0, got {data['duration_seconds']}"
-        )
+        assert (
+            "duration_seconds" in data
+        ), "Completed job should have duration_seconds field"
+        assert (
+            data["duration_seconds"] is not None
+        ), "duration_seconds should not be None"
+        assert (
+            data["duration_seconds"] >= 0
+        ), f"duration_seconds should be >= 0, got {data['duration_seconds']}"
 
     def test_completed_job_includes_completed_at(self, client):
         """Test that completed job includes completed_at timestamp.
@@ -1002,15 +1063,11 @@ class TestJobStatusEndpointCompletedJob:
         response = client.get(f"/api/v1/jobs/{job.job_id}")
         data = response.json()
 
-        assert "completed_at" in data, (
-            "Completed job should have completed_at field"
-        )
-        assert data["completed_at"] is not None, (
-            "completed_at should not be None for completed job"
-        )
-        assert "T" in data["completed_at"], (
-            "completed_at should be ISO 8601 format"
-        )
+        assert "completed_at" in data, "Completed job should have completed_at field"
+        assert (
+            data["completed_at"] is not None
+        ), "completed_at should not be None for completed job"
+        assert "T" in data["completed_at"], "completed_at should be ISO 8601 format"
 
     def test_completed_job_has_no_error(self, client):
         """Test that completed job does not have error field populated.
@@ -1027,9 +1084,9 @@ class TestJobStatusEndpointCompletedJob:
         response = client.get(f"/api/v1/jobs/{job.job_id}")
         data = response.json()
 
-        assert data.get("error") is None, (
-            "Completed job should not have error field populated"
-        )
+        assert (
+            data.get("error") is None
+        ), "Completed job should not have error field populated"
 
 
 class TestJobStatusEndpointFailedJob:
@@ -1051,9 +1108,9 @@ class TestJobStatusEndpointFailedJob:
         response = client.get(f"/api/v1/jobs/{job.job_id}")
         data = response.json()
 
-        assert data["status"] == "failed", (
-            f"Job status should be failed, got '{data['status']}'"
-        )
+        assert (
+            data["status"] == "failed"
+        ), f"Job status should be failed, got '{data['status']}'"
         assert "error" in data, "Failed job should have error field"
         assert data["error"] is not None, "Failed job error should not be None"
         assert len(data["error"]) > 0, "Failed job error should not be empty"
@@ -1075,9 +1132,9 @@ class TestJobStatusEndpointFailedJob:
         response = client.get(f"/api/v1/jobs/{job.job_id}")
         data = response.json()
 
-        assert error_message in data["error"], (
-            f"Error should contain '{error_message}', got '{data['error']}'"
-        )
+        assert (
+            error_message in data["error"]
+        ), f"Error should contain '{error_message}', got '{data['error']}'"
 
     def test_failed_job_includes_completed_at(self, client):
         """Test that failed job includes completed_at timestamp.
@@ -1094,12 +1151,10 @@ class TestJobStatusEndpointFailedJob:
         response = client.get(f"/api/v1/jobs/{job.job_id}")
         data = response.json()
 
-        assert "completed_at" in data, (
-            "Failed job should have completed_at field"
-        )
-        assert data["completed_at"] is not None, (
-            "completed_at should not be None for failed job"
-        )
+        assert "completed_at" in data, "Failed job should have completed_at field"
+        assert (
+            data["completed_at"] is not None
+        ), "completed_at should not be None for failed job"
 
     def test_failed_job_has_no_result(self, client):
         """Test that failed job does not have result field populated.
@@ -1116,9 +1171,9 @@ class TestJobStatusEndpointFailedJob:
         response = client.get(f"/api/v1/jobs/{job.job_id}")
         data = response.json()
 
-        assert data.get("result") is None, (
-            "Failed job should not have result field populated"
-        )
+        assert (
+            data.get("result") is None
+        ), "Failed job should not have result field populated"
 
     def test_failed_job_includes_duration_seconds(self, client):
         """Test that failed job includes duration_seconds.
@@ -1135,12 +1190,12 @@ class TestJobStatusEndpointFailedJob:
         response = client.get(f"/api/v1/jobs/{job.job_id}")
         data = response.json()
 
-        assert "duration_seconds" in data, (
-            "Failed job should have duration_seconds field"
-        )
-        assert data["duration_seconds"] is not None, (
-            "duration_seconds should not be None for failed job"
-        )
+        assert (
+            "duration_seconds" in data
+        ), "Failed job should have duration_seconds field"
+        assert (
+            data["duration_seconds"] is not None
+        ), "duration_seconds should not be None for failed job"
 
 
 class TestJobStatusEndpointProcessingJob:
@@ -1160,9 +1215,9 @@ class TestJobStatusEndpointProcessingJob:
         response = client.get(f"/api/v1/jobs/{job.job_id}")
         data = response.json()
 
-        assert data["status"] == "processing", (
-            f"Job status should be processing, got '{data['status']}'"
-        )
+        assert (
+            data["status"] == "processing"
+        ), f"Job status should be processing, got '{data['status']}'"
 
     def test_processing_job_includes_started_at(self, client):
         """Test that processing job includes started_at timestamp.
@@ -1178,12 +1233,10 @@ class TestJobStatusEndpointProcessingJob:
         response = client.get(f"/api/v1/jobs/{job.job_id}")
         data = response.json()
 
-        assert "started_at" in data, (
-            "Processing job should have started_at field"
-        )
-        assert data["started_at"] is not None, (
-            "started_at should not be None for processing job"
-        )
+        assert "started_at" in data, "Processing job should have started_at field"
+        assert (
+            data["started_at"] is not None
+        ), "started_at should not be None for processing job"
 
     def test_processing_job_with_progress_shows_progress(self, client):
         """Test that processing job with progress shows progress message.
@@ -1200,12 +1253,12 @@ class TestJobStatusEndpointProcessingJob:
         response = client.get(f"/api/v1/jobs/{job.job_id}")
         data = response.json()
 
-        assert "progress" in data, (
-            "Processing job with progress should have progress field"
-        )
-        assert "Validating specification 3 of 13" in data["progress"], (
-            f"Progress should contain expected message, got '{data.get('progress')}'"
-        )
+        assert (
+            "progress" in data
+        ), "Processing job with progress should have progress field"
+        assert (
+            "Validating specification 3 of 13" in data["progress"]
+        ), f"Progress should contain expected message, got '{data.get('progress')}'"
 
 
 # =============================================================================
@@ -1244,7 +1297,9 @@ class TestJobExpirationViaEndpoint:
         future_time = datetime.now(timezone.utc) + timedelta(seconds=3601)
         with patch("server.job_manager.datetime") as mock_datetime:
             mock_datetime.now.return_value = future_time
-            mock_datetime.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
+            mock_datetime.side_effect = lambda *args, **kwargs: datetime(
+                *args, **kwargs
+            )
 
             # Trigger cleanup via status request (for any job - the cleanup runs globally)
             # Create a fresh job to have a valid endpoint to call
@@ -1253,9 +1308,9 @@ class TestJobExpirationViaEndpoint:
 
         # Now the original job should be cleaned up
         response = client.get(f"/api/v1/jobs/{job.job_id}")
-        assert response.status_code == 404, (
-            f"Expired job should return 404, got {response.status_code}"
-        )
+        assert (
+            response.status_code == 404
+        ), f"Expired job should return 404, got {response.status_code}"
 
     def test_expired_failed_job_is_cleaned_up(self, client):
         """Test that failed jobs older than TTL are cleaned up.
@@ -1281,7 +1336,9 @@ class TestJobExpirationViaEndpoint:
         future_time = datetime.now(timezone.utc) + timedelta(seconds=3601)
         with patch("server.job_manager.datetime") as mock_datetime:
             mock_datetime.now.return_value = future_time
-            mock_datetime.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
+            mock_datetime.side_effect = lambda *args, **kwargs: datetime(
+                *args, **kwargs
+            )
 
             # Trigger cleanup
             fresh_job = job_manager.create_job()
@@ -1307,9 +1364,9 @@ class TestJobExpirationViaEndpoint:
         response = client.get(f"/api/v1/jobs/{job.job_id}")
 
         # Job should still exist (not expired)
-        assert response.status_code == 200, (
-            "Recent completed job should not be cleaned up"
-        )
+        assert (
+            response.status_code == 200
+        ), "Recent completed job should not be cleaned up"
         assert response.json()["status"] == "completed"
 
     def test_cleanup_preserves_pending_jobs_within_ttl(self, client):
@@ -1326,9 +1383,9 @@ class TestJobExpirationViaEndpoint:
         response = client.get(f"/api/v1/jobs/{job.job_id}")
 
         # Job should still exist
-        assert response.status_code == 200, (
-            "Pending job within TTL should not be cleaned up"
-        )
+        assert (
+            response.status_code == 200
+        ), "Pending job within TTL should not be cleaned up"
         assert response.json()["status"] == "pending"
 
     def test_cleanup_preserves_processing_jobs_within_ttl(self, client):
@@ -1346,9 +1403,9 @@ class TestJobExpirationViaEndpoint:
         response = client.get(f"/api/v1/jobs/{job.job_id}")
 
         # Job should still exist
-        assert response.status_code == 200, (
-            "Processing job within TTL should not be cleaned up"
-        )
+        assert (
+            response.status_code == 200
+        ), "Processing job within TTL should not be cleaned up"
         assert response.json()["status"] == "processing"
 
     def test_stuck_pending_job_is_cleaned_up_after_ttl(self, client):
@@ -1365,10 +1422,14 @@ class TestJobExpirationViaEndpoint:
         job = job_manager.create_job()
 
         # Mock time to simulate TTL expiration
-        future_time = datetime.now(timezone.utc) + timedelta(seconds=3601)
+        future_time = datetime.now(timezone.utc) + timedelta(
+            seconds=job_manager.STUCK_JOB_TTL_SECONDS + 1
+        )
         with patch("server.job_manager.datetime") as mock_datetime:
             mock_datetime.now.return_value = future_time
-            mock_datetime.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
+            mock_datetime.side_effect = lambda *args, **kwargs: datetime(
+                *args, **kwargs
+            )
 
             # Trigger cleanup
             fresh_job = job_manager.create_job()
@@ -1376,9 +1437,9 @@ class TestJobExpirationViaEndpoint:
 
         # Original stuck job should be cleaned up
         response = client.get(f"/api/v1/jobs/{job.job_id}")
-        assert response.status_code == 404, (
-            "Stuck pending job older than TTL should return 404"
-        )
+        assert (
+            response.status_code == 404
+        ), "Stuck pending job older than TTL should return 404"
 
     def test_cleanup_does_not_affect_other_active_jobs(self, client):
         """Test that cleanup of expired jobs doesn't affect other active jobs.
@@ -1412,10 +1473,12 @@ class TestJobExpirationViaEndpoint:
         future_time = datetime.now(timezone.utc) + timedelta(seconds=3601)
         with patch("server.job_manager.datetime") as mock_datetime:
             mock_datetime.now.return_value = future_time
-            mock_datetime.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
+            mock_datetime.side_effect = lambda *args, **kwargs: datetime(
+                *args, **kwargs
+            )
 
             # Trigger cleanup by accessing pending job
-            response = client.get(f"/api/v1/jobs/{pending_job.job_id}")
+            client.get(f"/api/v1/jobs/{pending_job.job_id}")
             # The pending job was also created before the mock, so in the mock's
             # perspective it's also expired. Let's adjust our test approach.
 
@@ -1428,7 +1491,10 @@ class TestJobExpirationViaEndpoint:
         job_manager.complete_job(old_job.job_id, {"result": "old"})
         # Manually backdate the completed_at
         from datetime import datetime, timedelta, timezone
-        old_completed_at = datetime.now(timezone.utc) - timedelta(seconds=7200)  # 2 hours ago
+
+        old_completed_at = datetime.now(timezone.utc) - timedelta(
+            seconds=7200
+        )  # 2 hours ago
         old_job_updated = job_manager.get_job(old_job.job_id)
         job_manager._jobs[old_job.job_id] = old_job_updated.model_copy(
             update={"completed_at": old_completed_at}
@@ -1440,20 +1506,20 @@ class TestJobExpirationViaEndpoint:
         job_manager.start_job(new_processing.job_id)
 
         # Trigger cleanup via status request
-        response = client.get(f"/api/v1/jobs/{new_pending.job_id}")
+        client.get(f"/api/v1/jobs/{new_pending.job_id}")
 
         # Old job should be cleaned up
-        assert client.get(f"/api/v1/jobs/{old_job.job_id}").status_code == 404, (
-            "Old completed job should be cleaned up"
-        )
+        assert (
+            client.get(f"/api/v1/jobs/{old_job.job_id}").status_code == 404
+        ), "Old completed job should be cleaned up"
 
         # New jobs should still exist
-        assert client.get(f"/api/v1/jobs/{new_pending.job_id}").status_code == 200, (
-            "New pending job should still exist"
-        )
-        assert client.get(f"/api/v1/jobs/{new_processing.job_id}").status_code == 200, (
-            "New processing job should still exist"
-        )
+        assert (
+            client.get(f"/api/v1/jobs/{new_pending.job_id}").status_code == 200
+        ), "New pending job should still exist"
+        assert (
+            client.get(f"/api/v1/jobs/{new_processing.job_id}").status_code == 200
+        ), "New processing job should still exist"
 
     def test_multiple_expired_jobs_are_all_cleaned_up(self, client):
         """Test that multiple expired jobs are all cleaned up in one pass.
@@ -1487,9 +1553,9 @@ class TestJobExpirationViaEndpoint:
         # All old jobs should be cleaned up
         for old_job in old_jobs:
             response = client.get(f"/api/v1/jobs/{old_job.job_id}")
-            assert response.status_code == 404, (
-                f"Expired job {old_job.job_id} should return 404"
-            )
+            assert (
+                response.status_code == 404
+            ), f"Expired job {old_job.job_id} should return 404"
 
         # Fresh job should still exist
         response = client.get(f"/api/v1/jobs/{fresh_job.job_id}")
@@ -1523,9 +1589,9 @@ class TestJobExpirationViaEndpoint:
 
         # Old job should have been cleaned up
         response = client.get(f"/api/v1/jobs/{old_job.job_id}")
-        assert response.status_code == 404, (
-            "Old job should be cleaned up when checking a different job"
-        )
+        assert (
+            response.status_code == 404
+        ), "Old job should be cleaned up when checking a different job"
 
     def test_expired_job_returns_404_with_proper_error_message(self, client):
         """Test that expired job returns 404 with appropriate error message.
@@ -1594,16 +1660,20 @@ class TestFullAsyncValidationFlow:
 
         # Step 1: Submit validation job
         files = {
-            "ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream"),
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
             "ids_file": ("spec.ids", io.BytesIO(sample_ids_content), "application/xml"),
         }
 
         submit_response = client.post("/api/v1/validate", files=files)
 
         # Verify job was accepted
-        assert submit_response.status_code == 202, (
-            f"Expected 202 Accepted, got {submit_response.status_code}: {submit_response.text}"
-        )
+        assert (
+            submit_response.status_code == 202
+        ), f"Expected 202 Accepted, got {submit_response.status_code}: {submit_response.text}"
         submit_data = submit_response.json()
         assert "job_id" in submit_data
         job_id = submit_data["job_id"]
@@ -1617,9 +1687,9 @@ class TestFullAsyncValidationFlow:
 
         for _ in range(max_polls):
             status_response = client.get(f"/api/v1/jobs/{job_id}")
-            assert status_response.status_code == 200, (
-                f"Job status request failed: {status_response.text}"
-            )
+            assert (
+                status_response.status_code == 200
+            ), f"Job status request failed: {status_response.text}"
             final_data = status_response.json()
             final_status = final_data.get("status")
 
@@ -1629,9 +1699,10 @@ class TestFullAsyncValidationFlow:
             time.sleep(poll_interval)
 
         # Step 3: Verify job completed (not timed out)
-        assert final_status in ("completed", "failed"), (
-            f"Job did not complete within timeout. Final status: {final_status}"
-        )
+        assert final_status in (
+            "completed",
+            "failed",
+        ), f"Job did not complete within timeout. Final status: {final_status}"
 
         # Step 4: Verify result structure matches ValidationReport
         assert final_data is not None, "Response data should not be None"
@@ -1648,9 +1719,15 @@ class TestFullAsyncValidationFlow:
             self._verify_validation_report_structure(result)
 
             # Verify timing info
-            assert "completed_at" in final_data, "Completed job should have completed_at"
-            assert "duration_seconds" in final_data, "Completed job should have duration_seconds"
-            assert final_data["duration_seconds"] >= 0, "duration_seconds should be >= 0"
+            assert (
+                "completed_at" in final_data
+            ), "Completed job should have completed_at"
+            assert (
+                "duration_seconds" in final_data
+            ), "Completed job should have duration_seconds"
+            assert (
+                final_data["duration_seconds"] >= 0
+            ), "duration_seconds should be >= 0"
 
         # For failed jobs, verify error structure
         elif final_status == "failed":
@@ -1670,8 +1747,16 @@ class TestFullAsyncValidationFlow:
 
         # Submit validation job
         files = {
-            "ifc_file": ("test_model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream"),
-            "ids_file": ("test_spec.ids", io.BytesIO(sample_ids_content), "application/xml"),
+            "ifc_file": (
+                "test_model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
+            "ids_file": (
+                "test_spec.ids",
+                io.BytesIO(sample_ids_content),
+                "application/xml",
+            ),
         }
 
         submit_response = client.post("/api/v1/validate", files=files)
@@ -1697,26 +1782,28 @@ class TestFullAsyncValidationFlow:
         result = final_data["result"]
 
         # Verify result reflects the input files
-        assert result["ifc_file"] == "test_model.ifc", (
-            f"Expected 'test_model.ifc', got '{result.get('ifc_file')}'"
-        )
-        assert result["ids_file"] == "test_spec.ids", (
-            f"Expected 'test_spec.ids', got '{result.get('ids_file')}'"
-        )
+        assert (
+            result["ifc_file"] == "test_model.ifc"
+        ), f"Expected 'test_model.ifc', got '{result.get('ifc_file')}'"
+        assert (
+            result["ids_file"] == "test_spec.ids"
+        ), f"Expected 'test_spec.ids', got '{result.get('ids_file')}'"
 
         # Verify IFC schema detection worked
-        assert result["ifc_schema"] == "IFC4", (
-            f"Expected 'IFC4', got '{result.get('ifc_schema')}'"
-        )
+        assert (
+            result["ifc_schema"] == "IFC4"
+        ), f"Expected 'IFC4', got '{result.get('ifc_schema')}'"
 
         # Verify IDS title field exists (value may be None depending on ifctester parsing)
         # Note: ids_title extraction depends on ifctester library behavior
-        assert "ids_title" in result or result.get("ids_title") is None, (
-            "Result should have ids_title field"
-        )
+        assert (
+            "ids_title" in result or result.get("ids_title") is None
+        ), "Result should have ids_title field"
 
         # Verify specifications were processed
-        assert result["total_specifications"] >= 1, "Should have at least 1 specification"
+        assert (
+            result["total_specifications"] >= 1
+        ), "Should have at least 1 specification"
         assert len(result["specifications"]) >= 1, "Should have specification results"
 
         # Verify specification structure
@@ -1738,7 +1825,11 @@ class TestFullAsyncValidationFlow:
 
         # Submit validation job
         files = {
-            "ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream"),
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
             "ids_file": ("spec.ids", io.BytesIO(sample_ids_content), "application/xml"),
         }
 
@@ -1748,9 +1839,9 @@ class TestFullAsyncValidationFlow:
         status_url = submit_data["status_url"]
 
         # Verify status_url format
-        assert f"/api/v1/jobs/{job_id}" in status_url, (
-            f"status_url should contain job endpoint, got '{status_url}'"
-        )
+        assert (
+            f"/api/v1/jobs/{job_id}" in status_url
+        ), f"status_url should contain job endpoint, got '{status_url}'"
 
         # Use status_url to poll (strip leading / for TestClient)
         # TestClient expects paths without the leading / for relative URLs
@@ -1758,9 +1849,9 @@ class TestFullAsyncValidationFlow:
         final_data = None
         for _ in range(max_polls):
             status_response = client.get(status_url)
-            assert status_response.status_code == 200, (
-                f"status_url request failed: {status_response.text}"
-            )
+            assert (
+                status_response.status_code == 200
+            ), f"status_url request failed: {status_response.text}"
             final_data = status_response.json()
             if final_data.get("status") in ("completed", "failed"):
                 break
@@ -1768,9 +1859,9 @@ class TestFullAsyncValidationFlow:
 
         # Verify we got results
         assert final_data is not None
-        assert final_data["job_id"] == job_id, (
-            "Job ID from status_url should match original"
-        )
+        assert (
+            final_data["job_id"] == job_id
+        ), "Job ID from status_url should match original"
 
     def test_validation_flow_tracks_processing_progress(
         self, client, sample_ifc_content, sample_ids_content
@@ -1784,7 +1875,11 @@ class TestFullAsyncValidationFlow:
         """
         # Submit validation job
         files = {
-            "ifc_file": ("model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream"),
+            "ifc_file": (
+                "model.ifc",
+                io.BytesIO(sample_ifc_content),
+                "application/octet-stream",
+            ),
             "ids_file": ("spec.ids", io.BytesIO(sample_ids_content), "application/xml"),
         }
 
@@ -1800,12 +1895,13 @@ class TestFullAsyncValidationFlow:
 
         # Status should be one of the valid job states
         valid_states = ["pending", "processing", "completed", "failed"]
-        assert initial_status in valid_states, (
-            f"Expected valid status, got '{initial_status}'"
-        )
+        assert (
+            initial_status in valid_states
+        ), f"Expected valid status, got '{initial_status}'"
 
         # Wait for completion if not already completed
         import time
+
         if initial_status not in ("completed", "failed"):
             for _ in range(50):
                 status_response = client.get(f"/api/v1/jobs/{job_id}")
@@ -1816,9 +1912,10 @@ class TestFullAsyncValidationFlow:
 
         # Final state should be completed or failed
         final_status = data.get("status")
-        assert final_status in ("completed", "failed"), (
-            f"Job should complete, got '{final_status}'"
-        )
+        assert final_status in (
+            "completed",
+            "failed",
+        ), f"Job should complete, got '{final_status}'"
 
     def test_validation_flow_handles_ifc_without_matching_entities(
         self, client, sample_ids_content
@@ -1855,7 +1952,11 @@ END-ISO-10303-21;
 """
 
         files = {
-            "ifc_file": ("minimal.ifc", io.BytesIO(minimal_ifc), "application/octet-stream"),
+            "ifc_file": (
+                "minimal.ifc",
+                io.BytesIO(minimal_ifc),
+                "application/octet-stream",
+            ),
             "ids_file": ("spec.ids", io.BytesIO(sample_ids_content), "application/xml"),
         }
 
@@ -1873,9 +1974,9 @@ END-ISO-10303-21;
             time.sleep(0.1)
 
         # Should complete (not crash)
-        assert final_data.get("status") == "completed", (
-            f"Should complete validation, got {final_data.get('status')}: {final_data.get('error')}"
-        )
+        assert (
+            final_data.get("status") == "completed"
+        ), f"Should complete validation, got {final_data.get('status')}: {final_data.get('error')}"
 
         # Verify result structure is valid even with no matching entities
         result = final_data["result"]
@@ -1925,35 +2026,50 @@ END-ISO-10303-21;
         assert isinstance(result["timestamp"], str), "timestamp should be a string"
         assert isinstance(result["ifc_file"], str), "ifc_file should be a string"
         assert isinstance(result["ifc_schema"], str), "ifc_schema should be a string"
-        assert isinstance(result["ifc_entity_count"], int), "ifc_entity_count should be int"
+        assert isinstance(
+            result["ifc_entity_count"], int
+        ), "ifc_entity_count should be int"
         assert isinstance(result["ids_file"], str), "ids_file should be a string"
-        assert isinstance(result["validation_time_seconds"], (int, float)), (
-            "validation_time_seconds should be numeric"
-        )
-        assert isinstance(result["total_specifications"], int), "total_specifications should be int"
-        assert isinstance(result["passed_specifications"], int), "passed_specifications should be int"
-        assert isinstance(result["failed_specifications"], int), "failed_specifications should be int"
-        assert isinstance(result["pass_rate_percent"], (int, float)), (
-            "pass_rate_percent should be numeric"
-        )
-        assert isinstance(result["specifications"], list), "specifications should be a list"
+        assert isinstance(
+            result["validation_time_seconds"], (int, float)
+        ), "validation_time_seconds should be numeric"
+        assert isinstance(
+            result["total_specifications"], int
+        ), "total_specifications should be int"
+        assert isinstance(
+            result["passed_specifications"], int
+        ), "passed_specifications should be int"
+        assert isinstance(
+            result["failed_specifications"], int
+        ), "failed_specifications should be int"
+        assert isinstance(
+            result["pass_rate_percent"], (int, float)
+        ), "pass_rate_percent should be numeric"
+        assert isinstance(
+            result["specifications"], list
+        ), "specifications should be a list"
         assert isinstance(result["success"], bool), "success should be a boolean"
 
         # Optional field type checks
         if result.get("ids_title") is not None:
-            assert isinstance(result["ids_title"], str), "ids_title should be string if present"
+            assert isinstance(
+                result["ids_title"], str
+            ), "ids_title should be string if present"
         if result.get("error") is not None:
             assert isinstance(result["error"], str), "error should be string if present"
 
         # Value range checks
         assert result["pass_rate_percent"] >= 0, "pass_rate_percent should be >= 0"
         assert result["pass_rate_percent"] <= 100, "pass_rate_percent should be <= 100"
-        assert result["validation_time_seconds"] >= 0, "validation_time_seconds should be >= 0"
+        assert (
+            result["validation_time_seconds"] >= 0
+        ), "validation_time_seconds should be >= 0"
 
         # Consistency checks
-        assert result["passed_specifications"] + result["failed_specifications"] == result["total_specifications"], (
-            "passed + failed should equal total specifications"
-        )
+        assert (
+            result["passed_specifications"] + result["failed_specifications"]
+            == result["total_specifications"]
+        ), "passed + failed should equal total specifications"
 
         # Verify specifications list structure
         for spec in result["specifications"]:
@@ -1985,15 +2101,17 @@ END-ISO-10303-21;
 
         assert isinstance(spec["name"], str), "spec name should be string"
         assert isinstance(spec["passed"], bool), "spec passed should be bool"
-        assert isinstance(spec["applicable_count"], int), "applicable_count should be int"
+        assert isinstance(
+            spec["applicable_count"], int
+        ), "applicable_count should be int"
         assert isinstance(spec["passed_count"], int), "passed_count should be int"
         assert isinstance(spec["failed_count"], int), "failed_count should be int"
         assert isinstance(spec["failures"], list), "failures should be a list"
 
         # Consistency check
-        assert spec["passed_count"] + spec["failed_count"] == spec["applicable_count"], (
-            "passed + failed should equal applicable count"
-        )
+        assert (
+            spec["passed_count"] + spec["failed_count"] == spec["applicable_count"]
+        ), "passed + failed should equal applicable count"
 
         # Verify failure structure if any
         for failure in spec["failures"]:
@@ -2068,9 +2186,9 @@ class TestConcurrentJobHandling:
             response = client.post("/api/v1/validate", files=files)
             submit_times.append(time.time() - start_time)
 
-            assert response.status_code == 202, (
-                f"Job {i} submission should succeed, got {response.status_code}"
-            )
+            assert (
+                response.status_code == 202
+            ), f"Job {i} submission should succeed, got {response.status_code}"
             job_ids.append(response.json()["job_id"])
 
         # Verify all jobs were accepted (not blocked)
@@ -2101,15 +2219,15 @@ class TestConcurrentJobHandling:
             time.sleep(poll_interval)
 
         # Step 3: Verify all jobs completed
-        assert len(completed_jobs) == num_jobs, (
-            f"All {num_jobs} jobs should complete, got {len(completed_jobs)}"
-        )
+        assert (
+            len(completed_jobs) == num_jobs
+        ), f"All {num_jobs} jobs should complete, got {len(completed_jobs)}"
 
         # Verify all jobs completed successfully (not failed)
         for job_id, data in completed_jobs.items():
-            assert data["status"] == "completed", (
-                f"Job {job_id} should be completed, got {data['status']}: {data.get('error')}"
-            )
+            assert (
+                data["status"] == "completed"
+            ), f"Job {job_id} should be completed, got {data['status']}: {data.get('error')}"
             assert "result" in data, f"Job {job_id} should have result"
             assert data["result"] is not None, f"Job {job_id} result should not be None"
 
@@ -2149,9 +2267,24 @@ END-ISO-10303-21;
 
         # Create distinct IFC files with unique names
         job_configs = [
-            {"filename": "building_A.ifc", "project_name": "Building A", "author": "Alice", "org": "OrgA"},
-            {"filename": "building_B.ifc", "project_name": "Building B", "author": "Bob", "org": "OrgB"},
-            {"filename": "building_C.ifc", "project_name": "Building C", "author": "Carol", "org": "OrgC"},
+            {
+                "filename": "building_A.ifc",
+                "project_name": "Building A",
+                "author": "Alice",
+                "org": "OrgA",
+            },
+            {
+                "filename": "building_B.ifc",
+                "project_name": "Building B",
+                "author": "Bob",
+                "org": "OrgB",
+            },
+            {
+                "filename": "building_C.ifc",
+                "project_name": "Building C",
+                "author": "Carol",
+                "org": "OrgC",
+            },
         ]
 
         job_ids = []
@@ -2159,14 +2292,11 @@ END-ISO-10303-21;
 
         # Step 1: Submit jobs with different files
         for config in job_configs:
-            ifc_content = ifc_template.replace(
-                b"{filename}", config["filename"].encode()
-            ).replace(
-                b"{project_name}", config["project_name"].encode()
-            ).replace(
-                b"{author}", config["author"].encode()
-            ).replace(
-                b"{org}", config["org"].encode()
+            ifc_content = (
+                ifc_template.replace(b"{filename}", config["filename"].encode())
+                .replace(b"{project_name}", config["project_name"].encode())
+                .replace(b"{author}", config["author"].encode())
+                .replace(b"{org}", config["org"].encode())
             )
 
             files = {
@@ -2210,9 +2340,9 @@ END-ISO-10303-21;
             assert job_id in completed_jobs, f"Job {job_id} should have completed"
             data = completed_jobs[job_id]
 
-            assert data["status"] == "completed", (
-                f"Job {job_id} should be completed: {data.get('error')}"
-            )
+            assert (
+                data["status"] == "completed"
+            ), f"Job {job_id} should be completed: {data.get('error')}"
 
             result = data["result"]
             expected_filename = expected_filenames[i]
@@ -2286,17 +2416,15 @@ END-ISO-10303-21;
             if status == "completed":
                 assert "result" in data, "Completed job should have result"
                 assert data["result"] is not None
-                assert data.get("error") is None, (
-                    "Completed job should not have error"
-                )
+                assert data.get("error") is None, "Completed job should not have error"
             elif status == "failed":
                 assert "error" in data, "Failed job should have error"
                 assert data["error"] is not None
-                assert data.get("result") is None, (
-                    "Failed job should not have result"
-                )
+                assert data.get("result") is None, "Failed job should not have result"
 
-    def test_job_limit_returns_503(self, client, sample_ifc_content, sample_ids_content):
+    def test_job_limit_returns_503(
+        self, client, sample_ifc_content, sample_ids_content
+    ):
         """Test that exceeding concurrent job limit returns 503.
 
         Integration Test:
@@ -2334,12 +2462,12 @@ END-ISO-10303-21;
 
             response = client.post("/api/v1/validate", files=files)
 
-            assert response.status_code == 503, (
-                f"Should return 503 when at capacity, got {response.status_code}"
-            )
-            assert "concurrent" in response.json()["detail"].lower(), (
-                "Error should mention concurrent jobs"
-            )
+            assert (
+                response.status_code == 503
+            ), f"Should return 503 when at capacity, got {response.status_code}"
+            assert (
+                "concurrent" in response.json()["detail"].lower()
+            ), "Error should mention concurrent jobs"
 
         finally:
             # Clean up the jobs we created
@@ -2389,9 +2517,9 @@ END-ISO-10303-21;
 
             response = client.post("/api/v1/validate", files=files)
 
-            assert response.status_code == 202, (
-                f"Should accept job after capacity freed, got {response.status_code}"
-            )
+            assert (
+                response.status_code == 202
+            ), f"Should accept job after capacity freed, got {response.status_code}"
 
         finally:
             # Clean up
@@ -2462,9 +2590,9 @@ END-ISO-10303-21;
                 assert "duration_seconds" in data, "Should have duration_seconds"
 
                 # Duration should be non-negative
-                assert data["duration_seconds"] >= 0, (
-                    f"Duration should be >= 0, got {data['duration_seconds']}"
-                )
+                assert (
+                    data["duration_seconds"] >= 0
+                ), f"Duration should be >= 0, got {data['duration_seconds']}"
 
         # Verify jobs have different timestamps (not shared)
         created_timestamps = [
@@ -2549,14 +2677,14 @@ END-ISO-10303-21;
                 ]
 
                 for field in required_fields:
-                    assert field in result, (
-                        f"Job {job_id} result missing field '{field}'"
-                    )
+                    assert (
+                        field in result
+                    ), f"Job {job_id} result missing field '{field}'"
 
                 # Verify specifications list structure
-                assert isinstance(result["specifications"], list), (
-                    f"Job {job_id} specifications should be a list"
-                )
+                assert isinstance(
+                    result["specifications"], list
+                ), f"Job {job_id} specifications should be a list"
 
                 # Verify numeric fields are correct types
                 assert isinstance(result["total_specifications"], int)
@@ -2565,6 +2693,6 @@ END-ISO-10303-21;
                 assert isinstance(result["pass_rate_percent"], (int, float))
 
         # At least some jobs should complete successfully
-        assert completed_count >= 1, (
-            f"At least 1 job should complete successfully, got {completed_count}"
-        )
+        assert (
+            completed_count >= 1
+        ), f"At least 1 job should complete successfully, got {completed_count}"
