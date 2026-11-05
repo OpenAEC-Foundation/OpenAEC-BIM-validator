@@ -4,7 +4,16 @@
       "Bash(mkdir:*)",
       "Bash(pip show:*)",
       "Bash(pip install:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(cd \"C:/Users/rickd/Documents/GitHub/OpenAEC-BIM-validator/viewer\" && npm install 2>&1)",
+      "Bash(cd \"C:/Users/rickd/Documents/GitHub/OpenAEC-BIM-validator\" && uvicorn server.main:app --reload --port 8000 2>&1)",
+      "Bash(cd \"C:/Users/rickd/Documents/GitHub/OpenAEC-BIM-validator/viewer\" && npm run dev 2>&1)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(git -C \"C:/Users/rickd/Documents/GitHub/OpenAEC-BIM-validator\" diff --stat)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "symitech-erpnext",
+    "freecad-mcp"
+  ]
 }
