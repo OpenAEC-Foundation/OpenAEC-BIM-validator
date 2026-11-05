@@ -1,6 +1,6 @@
 {
   "name": "ifc-viewer-poc",
-  "version": "2026.45.0",
+  "version": "2026.45.1",
   "description": "That Open Engine IFC Viewer - Proof of Concept for Phase 0 Research",
   "type": "module",
   "scripts": {

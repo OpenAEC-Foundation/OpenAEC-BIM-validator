@@ -19,6 +19,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from click.utils import strip_ansi
 from typer.testing import CliRunner
 
 # Add src to path for imports
@@ -86,7 +87,7 @@ class TestEndToEndValidationPass:
 
         assert (
             result.exit_code == 0
-        ), f"Expected exit code 0, got {result.exit_code}. Output: {result.output}"
+        ), f"Expected exit code 0, got {result.exit_code}. Output: {strip_ansi(result.output)}"
 
     def test_validation_pass_console_output_shows_success(
         self, runner, sample_ifc_path, sample_ids_path
@@ -103,7 +104,7 @@ class TestEndToEndValidationPass:
         )
 
         assert result.exit_code == 0
-        output_lower = result.output.lower()
+        output_lower = strip_ansi(result.output).lower()
         # Should indicate pass status
         assert (
             "pass" in output_lower
@@ -127,8 +128,8 @@ class TestEndToEndValidationPass:
 
         assert result.exit_code == 0
         # Should show file names
-        assert "sample.ifc" in result.output
-        assert "sample.ids" in result.output
+        assert "sample.ifc" in strip_ansi(result.output)
+        assert "sample.ids" in strip_ansi(result.output)
 
     def test_validation_pass_console_output_shows_specification(
         self, runner, sample_ifc_path, sample_ids_path
@@ -146,7 +147,9 @@ class TestEndToEndValidationPass:
 
         assert result.exit_code == 0
         # Should show specification name from sample.ids
-        assert "Wall" in result.output or "Naming" in result.output
+        assert "Wall" in strip_ansi(result.output) or "Naming" in strip_ansi(
+            result.output
+        )
 
 
 # =============================================================================
@@ -173,7 +176,7 @@ class TestEndToEndValidationFail:
 
         assert (
             result.exit_code == 1
-        ), f"Expected exit code 1, got {result.exit_code}. Output: {result.output}"
+        ), f"Expected exit code 1, got {result.exit_code}. Output: {strip_ansi(result.output)}"
 
     def test_validation_fail_console_output_shows_failure(
         self, runner, sample_fail_ifc_path, sample_ids_path
@@ -190,7 +193,7 @@ class TestEndToEndValidationFail:
         )
 
         assert result.exit_code == 1
-        output_lower = result.output.lower()
+        output_lower = strip_ansi(result.output).lower()
         # Should indicate failure status
         assert "fail" in output_lower
 
@@ -210,7 +213,7 @@ class TestEndToEndValidationFail:
 
         assert result.exit_code == 1
         # Should show entity information (either wall name or type)
-        output_lower = result.output.lower()
+        output_lower = strip_ansi(result.output).lower()
         assert (
             "wall" in output_lower or "bad" in output_lower or "entity" in output_lower
         )
@@ -239,10 +242,12 @@ class TestJSONOutputFormat:
         assert result.exit_code == 0
         # Should be parseable JSON
         try:
-            data = json.loads(result.output)
+            data = json.loads(strip_ansi(result.output))
             assert isinstance(data, dict)
         except json.JSONDecodeError as e:
-            pytest.fail(f"JSON output is not valid: {e}. Output: {result.output[:500]}")
+            pytest.fail(
+                f"JSON output is not valid: {e}. Output: {strip_ansi(result.output)[:500]}"
+            )
 
     def test_json_output_has_required_fields(
         self, runner, sample_ifc_path, sample_ids_path
@@ -258,7 +263,7 @@ class TestJSONOutputFormat:
             [str(sample_ifc_path), "--ids", str(sample_ids_path), "--output", "json"],
         )
 
-        data = json.loads(result.output)
+        data = json.loads(strip_ansi(result.output))
 
         # Required fields per spec
         required_fields = [
@@ -293,7 +298,7 @@ class TestJSONOutputFormat:
             [str(sample_ifc_path), "--ids", str(sample_ids_path), "--output", "json"],
         )
 
-        data = json.loads(result.output)
+        data = json.loads(strip_ansi(result.output))
         assert data["overall_pass"] is True
 
     def test_json_output_overall_pass_false_for_failing_model(
@@ -316,7 +321,7 @@ class TestJSONOutputFormat:
             ],
         )
 
-        data = json.loads(result.output)
+        data = json.loads(strip_ansi(result.output))
         assert data["overall_pass"] is False
 
     def test_json_output_specifications_structure(
@@ -333,7 +338,7 @@ class TestJSONOutputFormat:
             [str(sample_ifc_path), "--ids", str(sample_ids_path), "--output", "json"],
         )
 
-        data = json.loads(result.output)
+        data = json.loads(strip_ansi(result.output))
         assert isinstance(data["specifications"], list)
         assert len(data["specifications"]) > 0
 
@@ -366,7 +371,7 @@ class TestJSONOutputFormat:
             ],
         )
 
-        data = json.loads(result.output)
+        data = json.loads(strip_ansi(result.output))
 
         # Find failed specifications
         failed_specs = [s for s in data["specifications"] if not s["passed"]]
@@ -393,7 +398,7 @@ class TestJSONOutputFormat:
             [str(sample_ifc_path), "-i", str(sample_ids_path), "-o", "json"],
         )
 
-        data = json.loads(result.output)
+        data = json.loads(strip_ansi(result.output))
         assert data["overall_pass"] is True
 
 
@@ -431,7 +436,7 @@ class TestHTMLOutputFormat:
             assert result.exit_code == 0
             assert (
                 html_output.exists()
-            ), f"HTML file not created. Output: {result.output}"
+            ), f"HTML file not created. Output: {strip_ansi(result.output)}"
 
     def test_html_output_is_valid_html(self, runner, sample_ifc_path, sample_ids_path):
         """Test that HTML output is valid HTML document."""
@@ -562,7 +567,7 @@ class TestHTMLOutputFormat:
                 expected_file = Path(tmpdir) / "sample_report.html"
                 assert (
                     expected_file.exists()
-                ), f"Expected {expected_file} to be created. Output: {result.output}"
+                ), f"Expected {expected_file} to be created. Output: {strip_ansi(result.output)}"
             finally:
                 os.chdir(original_cwd)
 
@@ -590,7 +595,7 @@ class TestConsoleOutputFormat:
         # Default should be console, not JSON (which would start with { )
         assert result.exit_code == 0
         # Console output has Rich formatting, not raw JSON
-        assert not result.output.strip().startswith("{")
+        assert not strip_ansi(result.output).strip().startswith("{")
 
     def test_console_output_has_substantial_content(
         self, runner, sample_ifc_path, sample_ids_path
@@ -608,7 +613,7 @@ class TestConsoleOutputFormat:
 
         assert result.exit_code == 0
         # Should have substantial output (tables, panels, etc.)
-        assert len(result.output) > 100
+        assert len(strip_ansi(result.output)) > 100
 
     def test_console_output_explicit_format(
         self, runner, sample_ifc_path, sample_ids_path
@@ -632,7 +637,7 @@ class TestConsoleOutputFormat:
 
         assert result.exit_code == 0
         # Should be console format, not JSON
-        assert not result.output.strip().startswith("{")
+        assert not strip_ansi(result.output).strip().startswith("{")
 
 
 # =============================================================================
@@ -754,7 +759,7 @@ class TestErrorScenarios:
         )
 
         assert result.exit_code == 1
-        assert "error" in result.output.lower()
+        assert "error" in strip_ansi(result.output).lower()
 
     def test_missing_ids_file_returns_exit_1(self, runner, sample_ifc_path):
         """Test that missing IDS file returns exit code 1."""
@@ -767,7 +772,7 @@ class TestErrorScenarios:
         )
 
         assert result.exit_code == 1
-        assert "error" in result.output.lower()
+        assert "error" in strip_ansi(result.output).lower()
 
     def test_invalid_ifc_extension_returns_exit_1(self, runner, sample_ids_path):
         """Test that invalid IFC extension returns exit code 1."""
@@ -785,7 +790,7 @@ class TestErrorScenarios:
             )
 
             assert result.exit_code == 1
-            output_lower = result.output.lower()
+            output_lower = strip_ansi(result.output).lower()
             assert "error" in output_lower
             assert "extension" in output_lower or "invalid" in output_lower
         finally:
@@ -808,7 +813,7 @@ class TestErrorScenarios:
             )
 
             assert result.exit_code == 1
-            output_lower = result.output.lower()
+            output_lower = strip_ansi(result.output).lower()
             assert "error" in output_lower
         finally:
             if os.path.exists(temp_path):
@@ -929,15 +934,15 @@ class TestCLIOptions:
         result = runner.invoke(app, ["--help"])
 
         assert result.exit_code == 0
-        assert "--ids" in result.output
-        assert "--output" in result.output
+        assert "--ids" in strip_ansi(result.output)
+        assert "--output" in strip_ansi(result.output)
 
     def test_version_flag_shows_version(self, runner):
         """Test that --version shows version information."""
         result = runner.invoke(app, ["--version"])
 
         assert result.exit_code == 0
-        assert "version" in result.output.lower()
+        assert "version" in strip_ansi(result.output).lower()
 
     def test_short_ids_option_works(self, runner, sample_ifc_path, sample_ids_path):
         """Test that -i works as alias for --ids."""

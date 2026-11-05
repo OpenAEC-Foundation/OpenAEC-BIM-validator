@@ -4,7 +4,7 @@
 ; ==========================================================================
 
 #define MyAppName "BIM Validator"
-#define MyAppVersion "2026.45.0"
+#define MyAppVersion "2026.45.1"
 #define MyAppPublisher "3BM Bouwkunde"
 #define MyAppURL "https://github.com/OpenAEC/BIM-validator"
 #define MyAppExeName "BIMValidator.exe"

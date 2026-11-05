@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "BIM Validator",
-  "version": "2026.45.0",
+  "version": "2026.45.1",
   "identifier": "com.openaec.bim-validator",
   "build": {
     "frontendDist": "../dist",

@@ -2467,7 +2467,7 @@ dependencies = [
 
 [[package]]
 name = "openaec-bim-validator"
-version = "2026.45.0"
+version = "2026.45.1"
 dependencies = [
  "base64 0.22.1",
  "keyring",
