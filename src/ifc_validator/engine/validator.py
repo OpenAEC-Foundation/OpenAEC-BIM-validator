@@ -10,8 +10,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Union
 
-from ifc_validator.engine.file_utils import validate_ifc_file, validate_ids_file
-from ifc_validator.engine.parser import load_ifc_model, load_ids_specification
+from ifc_validator.engine.file_utils import validate_ids_file, validate_ifc_file
+from ifc_validator.engine.parser import load_ids_specification, load_ifc_model
 from ifc_validator.models import (
     EntityFailure,
     SpecificationResult,
@@ -108,9 +108,7 @@ def validate(
     not_checkable_specs = 0
 
     for spec in ids_file.specifications:
-        spec_name = (
-            spec.name if spec.name is not None else "Unnamed Specification"
-        )
+        spec_name = spec.name if spec.name is not None else "Unnamed Specification"
         description = getattr(spec, "description", None)
 
         status = getattr(spec, "status", True)
@@ -150,20 +148,13 @@ def validate(
 
         # CRITICAL: use failed_entities, NOT failed_elements
         failed_entities = []
-        if (
-            hasattr(spec, "failed_entities")
-            and spec.failed_entities is not None
-        ):
+        if hasattr(spec, "failed_entities") and spec.failed_entities is not None:
             failed_entities = list(spec.failed_entities)
         failed_count = len(failed_entities)
 
-        passed_count = (
-            applicable_count - failed_count if applicable_count > 0 else 0
-        )
+        passed_count = applicable_count - failed_count if applicable_count > 0 else 0
 
-        failures = [
-            _extract_entity_failure(entity) for entity in failed_entities
-        ]
+        failures = [_extract_entity_failure(entity) for entity in failed_entities]
 
         spec_result = SpecificationResult(
             name=spec_name,
@@ -185,9 +176,7 @@ def validate(
     # carry no signal and must not dilute or inflate the rate
     total_specs = len(ids_file.specifications)
     checkable_specs = total_specs - not_checkable_specs
-    pass_rate = (
-        (passed_specs / checkable_specs * 100) if checkable_specs > 0 else 0.0
-    )
+    pass_rate = (passed_specs / checkable_specs * 100) if checkable_specs > 0 else 0.0
 
     overall_pass = failed_specs == 0
 

@@ -13,7 +13,6 @@ backward compatibility for legacy paths (70_BIM, 99_overige_documenten).
 
 import json
 import logging
-import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -117,9 +116,7 @@ class VolumeReader:
         legacy_dir = self._root / project_name / LEGACY_BIM_SUBDIR
         return self._list_files_in(legacy_dir, BIM_EXTENSIONS)
 
-    def list_output_files(
-        self, project_name: str
-    ) -> list[VolumeFileInfo]:
+    def list_output_files(self, project_name: str) -> list[VolumeFileInfo]:
         """List validation output files.
 
         Tries new validation/ directory first, falls back to legacy
@@ -177,13 +174,9 @@ class VolumeReader:
         # Fallback to legacy paths
         fallback_subdir = self._legacy_fallback(subdir)
         if fallback_subdir and fallback_subdir != subdir:
-            fallback_path = (
-                self._root / project_name / fallback_subdir / filename
-            )
+            fallback_path = self._root / project_name / fallback_subdir / filename
             try:
-                fallback_path.resolve().relative_to(
-                    self._root.resolve()
-                )
+                fallback_path.resolve().relative_to(self._root.resolve())
             except ValueError:
                 return None
             if fallback_path.is_file():
@@ -217,9 +210,7 @@ class VolumeReader:
             logger.error("Failed to read %s: %s", path, exc)
             return None
 
-    def list_manifests(
-        self, project_name: str
-    ) -> list[dict[str, Any]]:
+    def list_manifests(self, project_name: str) -> list[dict[str, Any]]:
         """List all .wefc manifest files in a project root.
 
         Scans the project directory for files with .wefc extension.
@@ -249,11 +240,13 @@ class VolumeReader:
                     modified = datetime.fromtimestamp(
                         stat.st_mtime, tz=timezone.utc
                     ).isoformat()
-                    manifests.append({
-                        "name": entry.name,
-                        "size": stat.st_size,
-                        "last_modified": modified,
-                    })
+                    manifests.append(
+                        {
+                            "name": entry.name,
+                            "size": stat.st_size,
+                            "last_modified": modified,
+                        }
+                    )
         except OSError as exc:
             logger.error(
                 "Failed to list manifests for %s: %s",

@@ -15,11 +15,13 @@ venv
 test/venv
 htmlcov
 .coverage
+.codex
+installer
+viewer/src-tauri
 *.egg-info
 research
 docs
 claude-code
 webpagina
-README.md
 TESTING.md
 AUTO_CLAUDE_SETUP.md

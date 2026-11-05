@@ -14,7 +14,13 @@ import pytest
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 # Clear any existing ifc_validator paths from sys.path to prevent cross-contamination
-sys.path = [p for p in sys.path if "ifc_validator" not in p and "worktrees" not in str(p) or str(PROJECT_ROOT) in str(p)]
+sys.path = [
+    p
+    for p in sys.path
+    if "ifc_validator" not in p
+    and "worktrees" not in str(p)
+    or str(PROJECT_ROOT) in str(p)
+]
 
 # Insert our project's src at the beginning (for ifc_validator module)
 src_path = str(PROJECT_ROOT / "src")
@@ -29,7 +35,6 @@ if project_path not in sys.path:
 from fastapi.testclient import TestClient
 
 from server.main import app, uploaded_files
-
 
 # =============================================================================
 # Test Fixtures
@@ -219,13 +224,21 @@ def sample_ids_content():
 @pytest.fixture
 def sample_ifc_file(sample_ifc_content):
     """Create a file-like object for IFC upload testing."""
-    return ("test_model.ifc", io.BytesIO(sample_ifc_content), "application/octet-stream")
+    return (
+        "test_model.ifc",
+        io.BytesIO(sample_ifc_content),
+        "application/octet-stream",
+    )
 
 
 @pytest.fixture
 def sample_ifc_file_fail(sample_ifc_content_fail):
     """Create a file-like object for IFC upload that will fail validation."""
-    return ("test_model_fail.ifc", io.BytesIO(sample_ifc_content_fail), "application/octet-stream")
+    return (
+        "test_model_fail.ifc",
+        io.BytesIO(sample_ifc_content_fail),
+        "application/octet-stream",
+    )
 
 
 @pytest.fixture

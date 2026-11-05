@@ -15,27 +15,20 @@ Programmatic usage:
     print(f"Overall pass: {result.overall_pass}")
 """
 
-__version__ = "0.1.0"
+__version__ = "2026.45.0"
 
 # CLI app - entry point for ifc-validate command
 from ifc_validator.cli import app
-
-# Result models (Pydantic BaseModel)
-from ifc_validator.models import (
-    EntityFailure,
-    SpecificationResult,
-    ValidationResult,
-)
 
 # Validation engine
 from ifc_validator.engine import (
     check_memory_available,
     get_memory_info,
-    load_ifc_model,
     load_ids_specification,
+    load_ifc_model,
     validate,
-    validate_ifc_file,
     validate_ids_file,
+    validate_ifc_file,
 )
 
 # Formatters (re-exported from formatters package)
@@ -49,6 +42,13 @@ from ifc_validator.formatters import (
     format_json_to_file,
     print_html,
     print_json,
+)
+
+# Result models (Pydantic BaseModel)
+from ifc_validator.models import (
+    EntityFailure,
+    SpecificationResult,
+    ValidationResult,
 )
 
 __all__ = [

@@ -11,51 +11,51 @@ Usage:
 """
 
 import json
-import os
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from src.ifc_validator.formatters.console import (
+    _create_failures_panel,
+    _create_specifications_table,
+    _create_summary_panel,
+    _get_status_badge,
+    _get_status_text,
+    _truncate,
+    format_console,
+    format_console_to_string,
+)
+from src.ifc_validator.formatters.html import (
+    _escape_html,
+    _generate_html_template,
+    _get_status_class,
+    format_html,
+    format_html_from_ids,
+    format_html_from_ids_to_file,
+    format_html_to_file,
+    print_html,
+)
+from src.ifc_validator.formatters.html import (
+    _get_status_text as html_get_status_text,
+)
+from src.ifc_validator.formatters.json import (
+    _result_to_dict,
+    format_json,
+    format_json_compact,
+    format_json_to_file,
+    print_json,
+)
 from src.ifc_validator.validator import (
     EntityFailure,
     SpecificationResult,
     ValidationResult,
 )
-from src.ifc_validator.formatters.console import (
-    format_console,
-    format_console_to_string,
-    _get_status_text,
-    _get_status_badge,
-    _truncate,
-    _create_summary_panel,
-    _create_specifications_table,
-    _create_failures_panel,
-)
-from src.ifc_validator.formatters.json import (
-    format_json,
-    format_json_compact,
-    format_json_to_file,
-    print_json,
-    _result_to_dict,
-)
-from src.ifc_validator.formatters.html import (
-    format_html,
-    format_html_to_file,
-    format_html_from_ids,
-    format_html_from_ids_to_file,
-    print_html,
-    _escape_html,
-    _get_status_class,
-    _get_status_text as html_get_status_text,
-    _generate_html_template,
-)
-
 
 # =============================================================================
 # Test Fixtures
@@ -213,35 +213,47 @@ class TestConsoleFormatter:
         assert isinstance(output, str)
         assert len(output) > 0
 
-    def test_format_console_to_string_contains_pass_status(self, passing_validation_result):
+    def test_format_console_to_string_contains_pass_status(
+        self, passing_validation_result
+    ):
         """Test that passing result shows pass status."""
         output = format_console_to_string(passing_validation_result)
         # Should contain pass indicators
         assert "PASS" in output or "pass" in output.lower()
 
-    def test_format_console_to_string_contains_fail_status(self, failing_validation_result):
+    def test_format_console_to_string_contains_fail_status(
+        self, failing_validation_result
+    ):
         """Test that failing result shows fail status."""
         output = format_console_to_string(failing_validation_result)
         # Should contain fail indicators
         assert "FAIL" in output or "fail" in output.lower()
 
-    def test_format_console_to_string_contains_ifc_info(self, passing_validation_result):
+    def test_format_console_to_string_contains_ifc_info(
+        self, passing_validation_result
+    ):
         """Test that console output contains IFC file information."""
         output = format_console_to_string(passing_validation_result)
         assert "sample.ifc" in output
         assert "IFC4" in output
 
-    def test_format_console_to_string_contains_ids_info(self, passing_validation_result):
+    def test_format_console_to_string_contains_ids_info(
+        self, passing_validation_result
+    ):
         """Test that console output contains IDS file information."""
         output = format_console_to_string(passing_validation_result)
         assert "rules.ids" in output
 
-    def test_format_console_to_string_contains_specification_names(self, passing_validation_result):
+    def test_format_console_to_string_contains_specification_names(
+        self, passing_validation_result
+    ):
         """Test that console output contains specification names."""
         output = format_console_to_string(passing_validation_result)
         assert "Wall Naming Convention" in output
 
-    def test_format_console_to_string_contains_statistics(self, passing_validation_result):
+    def test_format_console_to_string_contains_statistics(
+        self, passing_validation_result
+    ):
         """Test that console output contains validation statistics."""
         output = format_console_to_string(passing_validation_result)
         # Should show pass rate or statistics
@@ -255,7 +267,9 @@ class TestConsoleFormatter:
 
     def test_format_console_to_string_without_failures(self, failing_validation_result):
         """Test that console output can hide failure details."""
-        output = format_console_to_string(failing_validation_result, show_failures=False)
+        output = format_console_to_string(
+            failing_validation_result, show_failures=False
+        )
         # Still shows summary but not detailed failures
         assert "FAIL" in output or "fail" in output.lower()
 
@@ -313,18 +327,21 @@ class TestConsoleFormatter:
     def test_create_summary_panel_returns_panel(self, passing_validation_result):
         """Test _create_summary_panel returns a Rich Panel."""
         from rich.panel import Panel
+
         result = _create_summary_panel(passing_validation_result)
         assert isinstance(result, Panel)
 
     def test_create_specifications_table_returns_table(self, passing_validation_result):
         """Test _create_specifications_table returns a Rich Table."""
         from rich.table import Table
+
         result = _create_specifications_table(passing_validation_result)
         assert isinstance(result, Table)
 
     def test_create_failures_panel_with_failures(self, failing_validation_result):
         """Test _create_failures_panel returns Panel for failed specs."""
         from rich.panel import Panel
+
         failed_spec = failing_validation_result.specifications[0]
         result = _create_failures_panel(failed_spec, 1)
         assert isinstance(result, Panel)
@@ -414,7 +431,9 @@ class TestJSONFormatter:
         data = json.loads(output)
         assert isinstance(data["specifications"], list)
 
-    def test_format_json_specification_has_required_fields(self, passing_validation_result):
+    def test_format_json_specification_has_required_fields(
+        self, passing_validation_result
+    ):
         """Test that each specification has required fields."""
         output = format_json(passing_validation_result)
         data = json.loads(output)
@@ -684,7 +703,11 @@ class TestHTMLFormatter:
         # Should have viewport meta tag
         assert "viewport" in output
         # Should have media queries or grid/flex
-        assert "media" in output.lower() or "grid" in output.lower() or "flex" in output.lower()
+        assert (
+            "media" in output.lower()
+            or "grid" in output.lower()
+            or "flex" in output.lower()
+        )
 
     def test_format_html_minimal_result(self, minimal_validation_result):
         """Test HTML output with minimal/empty validation result."""
@@ -701,7 +724,10 @@ class TestHTMLFormatter:
 
     def test_escape_html_basic(self):
         """Test _escape_html escapes HTML special characters."""
-        assert _escape_html("<script>alert('xss')</script>") == "&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;"
+        assert (
+            _escape_html("<script>alert('xss')</script>")
+            == "&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;"
+        )
 
     def test_escape_html_ampersand(self):
         """Test _escape_html escapes ampersand."""
@@ -709,7 +735,7 @@ class TestHTMLFormatter:
 
     def test_escape_html_quotes(self):
         """Test _escape_html escapes quotes."""
-        assert '&quot;' in _escape_html('test "quoted"')
+        assert "&quot;" in _escape_html('test "quoted"')
 
     def test_escape_html_none(self):
         """Test _escape_html handles None."""
@@ -1047,6 +1073,7 @@ class TestConsoleFormatterFailuresPanelEdgeCases:
     def test_failures_panel_with_max_failures(self, many_failures_result):
         """Test that failures panel truncates at 10 failures."""
         from rich.panel import Panel
+
         from src.ifc_validator.formatters.console import _create_failures_panel
 
         failed_spec = many_failures_result.specifications[0]
@@ -1143,9 +1170,7 @@ class TestJSONFormatterIndentVariations:
         with tempfile.TemporaryDirectory() as tmpdir:
             output_path = Path(tmpdir) / "indented.json"
 
-            result_path = format_json_to_file(
-                passing_validation_result, output_path, indent=4
-            )
+            format_json_to_file(passing_validation_result, output_path, indent=4)
 
             content = output_path.read_text(encoding="utf-8")
             assert "    " in content
@@ -1161,7 +1186,6 @@ class TestHTMLFormatterFromIds:
 
     def test_format_html_from_ids_with_mock(self):
         """Test format_html_from_ids with mocked IDS file object."""
-        from unittest.mock import MagicMock
         import sys
 
         mock_ids_file = MagicMock()
@@ -1179,7 +1203,9 @@ class TestHTMLFormatterFromIds:
         try:
             result = format_html_from_ids(mock_ids_file, hide_skipped=False)
 
-            mock_reporter.Html.assert_called_once_with(mock_ids_file, hide_skipped=False)
+            mock_reporter.Html.assert_called_once_with(
+                mock_ids_file, hide_skipped=False
+            )
             mock_html_reporter.to_string.assert_called_once()
             assert result == "<html>test</html>"
         finally:
@@ -1191,7 +1217,6 @@ class TestHTMLFormatterFromIds:
 
     def test_format_html_from_ids_hide_skipped(self):
         """Test format_html_from_ids with hide_skipped=True."""
-        from unittest.mock import MagicMock
         import sys
 
         mock_ids_file = MagicMock()
@@ -1207,7 +1232,7 @@ class TestHTMLFormatterFromIds:
         sys.modules["ifctester.reporter"] = mock_reporter
 
         try:
-            result = format_html_from_ids(mock_ids_file, hide_skipped=True)
+            format_html_from_ids(mock_ids_file, hide_skipped=True)
 
             mock_reporter.Html.assert_called_once_with(mock_ids_file, hide_skipped=True)
         finally:
@@ -1219,7 +1244,6 @@ class TestHTMLFormatterFromIds:
 
     def test_format_html_from_ids_to_file_with_mock(self):
         """Test format_html_from_ids_to_file with mocked IDS file object."""
-        from unittest.mock import MagicMock
         import sys
 
         mock_ids_file = MagicMock()
@@ -1239,7 +1263,9 @@ class TestHTMLFormatterFromIds:
             try:
                 result = format_html_from_ids_to_file(mock_ids_file, output_path)
 
-                mock_reporter.Html.assert_called_once_with(mock_ids_file, hide_skipped=False)
+                mock_reporter.Html.assert_called_once_with(
+                    mock_ids_file, hide_skipped=False
+                )
                 mock_html_reporter.to_file.assert_called_once_with(str(output_path))
                 assert result == output_path
             finally:
@@ -1251,7 +1277,6 @@ class TestHTMLFormatterFromIds:
 
     def test_format_html_from_ids_to_file_creates_dirs(self):
         """Test format_html_from_ids_to_file creates parent directories."""
-        from unittest.mock import MagicMock
         import sys
 
         mock_ids_file = MagicMock()
@@ -1269,7 +1294,7 @@ class TestHTMLFormatterFromIds:
             sys.modules["ifctester.reporter"] = mock_reporter
 
             try:
-                result = format_html_from_ids_to_file(mock_ids_file, output_path)
+                format_html_from_ids_to_file(mock_ids_file, output_path)
 
                 # Parent directory should be created
                 assert output_path.parent.exists()
@@ -1286,7 +1311,6 @@ class TestHTMLFormatterPrintHtml:
 
     def test_print_html_outputs_to_stdout(self, passing_validation_result, capsys):
         """Test that print_html outputs HTML to stdout."""
-        from src.ifc_validator.formatters.html import print_html
 
         print_html(passing_validation_result)
 
@@ -1419,7 +1443,7 @@ class TestHTMLFormatterSpecsWithoutDescription:
         # Should not contain "None" as text in description area
         assert "No Description Spec" in output
         # Verify description is not showing "None"
-        assert '>None<' not in output
+        assert ">None<" not in output
 
 
 class TestHTMLGenerateTemplateFunction:
@@ -1427,7 +1451,6 @@ class TestHTMLGenerateTemplateFunction:
 
     def test_generate_html_template_basic(self, passing_validation_result):
         """Test _generate_html_template produces complete HTML."""
-        from src.ifc_validator.formatters.html import _generate_html_template
 
         output = _generate_html_template(passing_validation_result)
 
@@ -1447,7 +1470,6 @@ class TestConsoleFormatDirect:
 
     def test_format_console_runs_without_error(self, passing_validation_result, capsys):
         """Test that format_console runs without raising errors."""
-        from src.ifc_validator.formatters.console import format_console
 
         # This should not raise an error
         format_console(passing_validation_result)
@@ -1459,16 +1481,16 @@ class TestConsoleFormatDirect:
 
     def test_format_console_with_failures(self, failing_validation_result, capsys):
         """Test format_console with failing validation result."""
-        from src.ifc_validator.formatters.console import format_console
 
         format_console(failing_validation_result, show_failures=True)
 
         captured = capsys.readouterr()
         assert len(captured.out) >= 0
 
-    def test_format_console_without_failures_shown(self, failing_validation_result, capsys):
+    def test_format_console_without_failures_shown(
+        self, failing_validation_result, capsys
+    ):
         """Test format_console with show_failures=False."""
-        from src.ifc_validator.formatters.console import format_console
 
         format_console(failing_validation_result, show_failures=False)
 

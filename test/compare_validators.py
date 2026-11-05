@@ -26,7 +26,7 @@ def compare_validators(ifc_path: Path, ids_path: Path, test_name: str) -> bool:
     print(f"\n{'=' * 70}")
     print(f"TEST: {test_name}")
     print(f"{'=' * 70}")
-    print(f"\nTest files:")
+    print("\nTest files:")
     print(f"  IFC: {ifc_path}")
     print(f"  IDS: {ids_path}")
 
@@ -99,25 +99,33 @@ def compare_validators(ifc_path: Path, ids_path: Path, test_name: str) -> bool:
     print("\n1. Aggregate Counts:")
 
     if poc_report.total_specifications != module_report.total_specifications:
-        print(f"   ❌ Total specifications: POC={poc_report.total_specifications}, Module={module_report.total_specifications}")
+        print(
+            f"   ❌ Total specifications: POC={poc_report.total_specifications}, Module={module_report.total_specifications}"
+        )
         all_match = False
     else:
         print(f"   ✓ Total specifications: {poc_report.total_specifications}")
 
     if poc_report.passed_specifications != module_report.passed_specifications:
-        print(f"   ❌ Passed specifications: POC={poc_report.passed_specifications}, Module={module_report.passed_specifications}")
+        print(
+            f"   ❌ Passed specifications: POC={poc_report.passed_specifications}, Module={module_report.passed_specifications}"
+        )
         all_match = False
     else:
         print(f"   ✓ Passed specifications: {poc_report.passed_specifications}")
 
     if poc_report.failed_specifications != module_report.failed_specifications:
-        print(f"   ❌ Failed specifications: POC={poc_report.failed_specifications}, Module={module_report.failed_specifications}")
+        print(
+            f"   ❌ Failed specifications: POC={poc_report.failed_specifications}, Module={module_report.failed_specifications}"
+        )
         all_match = False
     else:
         print(f"   ✓ Failed specifications: {poc_report.failed_specifications}")
 
     if poc_report.pass_rate_percent != module_report.pass_rate_percent:
-        print(f"   ❌ Pass rate: POC={poc_report.pass_rate_percent}%, Module={module_report.pass_rate_percent}%")
+        print(
+            f"   ❌ Pass rate: POC={poc_report.pass_rate_percent}%, Module={module_report.pass_rate_percent}%"
+        )
         all_match = False
     else:
         print(f"   ✓ Pass rate: {poc_report.pass_rate_percent}%")
@@ -151,19 +159,27 @@ def compare_validators(ifc_path: Path, ids_path: Path, test_name: str) -> bool:
 
         if poc_spec["passed"] != module_spec["passed"]:
             matches = False
-            issues.append(f"passed: POC={poc_spec['passed']}, Module={module_spec['passed']}")
+            issues.append(
+                f"passed: POC={poc_spec['passed']}, Module={module_spec['passed']}"
+            )
 
         if poc_spec["applicable_count"] != module_spec["applicable_count"]:
             matches = False
-            issues.append(f"applicable: POC={poc_spec['applicable_count']}, Module={module_spec['applicable_count']}")
+            issues.append(
+                f"applicable: POC={poc_spec['applicable_count']}, Module={module_spec['applicable_count']}"
+            )
 
         if poc_spec["passed_count"] != module_spec["passed_count"]:
             matches = False
-            issues.append(f"passed_count: POC={poc_spec['passed_count']}, Module={module_spec['passed_count']}")
+            issues.append(
+                f"passed_count: POC={poc_spec['passed_count']}, Module={module_spec['passed_count']}"
+            )
 
         if poc_spec["failed_count"] != module_spec["failed_count"]:
             matches = False
-            issues.append(f"failed_count: POC={poc_spec['failed_count']}, Module={module_spec['failed_count']}")
+            issues.append(
+                f"failed_count: POC={poc_spec['failed_count']}, Module={module_spec['failed_count']}"
+            )
 
         if matches:
             status = "PASS" if poc_spec["passed"] else "FAIL"

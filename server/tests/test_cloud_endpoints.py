@@ -7,13 +7,10 @@ Tests cover:
 - File listing with new category routing
 """
 
-import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
-
-from server.nextcloud_client import DIR_MODELS, DIR_VALIDATION
 
 
 @pytest.fixture
@@ -151,9 +148,7 @@ class TestFileListingCategories:
             "server.routers.cloud.get_nc_client",
             return_value=mock_nc,
         ):
-            resp = client.get(
-                "/api/cloud/projects/TestProj/files?category=bim"
-            )
+            resp = client.get("/api/cloud/projects/TestProj/files?category=bim")
             assert resp.status_code == 200
             mock_nc.list_models.assert_called_once_with("TestProj")
 
@@ -171,13 +166,9 @@ class TestFileListingCategories:
             "server.routers.cloud.get_nc_client",
             return_value=mock_nc,
         ):
-            resp = client.get(
-                "/api/cloud/projects/TestProj/files?category=output"
-            )
+            resp = client.get("/api/cloud/projects/TestProj/files?category=output")
             assert resp.status_code == 200
-            mock_nc.list_validation_files.assert_called_once_with(
-                "TestProj"
-            )
+            mock_nc.list_validation_files.assert_called_once_with("TestProj")
 
 
 class TestVolumeReaderFallback:
@@ -192,13 +183,9 @@ class TestVolumeReaderFallback:
         """Volume mount bim listing calls list_bim_files."""
         _mock_volume_available.list_bim_files.return_value = []
 
-        resp = client.get(
-            "/api/cloud/projects/TestProj/files?category=bim"
-        )
+        resp = client.get("/api/cloud/projects/TestProj/files?category=bim")
         assert resp.status_code == 200
-        _mock_volume_available.list_bim_files.assert_called_once_with(
-            "TestProj"
-        )
+        _mock_volume_available.list_bim_files.assert_called_once_with("TestProj")
 
     def test_output_listing_with_volume_mount(
         self,
@@ -209,10 +196,6 @@ class TestVolumeReaderFallback:
         """Volume mount output listing calls list_output_files."""
         _mock_volume_available.list_output_files.return_value = []
 
-        resp = client.get(
-            "/api/cloud/projects/TestProj/files?category=output"
-        )
+        resp = client.get("/api/cloud/projects/TestProj/files?category=output")
         assert resp.status_code == 200
-        _mock_volume_available.list_output_files.assert_called_once_with(
-            "TestProj"
-        )
+        _mock_volume_available.list_output_files.assert_called_once_with("TestProj")

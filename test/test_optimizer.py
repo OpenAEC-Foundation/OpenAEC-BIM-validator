@@ -80,9 +80,7 @@ def test_fix_duplicate_globalids():
 
 def test_fix_duplicate_globalids_noop_on_clean_model():
     model = ifcopenshell.file(schema="IFC4")
-    model.create_entity(
-        "IfcWall", GlobalId=ifcopenshell.guid.new(), Name="W"
-    )
+    model.create_entity("IfcWall", GlobalId=ifcopenshell.guid.new(), Name="W")
     result = fix_duplicate_globalids(model)
     assert result.changed == 0
 
@@ -132,9 +130,7 @@ def test_optimize_end_to_end(tmp_path):
 
 def test_optimize_subset_of_passes(tmp_path):
     out = tmp_path / "optimized.ifc"
-    report = optimize(
-        FIXTURES / "sample.ifc", out, passes=["fix_duplicate_globalids"]
-    )
+    report = optimize(FIXTURES / "sample.ifc", out, passes=["fix_duplicate_globalids"])
     assert [p.name for p in report.passes] == ["fix_duplicate_globalids"]
     assert out.exists()
 

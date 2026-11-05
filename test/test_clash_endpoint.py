@@ -33,9 +33,9 @@ def test_clash_single_model_flow(client):
         result = body["result"]
         assert result["mode"] == "intersection"
         assert isinstance(result["clashes"], list)
-        assert result["clash_count"] == len(result["clashes"]) + result[
-            "results_omitted"
-        ]
+        assert (
+            result["clash_count"] == len(result["clashes"]) + result["results_omitted"]
+        )
 
 
 def test_clash_two_models(client):
@@ -50,9 +50,7 @@ def test_clash_two_models(client):
 
 
 def test_clash_unknown_mode_rejected(client):
-    resp = client.post(
-        "/api/v1/clash", files=[_file("ifc_a")], data={"mode": "bogus"}
-    )
+    resp = client.post("/api/v1/clash", files=[_file("ifc_a")], data={"mode": "bogus"})
     assert resp.status_code == 422
 
 

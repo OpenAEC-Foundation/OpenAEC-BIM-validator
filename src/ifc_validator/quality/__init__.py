@@ -135,10 +135,6 @@ def run_quality_checks(
         ifc_file=ifc_file,
         ifc_schema=str(schema),
         checks=results,
-        error_count=sum(
-            r.finding_count for r in results if r.severity == "error"
-        ),
-        warning_count=sum(
-            r.finding_count for r in results if r.severity == "warning"
-        ),
+        error_count=sum(r.finding_count for r in results if r.severity == "error"),
+        warning_count=sum(r.finding_count for r in results if r.severity == "warning"),
     )

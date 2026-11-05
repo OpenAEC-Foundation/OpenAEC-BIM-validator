@@ -2,7 +2,7 @@
 
 Generates a BCF 2.1 .bcfzip from validation results. Each failed element
 becomes one BCF topic with severity-mapped priority. The output is directly
-importable in BIMcollab, Solibri, Navisworks, etc.
+importable in compatible BCF tools
 
 Only uses stdlib (zipfile + xml.etree.ElementTree) — no external dependencies.
 """
@@ -143,9 +143,7 @@ def generate_bcf_zip(
             requirements = spec.get("requirements", [])
 
             for req in requirements:
-                req_desc = req.get(
-                    "requirement_description", "Requirement"
-                )
+                req_desc = req.get("requirement_description", "Requirement")
                 elements = req.get("elements", [])
 
                 for element in elements:
@@ -159,9 +157,7 @@ def generate_bcf_zip(
                     # Build topic content
                     topic_guid = str(uuid.uuid4())
 
-                    title = _truncate(
-                        f"{el_type}: {el_name} — {spec_name}"
-                    )
+                    title = _truncate(f"{el_type}: {el_name} — {spec_name}")
 
                     description_parts = [
                         f"Requirement: {req_desc}",
@@ -181,9 +177,7 @@ def generate_bcf_zip(
                     if global_id:
                         comment_parts.append(f"GlobalId: {global_id}")
                     if messages:
-                        comment_parts.append(
-                            "Details: " + "; ".join(messages)
-                        )
+                        comment_parts.append("Details: " + "; ".join(messages))
                     comment_text = "\n".join(comment_parts)
 
                     markup = _build_markup_xml(

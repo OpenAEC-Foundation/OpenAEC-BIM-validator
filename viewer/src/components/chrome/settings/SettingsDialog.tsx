@@ -6,6 +6,7 @@ import Modal from "../Modal";
 import ThemedSelect from "../ThemedSelect";
 import "../ThemedSelect.css";
 import "./SettingsDialog.css";
+import { APP_VERSION } from "../../../version";
 
 const THEME_OPTIONS = [
   { value: "light", labelKey: "appearance.light", swatches: ["#FAFAF9", "#D97706", "#36363E", "#E7E5E4"] },
@@ -246,7 +247,7 @@ function AboutTabContent() {
     <div className="settings-section">
       <h3>{t("about.appName")}</h3>
       <div style={{ fontSize: 11, lineHeight: 1.8 }}>
-        <p><strong>{t("about.version")}:</strong> 0.1.0</p>
+        <p><strong>{t("about.version")}:</strong> {APP_VERSION}</p>
         <p><strong>{t("about.framework")}:</strong> React + TypeScript + That Open Engine</p>
         <p><strong>{t("about.license")}:</strong> MIT</p>
         <p style={{ marginTop: 8, color: "var(--theme-dialog-content-secondary)" }}>

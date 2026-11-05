@@ -24,9 +24,7 @@ class Project(Base):
 
     __tablename__ = "projects"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=_new_uuid
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_new_uuid)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Tenant slug owning this project. Nullable for backward compat with
@@ -34,9 +32,7 @@ class Project(Base):
     # stamped with the caller's tenant from the Authentik forward-auth
     # header (X-Authentik-Meta-Tenant). NULL rows are only visible when
     # the caller has no tenant context (e.g. auth disabled).
-    tenant: Mapped[str | None] = mapped_column(
-        String(64), nullable=True, index=True
-    )
+    tenant: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow
     )
@@ -78,9 +74,7 @@ class ProjectFile(Base):
 
     __tablename__ = "project_files"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=_new_uuid
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_new_uuid)
     project_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
     )
@@ -93,9 +87,7 @@ class ProjectFile(Base):
     uploaded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow
     )
-    metadata_json: Mapped[dict | None] = mapped_column(
-        "metadata", JSON, nullable=True
-    )
+    metadata_json: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
 
     project: Mapped["Project"] = relationship(back_populates="files")
 

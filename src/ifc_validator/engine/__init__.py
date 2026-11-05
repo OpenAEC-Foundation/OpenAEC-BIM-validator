@@ -13,16 +13,16 @@ from ifc_validator.engine.file_utils import (
     check_memory_available,
     get_memory_info,
     validate_file_exists,
-    validate_ifc_extension,
-    validate_ifc_file,
     validate_ids_extension,
     validate_ids_file,
+    validate_ifc_extension,
+    validate_ifc_file,
 )
 from ifc_validator.engine.parser import (
     IFCParser,
     MemoryStats,
-    load_ifc_model,
     load_ids_specification,
+    load_ifc_model,
 )
 from ifc_validator.engine.validator import (
     validate,

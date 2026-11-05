@@ -28,6 +28,7 @@ def _run_async(coro):  # type: ignore[no-untyped-def]
     """
     return asyncio.new_event_loop().run_until_complete(coro)
 
+
 # Ensure server package is importable
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
@@ -246,9 +247,7 @@ class TestProjectDetailTenantIsolation:
         )
         assert resp.status_code == 404
 
-    def test_put_other_tenant_returns_404(
-        self, tenant_client: TestClient
-    ) -> None:
+    def test_put_other_tenant_returns_404(self, tenant_client: TestClient) -> None:
         """PUT /projects/{id} for another tenant's project → 404 (no mutation)."""
         project_id = _seed_project("Secret project", "tenant-a")
 
@@ -267,9 +266,7 @@ class TestProjectDetailTenantIsolation:
         names = {p["name"] for p in list_resp.json()["projects"]}
         assert names == {"Secret project"}
 
-    def test_delete_other_tenant_returns_404(
-        self, tenant_client: TestClient
-    ) -> None:
+    def test_delete_other_tenant_returns_404(self, tenant_client: TestClient) -> None:
         """DELETE /projects/{id} for another tenant's project → 404 (no delete)."""
         project_id = _seed_project("Secret project", "tenant-a")
 
@@ -386,9 +383,7 @@ class TestProjectWefcTenantIsolation:
         registry.get.side_effect = _get
         return registry
 
-    def test_wefc_get_other_tenant_returns_404(
-        self, tenant_client: TestClient
-    ) -> None:
+    def test_wefc_get_other_tenant_returns_404(self, tenant_client: TestClient) -> None:
         """GET /projects/{id}/wefc for another tenant's project → 404."""
         project_id = _seed_project("Secret project", "tenant-a")
 
@@ -403,9 +398,7 @@ class TestProjectWefcTenantIsolation:
             )
         assert resp.status_code == 404
 
-    def test_wefc_put_other_tenant_returns_404(
-        self, tenant_client: TestClient
-    ) -> None:
+    def test_wefc_put_other_tenant_returns_404(self, tenant_client: TestClient) -> None:
         """PUT /projects/{id}/wefc for another tenant's project → 404 (no write)."""
         project_id = _seed_project("Secret project", "tenant-a")
 

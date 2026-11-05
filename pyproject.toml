@@ -1,9 +1,9 @@
 [project]
 name = "ifc-validator"
-version = "0.1.0"
+version = "2026.45.0"
 description = "IFC validation against IDS specifications - by 3BM Bouwkunde"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 license = {text = "MIT"}
 authors = [
     {name = "3BM Bouwkunde", email = "info@3bm.nl"}
@@ -14,17 +14,15 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
 
 dependencies = [
-    "ifcopenshell>=0.8.0",
-    "ifctester>=0.8.0",
-    "ifcpatch>=0.8.0",
-    "ifcclash>=0.8.0",
+    "ifcopenshell==0.8.4.post1",
+    "ifctester==0.8.4",
+    "ifcpatch==0.8.5",
+    "ifcclash==0.8.5",
     "fastapi>=0.100.0",
     "uvicorn>=0.20.0",
     "python-multipart>=0.0.6",
@@ -38,6 +36,8 @@ dependencies = [
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.23",
+    "httpx>=0.27.0",
     "black>=23.0.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
@@ -97,6 +97,12 @@ select = [
 ignore = [
     "E501",  # line too long (handled by black)
 ]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.File", "typer.Option"]
+
+[tool.ruff.lint.per-file-ignores]
+"server/tests/conftest.py" = ["E402"]
 
 [tool.mypy]
 python_version = "3.11"

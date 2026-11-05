@@ -7,13 +7,12 @@ never silently passed or failed.
 
 import ifcopenshell
 import pytest
-from ifctester.ids import Ids, Specification, Entity, Attribute
+from ifctester.ids import Attribute, Entity, Ids, Specification
 
 from ifc_validator.engine.validator import validate
 from ifc_validator.formatters.console import format_console_to_string
 from ifc_validator.formatters.html import format_html
 from ifc_validator.models import SpecificationResult, ValidationResult
-
 
 # -- Model-level behaviour ------------------------------------------------
 

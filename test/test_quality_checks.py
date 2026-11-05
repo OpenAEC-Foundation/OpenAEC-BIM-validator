@@ -272,9 +272,7 @@ def test_unhosted_openings() -> None:
     dangling_opening = model.create_entity(
         "IfcOpeningElement", GlobalId=_guid(), Name="Opening-los"
     )
-    window = model.create_entity(
-        "IfcWindow", GlobalId=_guid(), Name="Raam-zwevend"
-    )
+    window = model.create_entity("IfcWindow", GlobalId=_guid(), Name="Raam-zwevend")
     model.create_entity(
         "IfcRelFillsElement",
         GlobalId=_guid(),

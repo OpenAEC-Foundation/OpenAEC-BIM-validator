@@ -50,7 +50,7 @@
 - [ ] Cloud: IFC download via volume mount (performance test)
 - [ ] Cloud: fallback naar legacy paden bij bestaande projecten
 - [ ] Proxy auth: login via Authentik → user zichtbaar in TitleBar
-- [ ] BCF ZIP downloaden → importeren in BIMcollab/Solibri/Revit
+- [ ] BCF ZIP downloaden → importeren in een externe BCF-viewer
 - [ ] Push issues naar BCF Platform → verifieer op platform UI
 - [ ] Cross-site SSO: login validator → open platform → zelfde projecten
 

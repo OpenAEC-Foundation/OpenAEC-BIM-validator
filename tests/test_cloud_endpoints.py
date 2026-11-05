@@ -5,7 +5,7 @@ Tests both the 503 behavior (when not configured) and the endpoint
 responses when the NextcloudClient is mocked.
 """
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -24,6 +24,7 @@ def app_without_cloud():
     ):
         # Force reimport to pick up env vars
         import importlib
+
         import server.main as main_module
 
         importlib.reload(main_module)
@@ -87,7 +88,7 @@ class TestCloudConfigured:
                 last_modified="Mon, 01 Jan 2026 12:00:00 GMT",
             ),
         ]
-        self.mock_client.list_files.return_value = [
+        self.mock_client.list_validation_files.return_value = [
             DavItem(
                 name="report.bcf",
                 href="/bim-validator/report.bcf",
@@ -109,17 +110,24 @@ class TestCloudConfigured:
             },
         ):
             import importlib
+
             import server.main as main_module
 
             importlib.reload(main_module)
 
-            # Replace the global client
-            main_module._nextcloud_client = self.mock_client
-            main_module.CLOUD_ENABLED = True
-
-            self.client = TestClient(main_module.app)
-            yield
-            main_module._nextcloud_client = None
+            registry = MagicMock()
+            registry.is_configured = True
+            reader = MagicMock()
+            reader.available = False
+            with (
+                patch("server.routers.cloud.get_tenants", return_value=registry),
+                patch(
+                    "server.routers.cloud.get_nc_client", return_value=self.mock_client
+                ),
+                patch("server.routers.cloud.VolumeReader", return_value=reader),
+            ):
+                self.client = TestClient(main_module.app)
+                yield
 
     def test_status_enabled(self):
         """GET /api/cloud/status returns enabled=true, connected=true."""

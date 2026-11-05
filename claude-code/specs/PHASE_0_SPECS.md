@@ -172,7 +172,7 @@ issue.bcf (ZIP)
 - [ ] BCF spec doorgelezen
 - [ ] Minimale velden geïdentificeerd
 - [ ] Voorbeeld handmatig gemaakt
-- [ ] Import getest in BIMcollab
+- [ ] Import getest in externe BIM-tool
 
 ---
 

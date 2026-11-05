@@ -19,11 +19,10 @@ import sys
 from importlib.resources import files
 from pathlib import Path
 
-
 # Mapping of shortcut names to bundled IDS filenames
 STANDARD_SHORTCUTS: dict[str, str] = {
-    'nl-bim': 'NL_BIM_Basis_ILS_v2.ids',
-    'rvb': 'RVB_BIM_Norm_v1.1.ids',
+    "nl-bim": "NL_BIM_Basis_ILS_v2.ids",
+    "rvb": "RVB_BIM_Norm_v1.1.ids",
 }
 
 
@@ -58,7 +57,7 @@ def get_bundled_ids(shortcut: str) -> Path:
         ValueError: Unknown standard shortcut: 'invalid'. Valid shortcuts are: nl-bim, rvb
     """
     if shortcut not in STANDARD_SHORTCUTS:
-        valid_shortcuts = ', '.join(sorted(STANDARD_SHORTCUTS.keys()))
+        valid_shortcuts = ", ".join(sorted(STANDARD_SHORTCUTS.keys()))
         raise ValueError(
             f"Unknown standard shortcut: '{shortcut}'. "
             f"Valid shortcuts are: {valid_shortcuts}"
@@ -68,9 +67,9 @@ def get_bundled_ids(shortcut: str) -> Path:
 
     # When running as a PyInstaller frozen app, importlib.resources won't
     # work — resolve from the PyInstaller bundle directory instead.
-    if getattr(sys, 'frozen', False):
-        bundle_dir = Path(getattr(sys, '_MEIPASS', '.'))
-        resource_path = bundle_dir / 'ifc_validator' / 'standards' / filename
+    if getattr(sys, "frozen", False):
+        bundle_dir = Path(getattr(sys, "_MEIPASS", "."))
+        resource_path = bundle_dir / "ifc_validator" / "standards" / filename
         if not resource_path.exists():
             raise FileNotFoundError(
                 f"Bundled IDS file not found in frozen app: {filename}. "
@@ -78,7 +77,7 @@ def get_bundled_ids(shortcut: str) -> Path:
             )
         return resource_path
 
-    standards_dir = files('ifc_validator.standards')
+    standards_dir = files("ifc_validator.standards")
     resource = standards_dir / filename
 
     # Convert to Path for consistent interface
@@ -96,8 +95,7 @@ def get_bundled_ids(shortcut: str) -> Path:
         # Handle case where resource is in a zip archive and can't be
         # directly converted to a path
         raise FileNotFoundError(
-            f"Failed to access bundled IDS file: {filename}. "
-            f"Error: {e}"
+            f"Failed to access bundled IDS file: {filename}. " f"Error: {e}"
         ) from e
 
 
@@ -158,7 +156,7 @@ def get_standard_filename(shortcut: str) -> str:
         ValueError: If the shortcut is not recognized.
     """
     if shortcut not in STANDARD_SHORTCUTS:
-        valid_shortcuts = ', '.join(sorted(STANDARD_SHORTCUTS.keys()))
+        valid_shortcuts = ", ".join(sorted(STANDARD_SHORTCUTS.keys()))
         raise ValueError(
             f"Unknown standard shortcut: '{shortcut}'. "
             f"Valid shortcuts are: {valid_shortcuts}"
@@ -167,9 +165,9 @@ def get_standard_filename(shortcut: str) -> str:
 
 
 __all__ = [
-    'STANDARD_SHORTCUTS',
-    'get_bundled_ids',
-    'get_standard_filename',
-    'is_shortcut',
-    'list_available_standards',
+    "STANDARD_SHORTCUTS",
+    "get_bundled_ids",
+    "get_standard_filename",
+    "is_shortcut",
+    "list_available_standards",
 ]

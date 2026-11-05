@@ -4,11 +4,10 @@ Unit tests for the Nextcloud WebDAV client.
 Mocks httpx responses for PROPFIND, GET, PUT, DELETE, MKCOL operations.
 """
 
-import pytest
 import httpx
+import pytest
 
 from server.nextcloud_client import NextcloudClient, NextcloudError
-
 
 # ── Fixtures ────────────────────────────────────────────────────
 
@@ -161,6 +160,7 @@ class TestNextcloudClientAsync:
 
     async def test_list_projects(self, client: NextcloudClient, monkeypatch):
         """list_projects() returns only collections."""
+
         async def mock_propfind(path, depth="1"):
             return httpx.Response(207, content=PROPFIND_PROJECTS_XML)
 
@@ -171,6 +171,7 @@ class TestNextcloudClientAsync:
 
     async def test_list_files(self, client: NextcloudClient, monkeypatch):
         """list_files() returns only non-collection items."""
+
         async def mock_propfind(path, depth="1"):
             return httpx.Response(207, content=PROPFIND_FILES_XML)
 
@@ -183,6 +184,7 @@ class TestNextcloudClientAsync:
         self, client: NextcloudClient, monkeypatch
     ):
         """list_files() returns empty list when directory doesn't exist."""
+
         async def mock_propfind(path, depth="1"):
             raise NextcloudError("Not found", status_code=404)
 
@@ -203,6 +205,7 @@ class TestNextcloudClientAsync:
 
     async def test_download_file_404(self, client: NextcloudClient, monkeypatch):
         """download_file() raises NextcloudError for missing files."""
+
         async def mock_get(url, **kwargs):
             return httpx.Response(404)
 
@@ -232,6 +235,7 @@ class TestNextcloudClientAsync:
 
     async def test_delete_file(self, client: NextcloudClient, monkeypatch):
         """delete_file() sends DELETE request."""
+
         async def mock_delete(url, **kwargs):
             return httpx.Response(204)
 
@@ -240,6 +244,7 @@ class TestNextcloudClientAsync:
 
     async def test_delete_file_404(self, client: NextcloudClient, monkeypatch):
         """delete_file() raises NextcloudError for missing files."""
+
         async def mock_delete(url, **kwargs):
             return httpx.Response(404)
 
@@ -262,10 +267,9 @@ class TestNextcloudClientAsync:
         )
         assert len(mkcol_calls) == 4
 
-    async def test_ensure_directory_exists(
-        self, client: NextcloudClient, monkeypatch
-    ):
+    async def test_ensure_directory_exists(self, client: NextcloudClient, monkeypatch):
         """ensure_directory() handles 405 (already exists) gracefully."""
+
         async def mock_request(method, url, **kwargs):
             return httpx.Response(405)
 
@@ -273,10 +277,9 @@ class TestNextcloudClientAsync:
         # Should not raise
         await client.ensure_directory("Projects/Existing")
 
-    async def test_test_connection_success(
-        self, client: NextcloudClient, monkeypatch
-    ):
+    async def test_test_connection_success(self, client: NextcloudClient, monkeypatch):
         """test_connection() returns True on 207."""
+
         async def mock_propfind(path, depth="0"):
             return httpx.Response(207)
 
@@ -284,10 +287,9 @@ class TestNextcloudClientAsync:
         result = await client.test_connection()
         assert result is True
 
-    async def test_test_connection_failure(
-        self, client: NextcloudClient, monkeypatch
-    ):
+    async def test_test_connection_failure(self, client: NextcloudClient, monkeypatch):
         """test_connection() returns False on connection error."""
+
         async def mock_propfind(path, depth="0"):
             raise httpx.ConnectError("Connection refused")
 

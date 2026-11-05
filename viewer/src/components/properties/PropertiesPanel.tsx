@@ -1,5 +1,5 @@
 /**
- * PropertiesPanel — BIMcollab-style tabbed IFC property viewer.
+ * PropertiesPanel — tabbed IFC property viewer.
  *
  * Tabs: Info | Psets | Qto | Type
  * Uses client-side web-ifc extraction via PropertyExtractor.

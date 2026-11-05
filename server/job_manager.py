@@ -45,9 +45,7 @@ class JobInfo(BaseModel):
     result: Optional[Any] = Field(
         None, description="Validation result when completed (ValidationResult)"
     )
-    error: Optional[str] = Field(
-        None, description="Error message if job failed"
-    )
+    error: Optional[str] = Field(None, description="Error message if job failed")
     progress: Optional[str] = Field(
         None, description="Progress message during processing"
     )

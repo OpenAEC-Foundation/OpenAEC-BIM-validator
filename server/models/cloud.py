@@ -75,12 +75,8 @@ class ManifestInfo(BaseModel):
 class ManifestHeader(BaseModel):
     """Header section of a project.wefc manifest."""
 
-    schema_name: str = Field(
-        "WeFC", alias="schema", description="Schema identifier"
-    )
-    schema_version: str = Field(
-        "1.1.0", description="Schema version"
-    )
+    schema_name: str = Field("WeFC", alias="schema", description="Schema identifier")
+    schema_version: str = Field("1.1.0", description="Schema version")
     file_id: str = Field(
         "", alias="fileId", description="Unique file identifier (UUID4)"
     )

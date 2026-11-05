@@ -134,7 +134,7 @@ describe('ResultsSummary', () => {
       const result = createSuccessfulResult({ total_specifications: 13 });
       render(<ResultsSummary result={result} />);
 
-      expect(screen.getByText('13')).toBeInTheDocument();
+      expect(document.querySelector('.stat-card--total')).toHaveTextContent('13');
       expect(screen.getByText('Total')).toBeInTheDocument();
     });
 
@@ -270,8 +270,10 @@ describe('ResultsSummary', () => {
       render(<ResultsSummary result={result} />);
 
       expect(screen.getByText('Completed:')).toBeInTheDocument();
-      // The exact format depends on locale, but it should contain the date
-      expect(screen.getByText(/jan.*9.*2025/i)).toBeInTheDocument();
+      const formatted = new Date(result.validation_timestamp).toLocaleString(undefined, {
+        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+      });
+      expect(screen.getByText(formatted)).toBeInTheDocument();
     });
 
     it('should display file names with title attribute for truncation', () => {

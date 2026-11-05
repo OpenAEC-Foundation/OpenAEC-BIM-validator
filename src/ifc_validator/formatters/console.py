@@ -21,7 +21,6 @@ from rich.text import Text
 
 from ifc_validator.models import SpecificationResult, ValidationResult
 
-
 # Console instance for output
 console = Console()
 
@@ -76,7 +75,7 @@ def _truncate(text: Optional[str], max_length: int = 60) -> str:
         return ""
     if len(text) <= max_length:
         return text
-    return text[:max_length - 3] + "..."
+    return text[: max_length - 3] + "..."
 
 
 def _create_summary_panel(result: ValidationResult) -> Panel:
@@ -117,11 +116,15 @@ def _create_summary_panel(result: ValidationResult) -> Panel:
 
     # Passed count with color
     passed_color = "green" if result.passed_specifications > 0 else "dim"
-    lines.append(f"  Passed: [{passed_color}]{result.passed_specifications}[/{passed_color}]")
+    lines.append(
+        f"  Passed: [{passed_color}]{result.passed_specifications}[/{passed_color}]"
+    )
 
     # Failed count with color
     failed_color = "red" if result.failed_specifications > 0 else "dim"
-    lines.append(f"  Failed: [{failed_color}]{result.failed_specifications}[/{failed_color}]")
+    lines.append(
+        f"  Failed: [{failed_color}]{result.failed_specifications}[/{failed_color}]"
+    )
 
     # Not-checkable count (honesty rule: never hide unevaluated specs)
     if result.not_checkable_specifications > 0:
@@ -194,8 +197,16 @@ def _create_specifications_table(result: ValidationResult) -> Table:
 
         # Format counts with colors
         applicable = str(spec.applicable_count)
-        passed = f"[green]{spec.passed_count}[/green]" if spec.passed_count > 0 else str(spec.passed_count)
-        failed = f"[red]{spec.failed_count}[/red]" if spec.failed_count > 0 else str(spec.failed_count)
+        passed = (
+            f"[green]{spec.passed_count}[/green]"
+            if spec.passed_count > 0
+            else str(spec.passed_count)
+        )
+        failed = (
+            f"[red]{spec.failed_count}[/red]"
+            if spec.failed_count > 0
+            else str(spec.failed_count)
+        )
 
         table.add_row(
             str(i),
@@ -209,7 +220,9 @@ def _create_specifications_table(result: ValidationResult) -> Table:
     return table
 
 
-def _create_failures_panel(spec: SpecificationResult, spec_index: int) -> Optional[Panel]:
+def _create_failures_panel(
+    spec: SpecificationResult, spec_index: int
+) -> Optional[Panel]:
     """Create a panel showing failed entities for a specification.
 
     Args:

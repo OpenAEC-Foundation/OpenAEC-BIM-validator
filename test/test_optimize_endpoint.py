@@ -66,9 +66,7 @@ def test_optimize_subset_passes(client):
 
 
 def test_optimize_unknown_pass_rejected(client):
-    resp = client.post(
-        "/api/v1/optimize", files=_upload(), data={"passes": "bogus"}
-    )
+    resp = client.post("/api/v1/optimize", files=_upload(), data={"passes": "bogus"})
     assert resp.status_code == 422
     assert "bogus" in resp.json()["detail"]
 

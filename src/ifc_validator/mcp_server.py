@@ -32,6 +32,7 @@ import sys
 import traceback
 from typing import Any, Optional
 
+from ifc_validator import __version__
 from ifc_validator.standards.resolver import (
     STANDARD_SHORTCUTS,
     get_bundled_ids,
@@ -39,7 +40,8 @@ from ifc_validator.standards.resolver import (
 )
 
 SERVER_NAME = "ifc-validator"
-SERVER_VERSION = "0.1.0"
+
+SERVER_VERSION = __version__
 PROTOCOL_VERSION = "2025-06-18"
 
 # JSON-RPC error codes

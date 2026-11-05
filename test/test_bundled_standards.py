@@ -31,7 +31,6 @@ from ifc_validator.standards import (
     list_available_standards,
 )
 
-
 # =============================================================================
 # Test Fixtures
 # =============================================================================
@@ -78,19 +77,19 @@ def all_shortcuts() -> list[str]:
 
     Returns all shortcuts that should be recognized by the resolver.
     """
-    return ['nl-bim', 'rvb']
+    return ["nl-bim", "rvb"]
 
 
 @pytest.fixture
 def nl_bim_filename() -> str:
     """Expected filename for nl-bim shortcut."""
-    return 'NL_BIM_Basis_ILS_v2.ids'
+    return "NL_BIM_Basis_ILS_v2.ids"
 
 
 @pytest.fixture
 def rvb_filename() -> str:
     """Expected filename for rvb shortcut."""
-    return 'RVB_BIM_Norm_v1.1.ids'
+    return "RVB_BIM_Norm_v1.1.ids"
 
 
 # =============================================================================
@@ -118,8 +117,8 @@ class TestFixtures:
 
     def test_all_shortcuts_fixture(self, all_shortcuts: list[str]) -> None:
         """Verify all_shortcuts fixture contains expected shortcuts."""
-        assert 'nl-bim' in all_shortcuts
-        assert 'rvb' in all_shortcuts
+        assert "nl-bim" in all_shortcuts
+        assert "rvb" in all_shortcuts
         assert len(all_shortcuts) == 2
 
     def test_standard_shortcuts_constant_available(self) -> None:
@@ -149,7 +148,7 @@ class TestBundledStandardsExist:
         """
         from importlib.resources import files
 
-        standards_dir = files('ifc_validator.standards')
+        standards_dir = files("ifc_validator.standards")
         assert standards_dir is not None, "Standards package should be accessible"
 
     def test_nl_bim_ids_accessible_via_importlib(self, nl_bim_filename: str) -> None:
@@ -162,17 +161,17 @@ class TestBundledStandardsExist:
         """
         from importlib.resources import files
 
-        standards_dir = files('ifc_validator.standards')
+        standards_dir = files("ifc_validator.standards")
         resource = standards_dir / nl_bim_filename
 
         # Verify the resource can be resolved to a path
         resource_path = Path(str(resource))
-        assert resource_path.exists(), (
-            f"NL_BIM IDS file should exist at {resource_path}"
-        )
-        assert resource_path.suffix.lower() == '.ids', (
-            f"File should have .ids extension, got {resource_path.suffix}"
-        )
+        assert (
+            resource_path.exists()
+        ), f"NL_BIM IDS file should exist at {resource_path}"
+        assert (
+            resource_path.suffix.lower() == ".ids"
+        ), f"File should have .ids extension, got {resource_path.suffix}"
 
     def test_rvb_ids_accessible_via_importlib(self, rvb_filename: str) -> None:
         """Verify RVB IDS file is accessible via importlib.resources.
@@ -184,17 +183,15 @@ class TestBundledStandardsExist:
         """
         from importlib.resources import files
 
-        standards_dir = files('ifc_validator.standards')
+        standards_dir = files("ifc_validator.standards")
         resource = standards_dir / rvb_filename
 
         # Verify the resource can be resolved to a path
         resource_path = Path(str(resource))
-        assert resource_path.exists(), (
-            f"RVB IDS file should exist at {resource_path}"
-        )
-        assert resource_path.suffix.lower() == '.ids', (
-            f"File should have .ids extension, got {resource_path.suffix}"
-        )
+        assert resource_path.exists(), f"RVB IDS file should exist at {resource_path}"
+        assert (
+            resource_path.suffix.lower() == ".ids"
+        ), f"File should have .ids extension, got {resource_path.suffix}"
 
     def test_nl_bim_ids_file_not_empty(self, nl_bim_filename: str) -> None:
         """Verify NL_BIM IDS file has content and is valid XML.
@@ -203,7 +200,7 @@ class TestBundledStandardsExist:
         """
         from importlib.resources import files
 
-        standards_dir = files('ifc_validator.standards')
+        standards_dir = files("ifc_validator.standards")
         resource_path = Path(str(standards_dir / nl_bim_filename))
 
         # File should have content
@@ -211,10 +208,10 @@ class TestBundledStandardsExist:
         assert file_size > 0, "NL_BIM IDS file should not be empty"
 
         # File should start with XML declaration or IDS element
-        content = resource_path.read_text(encoding='utf-8')[:100]
-        assert '<?xml' in content or '<ids' in content.lower(), (
-            "NL_BIM IDS file should contain valid XML/IDS content"
-        )
+        content = resource_path.read_text(encoding="utf-8")[:100]
+        assert (
+            "<?xml" in content or "<ids" in content.lower()
+        ), "NL_BIM IDS file should contain valid XML/IDS content"
 
     def test_rvb_ids_file_not_empty(self, rvb_filename: str) -> None:
         """Verify RVB IDS file has content and is valid XML.
@@ -223,7 +220,7 @@ class TestBundledStandardsExist:
         """
         from importlib.resources import files
 
-        standards_dir = files('ifc_validator.standards')
+        standards_dir = files("ifc_validator.standards")
         resource_path = Path(str(standards_dir / rvb_filename))
 
         # File should have content
@@ -231,10 +228,10 @@ class TestBundledStandardsExist:
         assert file_size > 0, "RVB IDS file should not be empty"
 
         # File should start with XML declaration or IDS element
-        content = resource_path.read_text(encoding='utf-8')[:100]
-        assert '<?xml' in content or '<ids' in content.lower(), (
-            "RVB IDS file should contain valid XML/IDS content"
-        )
+        content = resource_path.read_text(encoding="utf-8")[:100]
+        assert (
+            "<?xml" in content or "<ids" in content.lower()
+        ), "RVB IDS file should contain valid XML/IDS content"
 
     def test_get_bundled_ids_returns_valid_path_for_nl_bim(self) -> None:
         """Verify get_bundled_ids() returns a valid Path for nl-bim shortcut.
@@ -242,13 +239,13 @@ class TestBundledStandardsExist:
         This test verifies the resolver function correctly resolves the
         nl-bim shortcut to a valid, existing file path.
         """
-        path = get_bundled_ids('nl-bim')
+        path = get_bundled_ids("nl-bim")
 
         assert isinstance(path, Path), f"Expected Path, got {type(path).__name__}"
         assert path.exists(), f"Resolved path should exist: {path}"
-        assert path.name == 'NL_BIM_Basis_ILS_v2.ids', (
-            f"Expected NL_BIM_Basis_ILS_v2.ids, got {path.name}"
-        )
+        assert (
+            path.name == "NL_BIM_Basis_ILS_v2.ids"
+        ), f"Expected NL_BIM_Basis_ILS_v2.ids, got {path.name}"
 
     def test_get_bundled_ids_returns_valid_path_for_rvb(self) -> None:
         """Verify get_bundled_ids() returns a valid Path for rvb shortcut.
@@ -256,15 +253,17 @@ class TestBundledStandardsExist:
         This test verifies the resolver function correctly resolves the
         rvb shortcut to a valid, existing file path.
         """
-        path = get_bundled_ids('rvb')
+        path = get_bundled_ids("rvb")
 
         assert isinstance(path, Path), f"Expected Path, got {type(path).__name__}"
         assert path.exists(), f"Resolved path should exist: {path}"
-        assert path.name == 'RVB_BIM_Norm_v1.1.ids', (
-            f"Expected RVB_BIM_Norm_v1.1.ids, got {path.name}"
-        )
+        assert (
+            path.name == "RVB_BIM_Norm_v1.1.ids"
+        ), f"Expected RVB_BIM_Norm_v1.1.ids, got {path.name}"
 
-    def test_all_shortcuts_resolve_to_existing_files(self, all_shortcuts: list[str]) -> None:
+    def test_all_shortcuts_resolve_to_existing_files(
+        self, all_shortcuts: list[str]
+    ) -> None:
         """Verify all defined shortcuts resolve to existing IDS files.
 
         This is a parameterized-style test that ensures every shortcut
@@ -276,7 +275,7 @@ class TestBundledStandardsExist:
                 f"Shortcut '{shortcut}' should resolve to existing file, "
                 f"but {path} does not exist"
             )
-            assert path.suffix.lower() == '.ids', (
+            assert path.suffix.lower() == ".ids", (
                 f"Shortcut '{shortcut}' should resolve to .ids file, "
                 f"got {path.suffix}"
             )
@@ -318,12 +317,10 @@ class TestShortcutResolution:
         - get_bundled_ids('nl-bim') returns a Path instance
         - The returned path is not None
         """
-        result = get_bundled_ids('nl-bim')
+        result = get_bundled_ids("nl-bim")
 
         assert result is not None, "nl-bim should resolve to a path"
-        assert isinstance(result, Path), (
-            f"Expected Path, got {type(result).__name__}"
-        )
+        assert isinstance(result, Path), f"Expected Path, got {type(result).__name__}"
 
     def test_rvb_shortcut_resolves_to_path(self) -> None:
         """Verify rvb shortcut resolves to a Path object.
@@ -332,47 +329,39 @@ class TestShortcutResolution:
         - get_bundled_ids('rvb') returns a Path instance
         - The returned path is not None
         """
-        result = get_bundled_ids('rvb')
+        result = get_bundled_ids("rvb")
 
         assert result is not None, "rvb should resolve to a path"
-        assert isinstance(result, Path), (
-            f"Expected Path, got {type(result).__name__}"
-        )
+        assert isinstance(result, Path), f"Expected Path, got {type(result).__name__}"
 
     # -------------------------------------------------------------------------
     # Correct Filename Tests
     # -------------------------------------------------------------------------
 
-    def test_nl_bim_resolves_to_correct_filename(
-        self, nl_bim_filename: str
-    ) -> None:
+    def test_nl_bim_resolves_to_correct_filename(self, nl_bim_filename: str) -> None:
         """Verify nl-bim shortcut resolves to the correct IDS filename.
 
         This test verifies:
         - The resolved path ends with 'NL_BIM_Basis_ILS_v2.ids'
         - The filename matches exactly (case-sensitive)
         """
-        result = get_bundled_ids('nl-bim')
+        result = get_bundled_ids("nl-bim")
 
         assert result.name == nl_bim_filename, (
-            f"nl-bim should resolve to '{nl_bim_filename}', "
-            f"got '{result.name}'"
+            f"nl-bim should resolve to '{nl_bim_filename}', " f"got '{result.name}'"
         )
 
-    def test_rvb_resolves_to_correct_filename(
-        self, rvb_filename: str
-    ) -> None:
+    def test_rvb_resolves_to_correct_filename(self, rvb_filename: str) -> None:
         """Verify rvb shortcut resolves to the correct IDS filename.
 
         This test verifies:
         - The resolved path ends with 'RVB_BIM_Norm_v1.1.ids'
         - The filename matches exactly (case-sensitive)
         """
-        result = get_bundled_ids('rvb')
+        result = get_bundled_ids("rvb")
 
         assert result.name == rvb_filename, (
-            f"rvb should resolve to '{rvb_filename}', "
-            f"got '{result.name}'"
+            f"rvb should resolve to '{rvb_filename}', " f"got '{result.name}'"
         )
 
     # -------------------------------------------------------------------------
@@ -381,41 +370,41 @@ class TestShortcutResolution:
 
     def test_nl_bim_resolved_path_exists(self) -> None:
         """Verify nl-bim resolved path points to an existing file."""
-        result = get_bundled_ids('nl-bim')
+        result = get_bundled_ids("nl-bim")
 
-        assert result.exists(), (
-            f"nl-bim resolved path should exist on filesystem: {result}"
-        )
-        assert result.is_file(), (
-            f"nl-bim resolved path should be a file, not directory: {result}"
-        )
+        assert (
+            result.exists()
+        ), f"nl-bim resolved path should exist on filesystem: {result}"
+        assert (
+            result.is_file()
+        ), f"nl-bim resolved path should be a file, not directory: {result}"
 
     def test_rvb_resolved_path_exists(self) -> None:
         """Verify rvb resolved path points to an existing file."""
-        result = get_bundled_ids('rvb')
+        result = get_bundled_ids("rvb")
 
-        assert result.exists(), (
-            f"rvb resolved path should exist on filesystem: {result}"
-        )
-        assert result.is_file(), (
-            f"rvb resolved path should be a file, not directory: {result}"
-        )
+        assert (
+            result.exists()
+        ), f"rvb resolved path should exist on filesystem: {result}"
+        assert (
+            result.is_file()
+        ), f"rvb resolved path should be a file, not directory: {result}"
 
     def test_nl_bim_resolved_path_has_ids_extension(self) -> None:
         """Verify nl-bim resolved path has .ids extension."""
-        result = get_bundled_ids('nl-bim')
+        result = get_bundled_ids("nl-bim")
 
-        assert result.suffix.lower() == '.ids', (
-            f"nl-bim should resolve to .ids file, got '{result.suffix}'"
-        )
+        assert (
+            result.suffix.lower() == ".ids"
+        ), f"nl-bim should resolve to .ids file, got '{result.suffix}'"
 
     def test_rvb_resolved_path_has_ids_extension(self) -> None:
         """Verify rvb resolved path has .ids extension."""
-        result = get_bundled_ids('rvb')
+        result = get_bundled_ids("rvb")
 
-        assert result.suffix.lower() == '.ids', (
-            f"rvb should resolve to .ids file, got '{result.suffix}'"
-        )
+        assert (
+            result.suffix.lower() == ".ids"
+        ), f"rvb should resolve to .ids file, got '{result.suffix}'"
 
     # -------------------------------------------------------------------------
     # is_shortcut() Function Tests
@@ -423,67 +412,57 @@ class TestShortcutResolution:
 
     def test_is_shortcut_returns_true_for_nl_bim(self) -> None:
         """Verify is_shortcut() returns True for 'nl-bim'."""
-        assert is_shortcut('nl-bim') is True, (
-            "is_shortcut('nl-bim') should return True"
-        )
+        assert is_shortcut("nl-bim") is True, "is_shortcut('nl-bim') should return True"
 
     def test_is_shortcut_returns_true_for_rvb(self) -> None:
         """Verify is_shortcut() returns True for 'rvb'."""
-        assert is_shortcut('rvb') is True, (
-            "is_shortcut('rvb') should return True"
-        )
+        assert is_shortcut("rvb") is True, "is_shortcut('rvb') should return True"
 
     def test_is_shortcut_returns_false_for_file_path(self) -> None:
         """Verify is_shortcut() returns False for file paths."""
         test_paths = [
-            '/path/to/file.ids',
-            'file.ids',
-            '../other/file.ids',
-            'C:\\path\\to\\file.ids',
+            "/path/to/file.ids",
+            "file.ids",
+            "../other/file.ids",
+            "C:\\path\\to\\file.ids",
         ]
         for path in test_paths:
-            assert is_shortcut(path) is False, (
-                f"is_shortcut('{path}') should return False"
-            )
+            assert (
+                is_shortcut(path) is False
+            ), f"is_shortcut('{path}') should return False"
 
     def test_is_shortcut_returns_false_for_invalid_shortcuts(self) -> None:
         """Verify is_shortcut() returns False for unrecognized shortcuts."""
         invalid_values = [
-            'unknown',
-            'NL-BIM',  # Wrong case
-            'RVB',  # Wrong case
-            'nl_bim',  # Underscore instead of hyphen
-            'nlbim',  # No separator
-            '',  # Empty string
+            "unknown",
+            "NL-BIM",  # Wrong case
+            "RVB",  # Wrong case
+            "nl_bim",  # Underscore instead of hyphen
+            "nlbim",  # No separator
+            "",  # Empty string
         ]
         for value in invalid_values:
-            assert is_shortcut(value) is False, (
-                f"is_shortcut('{value}') should return False"
-            )
+            assert (
+                is_shortcut(value) is False
+            ), f"is_shortcut('{value}') should return False"
 
     # -------------------------------------------------------------------------
     # get_standard_filename() Function Tests
     # -------------------------------------------------------------------------
 
-    def test_get_standard_filename_for_nl_bim(
-        self, nl_bim_filename: str
-    ) -> None:
+    def test_get_standard_filename_for_nl_bim(self, nl_bim_filename: str) -> None:
         """Verify get_standard_filename() returns correct name for nl-bim."""
-        result = get_standard_filename('nl-bim')
+        result = get_standard_filename("nl-bim")
 
-        assert result == nl_bim_filename, (
-            f"Expected '{nl_bim_filename}', got '{result}'"
-        )
+        assert (
+            result == nl_bim_filename
+        ), f"Expected '{nl_bim_filename}', got '{result}'"
 
-    def test_get_standard_filename_for_rvb(
-        self, rvb_filename: str
-    ) -> None:
+    def test_get_standard_filename_for_rvb(self, rvb_filename: str) -> None:
         """Verify get_standard_filename() returns correct name for rvb."""
-        result = get_standard_filename('rvb')
+        result = get_standard_filename("rvb")
 
-        assert result == rvb_filename, (
-            f"Expected '{rvb_filename}', got '{result}'"
-        )
+        assert result == rvb_filename, f"Expected '{rvb_filename}', got '{result}'"
 
     # -------------------------------------------------------------------------
     # Case Sensitivity Tests
@@ -496,16 +475,16 @@ class TestShortcutResolution:
         are not recognized. Only lowercase shortcuts are valid.
         """
         invalid_case_variants = [
-            'NL-BIM',
-            'Nl-Bim',
-            'nl-BIM',
-            'RVB',
-            'Rvb',
+            "NL-BIM",
+            "Nl-Bim",
+            "nl-BIM",
+            "RVB",
+            "Rvb",
         ]
         for variant in invalid_case_variants:
-            assert is_shortcut(variant) is False, (
-                f"is_shortcut('{variant}') should return False (case-sensitive)"
-            )
+            assert (
+                is_shortcut(variant) is False
+            ), f"is_shortcut('{variant}') should return False (case-sensitive)"
 
     # -------------------------------------------------------------------------
     # Resolved Paths Location Tests
@@ -516,10 +495,10 @@ class TestShortcutResolution:
 
         The resolved path should be inside the ifc_validator/standards/ directory.
         """
-        result = get_bundled_ids('nl-bim')
+        result = get_bundled_ids("nl-bim")
 
         # Parent directory should be named 'standards'
-        assert result.parent.name == 'standards', (
+        assert result.parent.name == "standards", (
             f"nl-bim should resolve to standards directory, "
             f"got parent '{result.parent.name}'"
         )
@@ -529,10 +508,10 @@ class TestShortcutResolution:
 
         The resolved path should be inside the ifc_validator/standards/ directory.
         """
-        result = get_bundled_ids('rvb')
+        result = get_bundled_ids("rvb")
 
         # Parent directory should be named 'standards'
-        assert result.parent.name == 'standards', (
+        assert result.parent.name == "standards", (
             f"rvb should resolve to standards directory, "
             f"got parent '{result.parent.name}'"
         )
@@ -545,16 +524,16 @@ class TestShortcutResolution:
         """Verify list_available_standards() returns both shortcuts."""
         available = list_available_standards()
 
-        assert 'nl-bim' in available, "nl-bim should be in available standards"
-        assert 'rvb' in available, "rvb should be in available standards"
+        assert "nl-bim" in available, "nl-bim should be in available standards"
+        assert "rvb" in available, "rvb should be in available standards"
 
     def test_list_available_standards_returns_list(self) -> None:
         """Verify list_available_standards() returns a list."""
         available = list_available_standards()
 
-        assert isinstance(available, list), (
-            f"Expected list, got {type(available).__name__}"
-        )
+        assert isinstance(
+            available, list
+        ), f"Expected list, got {type(available).__name__}"
 
     def test_all_listed_standards_can_be_resolved(self) -> None:
         """Verify every shortcut from list_available_standards() can be resolved.
@@ -574,27 +553,23 @@ class TestShortcutResolution:
     # STANDARD_SHORTCUTS Constant Tests
     # -------------------------------------------------------------------------
 
-    def test_standard_shortcuts_contains_nl_bim(
-        self, nl_bim_filename: str
-    ) -> None:
+    def test_standard_shortcuts_contains_nl_bim(self, nl_bim_filename: str) -> None:
         """Verify STANDARD_SHORTCUTS constant contains nl-bim mapping."""
-        assert 'nl-bim' in STANDARD_SHORTCUTS, (
-            "STANDARD_SHORTCUTS should contain 'nl-bim' key"
-        )
-        assert STANDARD_SHORTCUTS['nl-bim'] == nl_bim_filename, (
-            f"STANDARD_SHORTCUTS['nl-bim'] should be '{nl_bim_filename}'"
-        )
+        assert (
+            "nl-bim" in STANDARD_SHORTCUTS
+        ), "STANDARD_SHORTCUTS should contain 'nl-bim' key"
+        assert (
+            STANDARD_SHORTCUTS["nl-bim"] == nl_bim_filename
+        ), f"STANDARD_SHORTCUTS['nl-bim'] should be '{nl_bim_filename}'"
 
-    def test_standard_shortcuts_contains_rvb(
-        self, rvb_filename: str
-    ) -> None:
+    def test_standard_shortcuts_contains_rvb(self, rvb_filename: str) -> None:
         """Verify STANDARD_SHORTCUTS constant contains rvb mapping."""
-        assert 'rvb' in STANDARD_SHORTCUTS, (
-            "STANDARD_SHORTCUTS should contain 'rvb' key"
-        )
-        assert STANDARD_SHORTCUTS['rvb'] == rvb_filename, (
-            f"STANDARD_SHORTCUTS['rvb'] should be '{rvb_filename}'"
-        )
+        assert (
+            "rvb" in STANDARD_SHORTCUTS
+        ), "STANDARD_SHORTCUTS should contain 'rvb' key"
+        assert (
+            STANDARD_SHORTCUTS["rvb"] == rvb_filename
+        ), f"STANDARD_SHORTCUTS['rvb'] should be '{rvb_filename}'"
 
 
 # =============================================================================
@@ -620,14 +595,14 @@ class TestInvalidShortcutError:
         ValueError instead of silently failing or returning None.
         """
         with pytest.raises(ValueError):
-            get_bundled_ids('unknown')
+            get_bundled_ids("unknown")
 
     def test_get_bundled_ids_error_message_contains_invalid_shortcut(self) -> None:
         """Verify error message includes the invalid shortcut that was provided.
 
         This helps users identify typos in their shortcut names.
         """
-        invalid_shortcut = 'nl-bimx'
+        invalid_shortcut = "nl-bimx"
         with pytest.raises(ValueError) as exc_info:
             get_bundled_ids(invalid_shortcut)
 
@@ -643,14 +618,14 @@ class TestInvalidShortcutError:
         This helps users know what shortcuts are available.
         """
         with pytest.raises(ValueError) as exc_info:
-            get_bundled_ids('invalid')
+            get_bundled_ids("invalid")
 
         error_message = str(exc_info.value)
-        assert 'nl-bim' in error_message, (
+        assert "nl-bim" in error_message, (
             f"Error message should list 'nl-bim' as valid shortcut, "
             f"got: {error_message}"
         )
-        assert 'rvb' in error_message, (
+        assert "rvb" in error_message, (
             f"Error message should list 'rvb' as valid shortcut, "
             f"got: {error_message}"
         )
@@ -663,15 +638,15 @@ class TestInvalidShortcutError:
         - What the valid shortcuts are
         """
         with pytest.raises(ValueError) as exc_info:
-            get_bundled_ids('bad-shortcut')
+            get_bundled_ids("bad-shortcut")
 
         error_message = str(exc_info.value)
-        assert 'unknown' in error_message.lower() or 'Unknown' in error_message, (
-            f"Error message should indicate 'unknown' shortcut, got: {error_message}"
-        )
-        assert 'valid' in error_message.lower() or 'Valid' in error_message, (
-            f"Error message should mention 'valid' shortcuts, got: {error_message}"
-        )
+        assert (
+            "unknown" in error_message.lower() or "Unknown" in error_message
+        ), f"Error message should indicate 'unknown' shortcut, got: {error_message}"
+        assert (
+            "valid" in error_message.lower() or "Valid" in error_message
+        ), f"Error message should mention 'valid' shortcuts, got: {error_message}"
 
     # -------------------------------------------------------------------------
     # get_standard_filename() Error Tests
@@ -680,31 +655,33 @@ class TestInvalidShortcutError:
     def test_get_standard_filename_raises_valueerror_for_unknown_shortcut(self) -> None:
         """Verify get_standard_filename() raises ValueError for unknown shortcut."""
         with pytest.raises(ValueError):
-            get_standard_filename('unknown')
+            get_standard_filename("unknown")
 
-    def test_get_standard_filename_error_message_contains_invalid_shortcut(self) -> None:
+    def test_get_standard_filename_error_message_contains_invalid_shortcut(
+        self,
+    ) -> None:
         """Verify get_standard_filename() error contains invalid shortcut."""
-        invalid_shortcut = 'rvbx'
+        invalid_shortcut = "rvbx"
         with pytest.raises(ValueError) as exc_info:
             get_standard_filename(invalid_shortcut)
 
         error_message = str(exc_info.value)
-        assert invalid_shortcut in error_message, (
-            f"Error message should contain invalid shortcut '{invalid_shortcut}'"
-        )
+        assert (
+            invalid_shortcut in error_message
+        ), f"Error message should contain invalid shortcut '{invalid_shortcut}'"
 
     def test_get_standard_filename_error_message_lists_valid_shortcuts(self) -> None:
         """Verify get_standard_filename() error lists valid shortcuts."""
         with pytest.raises(ValueError) as exc_info:
-            get_standard_filename('bad')
+            get_standard_filename("bad")
 
         error_message = str(exc_info.value)
-        assert 'nl-bim' in error_message, (
-            f"Error message should list 'nl-bim', got: {error_message}"
-        )
-        assert 'rvb' in error_message, (
-            f"Error message should list 'rvb', got: {error_message}"
-        )
+        assert (
+            "nl-bim" in error_message
+        ), f"Error message should list 'nl-bim', got: {error_message}"
+        assert (
+            "rvb" in error_message
+        ), f"Error message should list 'rvb', got: {error_message}"
 
     # -------------------------------------------------------------------------
     # Parameterized Error Tests for Various Invalid Inputs
@@ -713,33 +690,33 @@ class TestInvalidShortcutError:
     def test_get_bundled_ids_raises_for_empty_string(self) -> None:
         """Verify get_bundled_ids() raises ValueError for empty string."""
         with pytest.raises(ValueError):
-            get_bundled_ids('')
+            get_bundled_ids("")
 
     def test_get_bundled_ids_raises_for_uppercase_variants(self) -> None:
         """Verify get_bundled_ids() raises ValueError for uppercase variants.
 
         Shortcuts are case-sensitive - only lowercase versions are valid.
         """
-        invalid_uppercase = ['NL-BIM', 'Nl-Bim', 'RVB', 'Rvb', 'NL-bim']
+        invalid_uppercase = ["NL-BIM", "Nl-Bim", "RVB", "Rvb", "NL-bim"]
         for variant in invalid_uppercase:
-            with pytest.raises(ValueError, match='[Uu]nknown'):
+            with pytest.raises(ValueError, match="[Uu]nknown"):
                 get_bundled_ids(variant)
 
     def test_get_bundled_ids_raises_for_underscore_variant(self) -> None:
         """Verify get_bundled_ids() raises for underscore instead of hyphen."""
         with pytest.raises(ValueError):
-            get_bundled_ids('nl_bim')
+            get_bundled_ids("nl_bim")
 
     def test_get_bundled_ids_raises_for_no_separator(self) -> None:
         """Verify get_bundled_ids() raises for shortcuts without separator."""
-        invalid_nosep = ['nlbim', 'nlbimifc']
+        invalid_nosep = ["nlbim", "nlbimifc"]
         for variant in invalid_nosep:
             with pytest.raises(ValueError):
                 get_bundled_ids(variant)
 
     def test_get_bundled_ids_raises_for_partial_shortcut(self) -> None:
         """Verify get_bundled_ids() raises for partial shortcuts."""
-        partials = ['nl', 'nl-', 'rv', 'bim', 'rvb-']
+        partials = ["nl", "nl-", "rv", "bim", "rvb-"]
         for partial in partials:
             with pytest.raises(ValueError):
                 get_bundled_ids(partial)
@@ -758,7 +735,7 @@ class TestInvalidShortcutError:
         """
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'unknown'],
+            [str(sample_ifc_path), "--ids", "unknown"],
         )
         assert result.exit_code == 1, (
             f"CLI should exit with code 1 for invalid shortcut, "
@@ -774,11 +751,11 @@ class TestInvalidShortcutError:
         """
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'unknown'],
+            [str(sample_ifc_path), "--ids", "unknown"],
         )
-        assert 'error' in result.output.lower() or 'Error' in result.output, (
-            f"CLI should show error message, got: {result.output}"
-        )
+        assert (
+            "error" in result.output.lower() or "Error" in result.output
+        ), f"CLI should show error message, got: {result.output}"
 
     def test_cli_invalid_shortcut_lists_valid_shortcuts(
         self, runner, sample_ifc_path: Path
@@ -790,15 +767,14 @@ class TestInvalidShortcutError:
         """
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'badshortcut'],
+            [str(sample_ifc_path), "--ids", "badshortcut"],
         )
-        assert 'nl-bim' in result.output, (
+        assert "nl-bim" in result.output, (
             f"CLI error should list 'nl-bim' as valid shortcut, "
             f"got: {result.output}"
         )
-        assert 'rvb' in result.output, (
-            f"CLI error should list 'rvb' as valid shortcut, "
-            f"got: {result.output}"
+        assert "rvb" in result.output, (
+            f"CLI error should list 'rvb' as valid shortcut, " f"got: {result.output}"
         )
 
     def test_cli_invalid_shortcut_shows_tip(
@@ -811,12 +787,12 @@ class TestInvalidShortcutError:
         """
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'invalidstd'],
+            [str(sample_ifc_path), "--ids", "invalidstd"],
         )
         # The tip should mention file path or .ids
-        assert 'tip' in result.output.lower() or '.ids' in result.output.lower(), (
-            f"CLI should show helpful tip, got: {result.output}"
-        )
+        assert (
+            "tip" in result.output.lower() or ".ids" in result.output.lower()
+        ), f"CLI should show helpful tip, got: {result.output}"
 
     def test_cli_invalid_shortcut_contains_invalid_value_in_output(
         self, runner, sample_ifc_path: Path
@@ -825,14 +801,14 @@ class TestInvalidShortcutError:
 
         This helps users see what they typed wrong.
         """
-        invalid_value = 'nl-bimx'
+        invalid_value = "nl-bimx"
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', invalid_value],
+            [str(sample_ifc_path), "--ids", invalid_value],
         )
-        assert invalid_value in result.output, (
-            f"CLI error should contain '{invalid_value}', got: {result.output}"
-        )
+        assert (
+            invalid_value in result.output
+        ), f"CLI error should contain '{invalid_value}', got: {result.output}"
 
     def test_cli_case_sensitive_shortcut_nl_bim_uppercase(
         self, runner, sample_ifc_path: Path
@@ -840,11 +816,11 @@ class TestInvalidShortcutError:
         """Verify CLI treats NL-BIM (uppercase) as invalid shortcut."""
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'NL-BIM'],
+            [str(sample_ifc_path), "--ids", "NL-BIM"],
         )
-        assert result.exit_code == 1, (
-            f"CLI should exit with code 1 for uppercase shortcut NL-BIM"
-        )
+        assert (
+            result.exit_code == 1
+        ), "CLI should exit with code 1 for uppercase shortcut NL-BIM"
 
     def test_cli_case_sensitive_shortcut_rvb_uppercase(
         self, runner, sample_ifc_path: Path
@@ -852,11 +828,11 @@ class TestInvalidShortcutError:
         """Verify CLI treats RVB (uppercase) as invalid shortcut."""
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'RVB'],
+            [str(sample_ifc_path), "--ids", "RVB"],
         )
-        assert result.exit_code == 1, (
-            f"CLI should exit with code 1 for uppercase shortcut RVB"
-        )
+        assert (
+            result.exit_code == 1
+        ), "CLI should exit with code 1 for uppercase shortcut RVB"
 
 
 # =============================================================================
@@ -884,15 +860,15 @@ class TestIDSFilesValidity:
         from ifctester import ids
 
         # Get the bundled IDS path
-        ids_path = get_bundled_ids('nl-bim')
+        ids_path = get_bundled_ids("nl-bim")
 
         # Load using ifctester - must convert Path to str for ifctester
         ids_file = ids.open(str(ids_path))
 
         # Verify file loaded successfully
-        assert ids_file is not None, (
-            "ifctester.ids.open() should return a valid IDS object for nl-bim"
-        )
+        assert (
+            ids_file is not None
+        ), "ifctester.ids.open() should return a valid IDS object for nl-bim"
 
     def test_rvb_ids_loadable_by_ifctester(self) -> None:
         """Verify RVB IDS file can be opened by ifctester.ids.open().
@@ -903,15 +879,15 @@ class TestIDSFilesValidity:
         from ifctester import ids
 
         # Get the bundled IDS path
-        ids_path = get_bundled_ids('rvb')
+        ids_path = get_bundled_ids("rvb")
 
         # Load using ifctester - must convert Path to str for ifctester
         ids_file = ids.open(str(ids_path))
 
         # Verify file loaded successfully
-        assert ids_file is not None, (
-            "ifctester.ids.open() should return a valid IDS object for rvb"
-        )
+        assert (
+            ids_file is not None
+        ), "ifctester.ids.open() should return a valid IDS object for rvb"
 
     # -------------------------------------------------------------------------
     # Specifications Tests
@@ -925,13 +901,13 @@ class TestIDSFilesValidity:
         """
         from ifctester import ids
 
-        ids_path = get_bundled_ids('nl-bim')
+        ids_path = get_bundled_ids("nl-bim")
         ids_file = ids.open(str(ids_path))
 
         # Verify specifications attribute exists
-        assert hasattr(ids_file, 'specifications'), (
-            "NL_BIM IDS file should have 'specifications' attribute"
-        )
+        assert hasattr(
+            ids_file, "specifications"
+        ), "NL_BIM IDS file should have 'specifications' attribute"
 
         # Verify file has at least one specification
         spec_count = len(ids_file.specifications)
@@ -948,13 +924,13 @@ class TestIDSFilesValidity:
         """
         from ifctester import ids
 
-        ids_path = get_bundled_ids('rvb')
+        ids_path = get_bundled_ids("rvb")
         ids_file = ids.open(str(ids_path))
 
         # Verify specifications attribute exists
-        assert hasattr(ids_file, 'specifications'), (
-            "RVB IDS file should have 'specifications' attribute"
-        )
+        assert hasattr(
+            ids_file, "specifications"
+        ), "RVB IDS file should have 'specifications' attribute"
 
         # Verify file has at least one specification
         spec_count = len(ids_file.specifications)
@@ -971,7 +947,7 @@ class TestIDSFilesValidity:
         """
         from ifctester import ids
 
-        ids_path = get_bundled_ids('nl-bim')
+        ids_path = get_bundled_ids("nl-bim")
         ids_file = ids.open(str(ids_path))
 
         # NL_BIM_Basis_ILS_v2.ids should contain 12 specifications
@@ -989,7 +965,7 @@ class TestIDSFilesValidity:
         """
         from ifctester import ids
 
-        ids_path = get_bundled_ids('rvb')
+        ids_path = get_bundled_ids("rvb")
         ids_file = ids.open(str(ids_path))
 
         spec_count = len(ids_file.specifications)
@@ -1009,19 +985,19 @@ class TestIDSFilesValidity:
         """
         from ifctester import ids
 
-        ids_path = get_bundled_ids('nl-bim')
+        ids_path = get_bundled_ids("nl-bim")
         ids_file = ids.open(str(ids_path))
 
         for i, spec in enumerate(ids_file.specifications):
-            assert hasattr(spec, 'name'), (
-                f"NL_BIM specification {i} should have 'name' attribute"
-            )
-            assert spec.name is not None, (
-                f"NL_BIM specification {i} name should not be None"
-            )
-            assert len(spec.name) > 0, (
-                f"NL_BIM specification {i} name should not be empty"
-            )
+            assert hasattr(
+                spec, "name"
+            ), f"NL_BIM specification {i} should have 'name' attribute"
+            assert (
+                spec.name is not None
+            ), f"NL_BIM specification {i} name should not be None"
+            assert (
+                len(spec.name) > 0
+            ), f"NL_BIM specification {i} name should not be empty"
 
     def test_rvb_specifications_have_names(self) -> None:
         """Verify RVB IDS specifications have valid names.
@@ -1030,19 +1006,17 @@ class TestIDSFilesValidity:
         """
         from ifctester import ids
 
-        ids_path = get_bundled_ids('rvb')
+        ids_path = get_bundled_ids("rvb")
         ids_file = ids.open(str(ids_path))
 
         for i, spec in enumerate(ids_file.specifications):
-            assert hasattr(spec, 'name'), (
-                f"RVB specification {i} should have 'name' attribute"
-            )
-            assert spec.name is not None, (
-                f"RVB specification {i} name should not be None"
-            )
-            assert len(spec.name) > 0, (
-                f"RVB specification {i} name should not be empty"
-            )
+            assert hasattr(
+                spec, "name"
+            ), f"RVB specification {i} should have 'name' attribute"
+            assert (
+                spec.name is not None
+            ), f"RVB specification {i} name should not be None"
+            assert len(spec.name) > 0, f"RVB specification {i} name should not be empty"
 
     # -------------------------------------------------------------------------
     # All Shortcuts Parameterized Tests
@@ -1064,9 +1038,9 @@ class TestIDSFilesValidity:
                 f"Shortcut '{shortcut}' should resolve to valid IDS file "
                 f"loadable by ifctester"
             )
-            assert hasattr(ids_file, 'specifications'), (
-                f"IDS file for shortcut '{shortcut}' should have specifications"
-            )
+            assert hasattr(
+                ids_file, "specifications"
+            ), f"IDS file for shortcut '{shortcut}' should have specifications"
             assert len(ids_file.specifications) > 0, (
                 f"IDS file for shortcut '{shortcut}' should have at least "
                 f"one specification"
@@ -1084,7 +1058,7 @@ class TestIDSFilesValidity:
         """
         from ifctester import ids
 
-        ids_path = get_bundled_ids('nl-bim')
+        ids_path = get_bundled_ids("nl-bim")
 
         # Path object conversion should work
         assert isinstance(ids_path, Path), "get_bundled_ids should return Path"
@@ -1105,7 +1079,7 @@ class TestIDSFilesValidity:
         """
         from ifctester import ids
 
-        ids_path = get_bundled_ids('rvb')
+        ids_path = get_bundled_ids("rvb")
 
         # Path object conversion should work
         assert isinstance(ids_path, Path), "get_bundled_ids should return Path"
@@ -1131,9 +1105,7 @@ class TestValidationWithNlBim:
     - End-to-end validation with --ids nl-bim produces valid results
     """
 
-    def test_cli_accepts_nl_bim_shortcut(
-        self, runner, sample_ifc_path: Path
-    ) -> None:
+    def test_cli_accepts_nl_bim_shortcut(self, runner, sample_ifc_path: Path) -> None:
         """Verify CLI accepts --ids nl-bim shortcut without errors.
 
         This test ensures the CLI recognizes nl-bim as a valid shortcut
@@ -1141,16 +1113,14 @@ class TestValidationWithNlBim:
         """
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'nl-bim'],
+            [str(sample_ifc_path), "--ids", "nl-bim"],
         )
         # Should NOT show unknown shortcut error
-        assert 'unknown shortcut' not in result.output.lower(), (
-            f"CLI should recognize nl-bim as valid shortcut: {result.output}"
-        )
+        assert (
+            "unknown shortcut" not in result.output.lower()
+        ), f"CLI should recognize nl-bim as valid shortcut: {result.output}"
 
-    def test_cli_nl_bim_produces_output(
-        self, runner, sample_ifc_path: Path
-    ) -> None:
+    def test_cli_nl_bim_produces_output(self, runner, sample_ifc_path: Path) -> None:
         """Verify CLI produces validation output with nl-bim shortcut.
 
         The CLI should produce some form of validation output when
@@ -1158,12 +1128,12 @@ class TestValidationWithNlBim:
         """
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'nl-bim'],
+            [str(sample_ifc_path), "--ids", "nl-bim"],
         )
         # Should produce some output
-        assert len(result.output) > 0, (
-            "CLI should produce output when validating with nl-bim"
-        )
+        assert (
+            len(result.output) > 0
+        ), "CLI should produce output when validating with nl-bim"
 
     def test_cli_nl_bim_exits_with_valid_code(
         self, runner, sample_ifc_path: Path
@@ -1176,11 +1146,12 @@ class TestValidationWithNlBim:
         """
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'nl-bim'],
+            [str(sample_ifc_path), "--ids", "nl-bim"],
         )
-        assert result.exit_code in (0, 1), (
-            f"CLI should exit with code 0 or 1, got {result.exit_code}"
-        )
+        assert result.exit_code in (
+            0,
+            1,
+        ), f"CLI should exit with code 0 or 1, got {result.exit_code}"
 
     def test_cli_nl_bim_no_file_not_found_error(
         self, runner, sample_ifc_path: Path
@@ -1191,16 +1162,14 @@ class TestValidationWithNlBim:
         """
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'nl-bim'],
+            [str(sample_ifc_path), "--ids", "nl-bim"],
         )
         output_lower = result.output.lower()
-        assert 'not found' not in output_lower or 'ids' not in output_lower, (
-            f"Should not have file not found error for bundled IDS: {result.output}"
-        )
+        assert (
+            "not found" not in output_lower or "ids" not in output_lower
+        ), f"Should not have file not found error for bundled IDS: {result.output}"
 
-    def test_cli_nl_bim_json_output_valid(
-        self, runner, sample_ifc_path: Path
-    ) -> None:
+    def test_cli_nl_bim_json_output_valid(self, runner, sample_ifc_path: Path) -> None:
         """Verify nl-bim validation with JSON output produces valid JSON.
 
         This tests end-to-end validation with JSON output format.
@@ -1209,16 +1178,16 @@ class TestValidationWithNlBim:
 
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'nl-bim', '--output', 'json'],
+            [str(sample_ifc_path), "--ids", "nl-bim", "--output", "json"],
         )
         # Should be valid JSON
         try:
             data = json.loads(result.output)
             assert isinstance(data, dict), "JSON output should be a dict"
             # Should have validation result fields
-            assert 'overall_pass' in data or 'specifications' in data, (
-                f"JSON should have validation fields: {list(data.keys())}"
-            )
+            assert (
+                "overall_pass" in data or "specifications" in data
+            ), f"JSON should have validation fields: {list(data.keys())}"
         except json.JSONDecodeError as e:
             pytest.fail(
                 f"nl-bim JSON output is not valid JSON: {e}\n"
@@ -1236,22 +1205,20 @@ class TestValidationWithNlBim:
 
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'nl-bim', '--output', 'json'],
+            [str(sample_ifc_path), "--ids", "nl-bim", "--output", "json"],
         )
         if result.exit_code in (0, 1):
             try:
                 data = json.loads(result.output)
-                if 'specifications' in data:
-                    specs = data['specifications']
-                    assert len(specs) > 0, (
-                        "nl-bim should have at least one specification"
-                    )
+                if "specifications" in data:
+                    specs = data["specifications"]
+                    assert (
+                        len(specs) > 0
+                    ), "nl-bim should have at least one specification"
             except json.JSONDecodeError:
                 pass  # JSON parsing tested elsewhere
 
-    def test_cli_nl_bim_with_large_ifc(
-        self, runner, large_ifc_path: Path
-    ) -> None:
+    def test_cli_nl_bim_with_large_ifc(self, runner, large_ifc_path: Path) -> None:
         """Verify nl-bim validation works with larger IFC file.
 
         This tests end-to-end validation with a more complex model.
@@ -1261,12 +1228,13 @@ class TestValidationWithNlBim:
 
         result = runner.invoke(
             app,
-            [str(large_ifc_path), '--ids', 'nl-bim'],
+            [str(large_ifc_path), "--ids", "nl-bim"],
         )
         # Should complete without crashing
-        assert result.exit_code in (0, 1), (
-            f"CLI should complete validation, got exit code {result.exit_code}"
-        )
+        assert result.exit_code in (
+            0,
+            1,
+        ), f"CLI should complete validation, got exit code {result.exit_code}"
 
     def test_cli_nl_bim_console_output_format(
         self, runner, sample_ifc_path: Path
@@ -1277,7 +1245,7 @@ class TestValidationWithNlBim:
         """
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'nl-bim', '--output', 'console'],
+            [str(sample_ifc_path), "--ids", "nl-bim", "--output", "console"],
         )
         # Console output should not be pure JSON
         output = result.output.strip()
@@ -1286,11 +1254,11 @@ class TestValidationWithNlBim:
             output_lower = output.lower()
             has_validation_terms = any(
                 term in output_lower
-                for term in ['validation', 'specification', 'pass', 'fail', 'result']
+                for term in ["validation", "specification", "pass", "fail", "result"]
             )
-            assert has_validation_terms or len(output) > 10, (
-                f"Console output should contain validation info: {output[:200]}"
-            )
+            assert (
+                has_validation_terms or len(output) > 10
+            ), f"Console output should contain validation info: {output[:200]}"
 
 
 # =============================================================================
@@ -1305,9 +1273,7 @@ class TestValidationWithRvb:
     - End-to-end validation with --ids rvb produces valid results
     """
 
-    def test_cli_accepts_rvb_shortcut(
-        self, runner, sample_ifc_path: Path
-    ) -> None:
+    def test_cli_accepts_rvb_shortcut(self, runner, sample_ifc_path: Path) -> None:
         """Verify CLI accepts --ids rvb shortcut without errors.
 
         This test ensures the CLI recognizes rvb as a valid shortcut
@@ -1315,16 +1281,14 @@ class TestValidationWithRvb:
         """
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'rvb'],
+            [str(sample_ifc_path), "--ids", "rvb"],
         )
         # Should NOT show unknown shortcut error
-        assert 'unknown shortcut' not in result.output.lower(), (
-            f"CLI should recognize rvb as valid shortcut: {result.output}"
-        )
+        assert (
+            "unknown shortcut" not in result.output.lower()
+        ), f"CLI should recognize rvb as valid shortcut: {result.output}"
 
-    def test_cli_rvb_produces_output(
-        self, runner, sample_ifc_path: Path
-    ) -> None:
+    def test_cli_rvb_produces_output(self, runner, sample_ifc_path: Path) -> None:
         """Verify CLI produces validation output with rvb shortcut.
 
         The CLI should produce some form of validation output when
@@ -1332,16 +1296,14 @@ class TestValidationWithRvb:
         """
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'rvb'],
+            [str(sample_ifc_path), "--ids", "rvb"],
         )
         # Should produce some output
-        assert len(result.output) > 0, (
-            "CLI should produce output when validating with rvb"
-        )
+        assert (
+            len(result.output) > 0
+        ), "CLI should produce output when validating with rvb"
 
-    def test_cli_rvb_exits_with_valid_code(
-        self, runner, sample_ifc_path: Path
-    ) -> None:
+    def test_cli_rvb_exits_with_valid_code(self, runner, sample_ifc_path: Path) -> None:
         """Verify CLI exits with valid exit code (0 or 1) for rvb.
 
         Exit code 0 = all specs passed
@@ -1350,11 +1312,12 @@ class TestValidationWithRvb:
         """
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'rvb'],
+            [str(sample_ifc_path), "--ids", "rvb"],
         )
-        assert result.exit_code in (0, 1), (
-            f"CLI should exit with code 0 or 1, got {result.exit_code}"
-        )
+        assert result.exit_code in (
+            0,
+            1,
+        ), f"CLI should exit with code 0 or 1, got {result.exit_code}"
 
     def test_cli_rvb_no_file_not_found_error(
         self, runner, sample_ifc_path: Path
@@ -1365,16 +1328,14 @@ class TestValidationWithRvb:
         """
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'rvb'],
+            [str(sample_ifc_path), "--ids", "rvb"],
         )
         output_lower = result.output.lower()
-        assert 'not found' not in output_lower or 'ids' not in output_lower, (
-            f"Should not have file not found error for bundled IDS: {result.output}"
-        )
+        assert (
+            "not found" not in output_lower or "ids" not in output_lower
+        ), f"Should not have file not found error for bundled IDS: {result.output}"
 
-    def test_cli_rvb_json_output_valid(
-        self, runner, sample_ifc_path: Path
-    ) -> None:
+    def test_cli_rvb_json_output_valid(self, runner, sample_ifc_path: Path) -> None:
         """Verify rvb validation with JSON output produces valid JSON.
 
         This tests end-to-end validation with JSON output format.
@@ -1383,16 +1344,16 @@ class TestValidationWithRvb:
 
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'rvb', '--output', 'json'],
+            [str(sample_ifc_path), "--ids", "rvb", "--output", "json"],
         )
         # Should be valid JSON
         try:
             data = json.loads(result.output)
             assert isinstance(data, dict), "JSON output should be a dict"
             # Should have validation result fields
-            assert 'overall_pass' in data or 'specifications' in data, (
-                f"JSON should have validation fields: {list(data.keys())}"
-            )
+            assert (
+                "overall_pass" in data or "specifications" in data
+            ), f"JSON should have validation fields: {list(data.keys())}"
         except json.JSONDecodeError as e:
             pytest.fail(
                 f"rvb JSON output is not valid JSON: {e}\n"
@@ -1410,22 +1371,18 @@ class TestValidationWithRvb:
 
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'rvb', '--output', 'json'],
+            [str(sample_ifc_path), "--ids", "rvb", "--output", "json"],
         )
         if result.exit_code in (0, 1):
             try:
                 data = json.loads(result.output)
-                if 'specifications' in data:
-                    specs = data['specifications']
-                    assert len(specs) > 0, (
-                        "rvb should have at least one specification"
-                    )
+                if "specifications" in data:
+                    specs = data["specifications"]
+                    assert len(specs) > 0, "rvb should have at least one specification"
             except json.JSONDecodeError:
                 pass  # JSON parsing tested elsewhere
 
-    def test_cli_rvb_with_large_ifc(
-        self, runner, large_ifc_path: Path
-    ) -> None:
+    def test_cli_rvb_with_large_ifc(self, runner, large_ifc_path: Path) -> None:
         """Verify rvb validation works with larger IFC file.
 
         This tests end-to-end validation with a more complex model.
@@ -1435,23 +1392,22 @@ class TestValidationWithRvb:
 
         result = runner.invoke(
             app,
-            [str(large_ifc_path), '--ids', 'rvb'],
+            [str(large_ifc_path), "--ids", "rvb"],
         )
         # Should complete without crashing
-        assert result.exit_code in (0, 1), (
-            f"CLI should complete validation, got exit code {result.exit_code}"
-        )
+        assert result.exit_code in (
+            0,
+            1,
+        ), f"CLI should complete validation, got exit code {result.exit_code}"
 
-    def test_cli_rvb_console_output_format(
-        self, runner, sample_ifc_path: Path
-    ) -> None:
+    def test_cli_rvb_console_output_format(self, runner, sample_ifc_path: Path) -> None:
         """Verify rvb validation with console output is readable.
 
         Console output should contain readable text, not raw JSON.
         """
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'rvb', '--output', 'console'],
+            [str(sample_ifc_path), "--ids", "rvb", "--output", "console"],
         )
         # Console output should not be pure JSON
         output = result.output.strip()
@@ -1460,11 +1416,11 @@ class TestValidationWithRvb:
             output_lower = output.lower()
             has_validation_terms = any(
                 term in output_lower
-                for term in ['validation', 'specification', 'pass', 'fail', 'result']
+                for term in ["validation", "specification", "pass", "fail", "result"]
             )
-            assert has_validation_terms or len(output) > 10, (
-                f"Console output should contain validation info: {output[:200]}"
-            )
+            assert (
+                has_validation_terms or len(output) > 10
+            ), f"Console output should contain validation info: {output[:200]}"
 
     def test_cli_rvb_produces_different_results_than_nl_bim(
         self, runner, sample_ifc_path: Path
@@ -1479,13 +1435,13 @@ class TestValidationWithRvb:
         # Run with rvb
         rvb_result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'rvb', '--output', 'json'],
+            [str(sample_ifc_path), "--ids", "rvb", "--output", "json"],
         )
 
         # Run with nl-bim
         nl_bim_result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'nl-bim', '--output', 'json'],
+            [str(sample_ifc_path), "--ids", "nl-bim", "--output", "json"],
         )
 
         # Both should complete successfully
@@ -1497,9 +1453,9 @@ class TestValidationWithRvb:
             nl_bim_data = json.loads(nl_bim_result.output)
 
             # If both have specifications, they should be different
-            if 'specifications' in rvb_data and 'specifications' in nl_bim_data:
-                rvb_spec_count = len(rvb_data['specifications'])
-                nl_bim_spec_count = len(nl_bim_data['specifications'])
+            if "specifications" in rvb_data and "specifications" in nl_bim_data:
+                rvb_spec_count = len(rvb_data["specifications"])
+                nl_bim_spec_count = len(nl_bim_data["specifications"])
 
                 # Spec counts should differ (RVB has more specs than NL_BIM v2)
                 assert rvb_spec_count != nl_bim_spec_count or rvb_spec_count > 0, (
@@ -1536,16 +1492,16 @@ class TestBackwardCompatibility:
         """
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', str(sample_ids_path)],
+            [str(sample_ifc_path), "--ids", str(sample_ids_path)],
         )
         # Should NOT show unknown shortcut error
-        assert 'unknown shortcut' not in result.output.lower(), (
-            f"CLI should accept file path for --ids: {result.output}"
-        )
+        assert (
+            "unknown shortcut" not in result.output.lower()
+        ), f"CLI should accept file path for --ids: {result.output}"
         # Should NOT show file not found error (file exists)
-        assert 'ids file not found' not in result.output.lower(), (
-            f"CLI should find the IDS file: {result.output}"
-        )
+        assert (
+            "ids file not found" not in result.output.lower()
+        ), f"CLI should find the IDS file: {result.output}"
 
     def test_cli_file_path_produces_output(
         self, runner, sample_ifc_path: Path, sample_ids_path: Path
@@ -1557,12 +1513,12 @@ class TestBackwardCompatibility:
         """
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', str(sample_ids_path)],
+            [str(sample_ifc_path), "--ids", str(sample_ids_path)],
         )
         # Should produce some output
-        assert len(result.output) > 0, (
-            "CLI should produce output when validating with file path IDS"
-        )
+        assert (
+            len(result.output) > 0
+        ), "CLI should produce output when validating with file path IDS"
 
     def test_cli_file_path_exits_with_valid_code(
         self, runner, sample_ifc_path: Path, sample_ids_path: Path
@@ -1575,7 +1531,7 @@ class TestBackwardCompatibility:
         """
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', str(sample_ids_path)],
+            [str(sample_ifc_path), "--ids", str(sample_ids_path)],
         )
         assert result.exit_code in (0, 1), (
             f"CLI should exit with code 0 or 1 for file path, "
@@ -1598,16 +1554,16 @@ class TestBackwardCompatibility:
 
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', str(sample_ids_path), '--output', 'json'],
+            [str(sample_ifc_path), "--ids", str(sample_ids_path), "--output", "json"],
         )
         # Should be valid JSON
         try:
             data = json.loads(result.output)
             assert isinstance(data, dict), "JSON output should be a dict"
             # Should have validation result fields
-            assert 'overall_pass' in data or 'specifications' in data, (
-                f"JSON should have validation fields: {list(data.keys())}"
-            )
+            assert (
+                "overall_pass" in data or "specifications" in data
+            ), f"JSON should have validation fields: {list(data.keys())}"
         except json.JSONDecodeError as e:
             pytest.fail(
                 f"File path JSON output is not valid JSON: {e}\n"
@@ -1625,16 +1581,14 @@ class TestBackwardCompatibility:
 
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', str(sample_ids_path), '--output', 'json'],
+            [str(sample_ifc_path), "--ids", str(sample_ids_path), "--output", "json"],
         )
         if result.exit_code in (0, 1):
             try:
                 data = json.loads(result.output)
-                if 'specifications' in data:
-                    specs = data['specifications']
-                    assert isinstance(specs, list), (
-                        "specifications should be a list"
-                    )
+                if "specifications" in data:
+                    specs = data["specifications"]
+                    assert isinstance(specs, list), "specifications should be a list"
             except json.JSONDecodeError:
                 pass  # JSON parsing tested elsewhere
 
@@ -1653,15 +1607,15 @@ class TestBackwardCompatibility:
         # Use a non-existent file with .ids extension
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'nonexistent.ids'],
+            [str(sample_ifc_path), "--ids", "nonexistent.ids"],
         )
         # Should show file not found error, NOT unknown shortcut
         output_lower = result.output.lower()
         # File path detection should see it's a file path (due to .ids extension)
         # and report file not found, not "unknown shortcut"
-        assert 'unknown shortcut' not in output_lower or 'not found' in output_lower, (
-            f"CLI should treat .ids file as file path: {result.output}"
-        )
+        assert (
+            "unknown shortcut" not in output_lower or "not found" in output_lower
+        ), f"CLI should treat .ids file as file path: {result.output}"
 
     def test_cli_path_with_directory_separator(
         self, runner, sample_ifc_path: Path
@@ -1673,12 +1627,12 @@ class TestBackwardCompatibility:
         # Use a path with directory separator (non-existent)
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'path/to/file.ids'],
+            [str(sample_ifc_path), "--ids", "path/to/file.ids"],
         )
         # Should NOT be treated as unknown shortcut
         # The error should be about file not found, not unknown shortcut
         output_lower = result.output.lower()
-        if 'unknown shortcut' in output_lower:
+        if "unknown shortcut" in output_lower:
             pytest.fail(
                 f"CLI should treat path with / as file path, not shortcut: "
                 f"{result.output}"
@@ -1696,22 +1650,25 @@ class TestBackwardCompatibility:
         Test using the original NL_BIM file from ids-bestanden/ directory
         to ensure file paths continue to work alongside shortcuts.
         """
-        ids_file_path = Path(__file__).parent.parent / "ids-bestanden" / "NL_BIM_Basis_ILS_v2.ids"
+        ids_file_path = (
+            Path(__file__).parent.parent / "ids-bestanden" / "NL_BIM_Basis_ILS_v2.ids"
+        )
 
         if not ids_file_path.exists():
             pytest.skip(f"IDS file not found: {ids_file_path}")
 
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', str(ids_file_path)],
+            [str(sample_ifc_path), "--ids", str(ids_file_path)],
         )
         # Should accept file path without error
-        assert 'unknown shortcut' not in result.output.lower(), (
-            f"CLI should accept file path: {result.output}"
-        )
-        assert result.exit_code in (0, 1), (
-            f"CLI should complete validation, got exit code {result.exit_code}"
-        )
+        assert (
+            "unknown shortcut" not in result.output.lower()
+        ), f"CLI should accept file path: {result.output}"
+        assert result.exit_code in (
+            0,
+            1,
+        ), f"CLI should complete validation, got exit code {result.exit_code}"
 
     def test_cli_ids_bestanden_rvb_file_path(
         self, runner, sample_ifc_path: Path
@@ -1721,22 +1678,25 @@ class TestBackwardCompatibility:
         Test using the original RVB file from ids-bestanden/ directory
         to ensure file paths continue to work alongside shortcuts.
         """
-        ids_file_path = Path(__file__).parent.parent / "ids-bestanden" / "RVB_BIM_Norm_v1.1.ids"
+        ids_file_path = (
+            Path(__file__).parent.parent / "ids-bestanden" / "RVB_BIM_Norm_v1.1.ids"
+        )
 
         if not ids_file_path.exists():
             pytest.skip(f"IDS file not found: {ids_file_path}")
 
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', str(ids_file_path)],
+            [str(sample_ifc_path), "--ids", str(ids_file_path)],
         )
         # Should accept file path without error
-        assert 'unknown shortcut' not in result.output.lower(), (
-            f"CLI should accept file path: {result.output}"
-        )
-        assert result.exit_code in (0, 1), (
-            f"CLI should complete validation, got exit code {result.exit_code}"
-        )
+        assert (
+            "unknown shortcut" not in result.output.lower()
+        ), f"CLI should accept file path: {result.output}"
+        assert result.exit_code in (
+            0,
+            1,
+        ), f"CLI should complete validation, got exit code {result.exit_code}"
 
     # -------------------------------------------------------------------------
     # Shortcut vs File Path Priority Tests
@@ -1753,16 +1713,17 @@ class TestBackwardCompatibility:
         # nl-bim should be recognized as a shortcut
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'nl-bim'],
+            [str(sample_ifc_path), "--ids", "nl-bim"],
         )
         # Should NOT show unknown shortcut error
-        assert 'unknown shortcut' not in result.output.lower(), (
-            f"nl-bim should be recognized as shortcut: {result.output}"
-        )
+        assert (
+            "unknown shortcut" not in result.output.lower()
+        ), f"nl-bim should be recognized as shortcut: {result.output}"
         # Should produce valid output
-        assert result.exit_code in (0, 1), (
-            f"Shortcut nl-bim should work, got exit code {result.exit_code}"
-        )
+        assert result.exit_code in (
+            0,
+            1,
+        ), f"Shortcut nl-bim should work, got exit code {result.exit_code}"
 
     def test_cli_file_path_with_ids_extension_preferred_over_shortcut_detection(
         self, runner, sample_ifc_path: Path, sample_ids_path: Path
@@ -1774,12 +1735,13 @@ class TestBackwardCompatibility:
         """
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', str(sample_ids_path)],
+            [str(sample_ifc_path), "--ids", str(sample_ids_path)],
         )
         # Should complete validation successfully
-        assert result.exit_code in (0, 1), (
-            f"Explicit .ids file path should work, got exit code {result.exit_code}"
-        )
+        assert result.exit_code in (
+            0,
+            1,
+        ), f"Explicit .ids file path should work, got exit code {result.exit_code}"
 
     # -------------------------------------------------------------------------
     # Console Output Format Tests
@@ -1794,7 +1756,13 @@ class TestBackwardCompatibility:
         """
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', str(sample_ids_path), '--output', 'console'],
+            [
+                str(sample_ifc_path),
+                "--ids",
+                str(sample_ids_path),
+                "--output",
+                "console",
+            ],
         )
         # Console output should contain readable content
         output = result.output.strip()
@@ -1802,11 +1770,11 @@ class TestBackwardCompatibility:
             output_lower = output.lower()
             has_validation_terms = any(
                 term in output_lower
-                for term in ['validation', 'specification', 'pass', 'fail', 'result']
+                for term in ["validation", "specification", "pass", "fail", "result"]
             )
-            assert has_validation_terms or len(output) > 10, (
-                f"Console output should contain validation info: {output[:200]}"
-            )
+            assert (
+                has_validation_terms or len(output) > 10
+            ), f"Console output should contain validation info: {output[:200]}"
 
     # -------------------------------------------------------------------------
     # Large File Tests
@@ -1825,7 +1793,7 @@ class TestBackwardCompatibility:
 
         result = runner.invoke(
             app,
-            [str(large_ifc_path), '--ids', str(sample_ids_path)],
+            [str(large_ifc_path), "--ids", str(sample_ids_path)],
         )
         # Should complete without crashing
         assert result.exit_code in (0, 1), (
@@ -1847,7 +1815,9 @@ class TestBackwardCompatibility:
         """
         import json
 
-        ids_file_path = Path(__file__).parent.parent / "ids-bestanden" / "NL_BIM_Basis_ILS_v2.ids"
+        ids_file_path = (
+            Path(__file__).parent.parent / "ids-bestanden" / "NL_BIM_Basis_ILS_v2.ids"
+        )
 
         if not ids_file_path.exists():
             pytest.skip(f"IDS file not found: {ids_file_path}")
@@ -1855,13 +1825,13 @@ class TestBackwardCompatibility:
         # Run with file path
         file_result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', str(ids_file_path), '--output', 'json'],
+            [str(sample_ifc_path), "--ids", str(ids_file_path), "--output", "json"],
         )
 
         # Run with shortcut
         shortcut_result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'nl-bim', '--output', 'json'],
+            [str(sample_ifc_path), "--ids", "nl-bim", "--output", "json"],
         )
 
         # Both should complete
@@ -1873,9 +1843,9 @@ class TestBackwardCompatibility:
             file_data = json.loads(file_result.output)
             shortcut_data = json.loads(shortcut_result.output)
 
-            if 'specifications' in file_data and 'specifications' in shortcut_data:
-                file_spec_count = len(file_data['specifications'])
-                shortcut_spec_count = len(shortcut_data['specifications'])
+            if "specifications" in file_data and "specifications" in shortcut_data:
+                file_spec_count = len(file_data["specifications"])
+                shortcut_spec_count = len(shortcut_data["specifications"])
 
                 assert file_spec_count == shortcut_spec_count, (
                     f"File path ({file_spec_count} specs) and shortcut "
@@ -1894,7 +1864,9 @@ class TestBackwardCompatibility:
         """
         import json
 
-        ids_file_path = Path(__file__).parent.parent / "ids-bestanden" / "RVB_BIM_Norm_v1.1.ids"
+        ids_file_path = (
+            Path(__file__).parent.parent / "ids-bestanden" / "RVB_BIM_Norm_v1.1.ids"
+        )
 
         if not ids_file_path.exists():
             pytest.skip(f"IDS file not found: {ids_file_path}")
@@ -1902,13 +1874,13 @@ class TestBackwardCompatibility:
         # Run with file path
         file_result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', str(ids_file_path), '--output', 'json'],
+            [str(sample_ifc_path), "--ids", str(ids_file_path), "--output", "json"],
         )
 
         # Run with shortcut
         shortcut_result = runner.invoke(
             app,
-            [str(sample_ifc_path), '--ids', 'rvb', '--output', 'json'],
+            [str(sample_ifc_path), "--ids", "rvb", "--output", "json"],
         )
 
         # Both should complete
@@ -1920,9 +1892,9 @@ class TestBackwardCompatibility:
             file_data = json.loads(file_result.output)
             shortcut_data = json.loads(shortcut_result.output)
 
-            if 'specifications' in file_data and 'specifications' in shortcut_data:
-                file_spec_count = len(file_data['specifications'])
-                shortcut_spec_count = len(shortcut_data['specifications'])
+            if "specifications" in file_data and "specifications" in shortcut_data:
+                file_spec_count = len(file_data["specifications"])
+                shortcut_spec_count = len(shortcut_data["specifications"])
 
                 assert file_spec_count == shortcut_spec_count, (
                     f"File path ({file_spec_count} specs) and shortcut "

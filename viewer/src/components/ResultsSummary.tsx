@@ -27,6 +27,7 @@ export interface ResultsSummaryProps {
 function formatTimestamp(isoTimestamp: string): string {
   try {
     const date = new Date(isoTimestamp);
+    if (Number.isNaN(date.getTime())) return isoTimestamp;
     return date.toLocaleString(undefined, {
       year: 'numeric',
       month: 'short',
@@ -44,10 +45,10 @@ function formatTimestamp(isoTimestamp: string): string {
  */
 function formatElementCount(count: number): string {
   if (count >= 1000000) {
-    return `${(count / 1000000).toFixed(1)}M`;
+    return `${Number((count / 1000000).toFixed(1))}M`;
   }
   if (count >= 1000) {
-    return `${(count / 1000).toFixed(1)}K`;
+    return `${Number((count / 1000).toFixed(1))}K`;
   }
   return count.toString();
 }

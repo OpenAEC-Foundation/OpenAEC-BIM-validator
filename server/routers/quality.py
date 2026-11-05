@@ -70,19 +70,13 @@ async def run_quality(
             raise HTTPException(400, "File is empty")
 
         try:
-            report = await run_in_threadpool(
-                run_quality_checks, tmp_path, selected
-            )
+            report = await run_in_threadpool(run_quality_checks, tmp_path, selected)
         except ValueError as exc:
             # Unknown check id(s) in the checks filter.
             raise HTTPException(400, str(exc)) from exc
         except Exception as exc:
-            logger.exception(
-                "Quality check failed for upload %s", ifc_file.filename
-            )
-            raise HTTPException(
-                422, f"Could not process IFC file: {exc}"
-            ) from exc
+            logger.exception("Quality check failed for upload %s", ifc_file.filename)
+            raise HTTPException(422, f"Could not process IFC file: {exc}") from exc
     finally:
         if tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)

@@ -23,8 +23,6 @@ import sys
 import tempfile
 from dataclasses import asdict, fields
 from pathlib import Path
-from typing import Optional
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -38,7 +36,6 @@ from server.ifc_processor import (
     IFCProcessor,
     ProcessingResult,
 )
-
 
 # =============================================================================
 # Test Fixtures
@@ -131,15 +128,15 @@ class TestModuleConstants:
 
     def test_gltf_available_is_bool(self) -> None:
         """Test that GLTF_AVAILABLE is a boolean."""
-        assert isinstance(GLTF_AVAILABLE, bool), (
-            f"GLTF_AVAILABLE should be bool, got {type(GLTF_AVAILABLE).__name__}"
-        )
+        assert isinstance(
+            GLTF_AVAILABLE, bool
+        ), f"GLTF_AVAILABLE should be bool, got {type(GLTF_AVAILABLE).__name__}"
 
     def test_obj_available_is_bool(self) -> None:
         """Test that OBJ_AVAILABLE is a boolean."""
-        assert isinstance(OBJ_AVAILABLE, bool), (
-            f"OBJ_AVAILABLE should be bool, got {type(OBJ_AVAILABLE).__name__}"
-        )
+        assert isinstance(
+            OBJ_AVAILABLE, bool
+        ), f"OBJ_AVAILABLE should be bool, got {type(OBJ_AVAILABLE).__name__}"
 
     def test_gltf_available_reflects_serializer(self) -> None:
         """Test that GLTF_AVAILABLE correctly reflects ifcopenshell capabilities."""
@@ -245,14 +242,14 @@ class TestProcessingResultDataclass:
             "file_size_bytes",
         ]
 
-        assert len(field_names) == 10, (
-            f"ProcessingResult should have 10 fields, got {len(field_names)}: {field_names}"
-        )
+        assert (
+            len(field_names) == 10
+        ), f"ProcessingResult should have 10 fields, got {len(field_names)}: {field_names}"
 
         for expected_field in expected_fields:
-            assert expected_field in field_names, (
-                f"ProcessingResult missing expected field: {expected_field}"
-            )
+            assert (
+                expected_field in field_names
+            ), f"ProcessingResult missing expected field: {expected_field}"
 
     def test_processing_result_json_serializable(self) -> None:
         """Test ProcessingResult can be serialized to JSON via asdict."""
@@ -356,14 +353,14 @@ class TestElementGeometryDataclass:
             "color",
         ]
 
-        assert len(field_names) == 8, (
-            f"ElementGeometry should have 8 fields, got {len(field_names)}: {field_names}"
-        )
+        assert (
+            len(field_names) == 8
+        ), f"ElementGeometry should have 8 fields, got {len(field_names)}: {field_names}"
 
         for expected_field in expected_fields:
-            assert expected_field in field_names, (
-                f"ElementGeometry missing expected field: {expected_field}"
-            )
+            assert (
+                expected_field in field_names
+            ), f"ElementGeometry missing expected field: {expected_field}"
 
 
 # =============================================================================
@@ -421,9 +418,9 @@ class TestGetCapabilities:
         """Test that get_capabilities() returns a dictionary."""
         capabilities = processor.get_capabilities()
 
-        assert isinstance(capabilities, dict), (
-            f"get_capabilities() should return dict, got {type(capabilities).__name__}"
-        )
+        assert isinstance(
+            capabilities, dict
+        ), f"get_capabilities() should return dict, got {type(capabilities).__name__}"
 
     def test_get_capabilities_has_expected_keys(self, processor: IFCProcessor) -> None:
         """Test that get_capabilities() returns dict with all expected keys."""
@@ -465,9 +462,9 @@ class TestGetCapabilities:
         """Test that json_mesh_available is always True."""
         capabilities = processor.get_capabilities()
 
-        assert capabilities["json_mesh_available"] is True, (
-            "json_mesh_available should always be True"
-        )
+        assert (
+            capabilities["json_mesh_available"] is True
+        ), "json_mesh_available should always be True"
 
     def test_get_capabilities_ifcopenshell_version_is_string(
         self, processor: IFCProcessor
@@ -524,7 +521,9 @@ class TestProcessToJsonMesh:
 
         result = processor.process_to_json_mesh(str(sample_ifc_path))
 
-        assert result.success is True, f"Processing should succeed, error: {result.error}"
+        assert (
+            result.success is True
+        ), f"Processing should succeed, error: {result.error}"
         assert result.output_format == "json-mesh"
         assert result.error is None
 
@@ -537,7 +536,9 @@ class TestProcessToJsonMesh:
 
         result = processor.process_to_json_mesh(str(sample_ifc_path))
 
-        assert result.success is True, f"Processing should succeed, error: {result.error}"
+        assert (
+            result.success is True
+        ), f"Processing should succeed, error: {result.error}"
         assert result.output_data is not None
 
         # Check expected keys in output_data
@@ -571,9 +572,9 @@ class TestProcessToJsonMesh:
             "processingTimeMs",
         ]
         for key in expected_stat_keys:
-            assert key in stats, (
-                f"stats should have '{key}' key, available keys: {list(stats.keys())}"
-            )
+            assert (
+                key in stats
+            ), f"stats should have '{key}' key, available keys: {list(stats.keys())}"
 
     def test_process_to_json_mesh_elements_structure(
         self, processor: IFCProcessor, sample_ifc_path: Path
@@ -592,11 +593,19 @@ class TestProcessToJsonMesh:
         # If there are elements, check structure
         if len(elements) > 0:
             elem = elements[0]
-            expected_elem_keys = ["id", "guid", "type", "name", "vertices", "normals", "indices"]
+            expected_elem_keys = [
+                "id",
+                "guid",
+                "type",
+                "name",
+                "vertices",
+                "normals",
+                "indices",
+            ]
             for key in expected_elem_keys:
-                assert key in elem, (
-                    f"element should have '{key}' key, available keys: {list(elem.keys())}"
-                )
+                assert (
+                    key in elem
+                ), f"element should have '{key}' key, available keys: {list(elem.keys())}"
 
             # Verify geometry arrays
             assert isinstance(elem["vertices"], list)
@@ -629,9 +638,9 @@ class TestProcessToJsonMesh:
         result = processor.process_to_json_mesh(str(sample_ifc_path))
 
         assert result.success is True
-        assert result.processing_time_ms > 0, (
-            f"processing_time_ms should be > 0, got {result.processing_time_ms}"
-        )
+        assert (
+            result.processing_time_ms > 0
+        ), f"processing_time_ms should be > 0, got {result.processing_time_ms}"
 
     def test_process_to_json_mesh_file_size_positive(
         self, processor: IFCProcessor, sample_ifc_path: Path
@@ -643,9 +652,9 @@ class TestProcessToJsonMesh:
         result = processor.process_to_json_mesh(str(sample_ifc_path))
 
         assert result.success is True
-        assert result.file_size_bytes > 0, (
-            f"file_size_bytes should be > 0, got {result.file_size_bytes}"
-        )
+        assert (
+            result.file_size_bytes > 0
+        ), f"file_size_bytes should be > 0, got {result.file_size_bytes}"
 
     def test_process_to_json_mesh_no_output_path(
         self, processor: IFCProcessor, sample_ifc_path: Path
@@ -657,13 +666,11 @@ class TestProcessToJsonMesh:
         result = processor.process_to_json_mesh(str(sample_ifc_path))
 
         assert result.success is True
-        assert result.output_path is None, (
-            "output_path should be None for JSON mesh format"
-        )
+        assert (
+            result.output_path is None
+        ), "output_path should be None for JSON mesh format"
 
-    def test_process_to_json_mesh_invalid_file(
-        self, processor: IFCProcessor
-    ) -> None:
+    def test_process_to_json_mesh_invalid_file(self, processor: IFCProcessor) -> None:
         """Test process_to_json_mesh with invalid file content."""
         with tempfile.NamedTemporaryFile(suffix=".ifc", delete=False) as f:
             f.write(b"Invalid IFC content that cannot be parsed")
@@ -731,7 +738,9 @@ class TestProcessToGltf:
             str(sample_ifc_path), "test_output"
         )
 
-        assert result.success is True, f"Processing should succeed, error: {result.error}"
+        assert (
+            result.success is True
+        ), f"Processing should succeed, error: {result.error}"
         assert result.output_format == "gltf"
         assert result.error is None
         assert result.output_path is not None
@@ -752,9 +761,9 @@ class TestProcessToGltf:
         if result.success:
             assert result.output_path is not None
             output_file = Path(result.output_path)
-            assert output_file.exists(), (
-                f"Output file should exist: {result.output_path}"
-            )
+            assert (
+                output_file.exists()
+            ), f"Output file should exist: {result.output_path}"
             # Check actual file size rather than result.file_size_bytes
             # (file_size_bytes may be 0 if file doesn't exist at check time)
             actual_size = output_file.stat().st_size
@@ -789,9 +798,9 @@ class TestProcessMethod:
 
         result = processor.process(str(sample_ifc_path), "test_output")
 
-        assert isinstance(result, ProcessingResult), (
-            f"process() should return ProcessingResult, got {type(result).__name__}"
-        )
+        assert isinstance(
+            result, ProcessingResult
+        ), f"process() should return ProcessingResult, got {type(result).__name__}"
 
     def test_process_file_not_found(
         self, processor: IFCProcessor, nonexistent_ifc_path: Path
@@ -815,7 +824,9 @@ class TestProcessMethod:
             str(sample_ifc_path), "test_output", preferred_format="json-mesh"
         )
 
-        assert result.success is True, f"Processing should succeed, error: {result.error}"
+        assert (
+            result.success is True
+        ), f"Processing should succeed, error: {result.error}"
         assert result.output_format == "json-mesh"
         assert result.output_data is not None
 
@@ -844,7 +855,9 @@ class TestProcessMethod:
             str(sample_ifc_path), "test_output", preferred_format="auto"
         )
 
-        assert result.success is True, f"Processing should succeed, error: {result.error}"
+        assert (
+            result.success is True
+        ), f"Processing should succeed, error: {result.error}"
         # Format depends on availability
         assert result.output_format in ["gltf", "json-mesh"]
 
@@ -858,7 +871,9 @@ class TestProcessMethod:
         # Call without preferred_format
         result = processor.process(str(sample_ifc_path), "test_output")
 
-        assert result.success is True, f"Processing should succeed, error: {result.error}"
+        assert (
+            result.success is True
+        ), f"Processing should succeed, error: {result.error}"
         # Should use auto logic
         assert result.output_format in ["gltf", "json-mesh"]
 
@@ -894,16 +909,16 @@ class TestErrorHandling:
         assert result.face_count == 0
         assert result.file_size_bytes == 0
 
-    def test_process_invalid_ifc_content(
-        self, processor: IFCProcessor
-    ) -> None:
+    def test_process_invalid_ifc_content(self, processor: IFCProcessor) -> None:
         """Test processing with invalid IFC file content."""
         with tempfile.NamedTemporaryFile(suffix=".ifc", delete=False) as f:
             f.write(b"This is not valid IFC content")
             temp_path = f.name
 
         try:
-            result = processor.process(temp_path, "test_output", preferred_format="json-mesh")
+            result = processor.process(
+                temp_path, "test_output", preferred_format="json-mesh"
+            )
 
             assert result.success is False
             assert result.error is not None
@@ -911,9 +926,7 @@ class TestErrorHandling:
             if os.path.exists(temp_path):
                 os.unlink(temp_path)
 
-    def test_json_mesh_exception_handling(
-        self, processor: IFCProcessor
-    ) -> None:
+    def test_json_mesh_exception_handling(self, processor: IFCProcessor) -> None:
         """Test that exceptions are caught in process_to_json_mesh."""
         with tempfile.NamedTemporaryFile(suffix=".ifc", delete=False) as f:
             f.write(b"Invalid content")
@@ -950,7 +963,9 @@ class TestIntegrationWithRealFile:
             str(ifc_path), "large_file_test", preferred_format="json-mesh"
         )
 
-        assert result.success is True, f"Processing should succeed, error: {result.error}"
+        assert (
+            result.success is True
+        ), f"Processing should succeed, error: {result.error}"
         assert result.element_count > 0
         assert result.vertex_count > 0
         assert result.face_count > 0
@@ -970,12 +985,12 @@ class TestIntegrationWithRealFile:
         assert result.success is True
 
         # Processing should take more than 1ms but less than 5 minutes
-        assert result.processing_time_ms > 1, (
-            f"Processing should take > 1ms, got {result.processing_time_ms}ms"
-        )
-        assert result.processing_time_ms < 300000, (
-            f"Processing should take < 5min, got {result.processing_time_ms}ms"
-        )
+        assert (
+            result.processing_time_ms > 1
+        ), f"Processing should take > 1ms, got {result.processing_time_ms}ms"
+        assert (
+            result.processing_time_ms < 300000
+        ), f"Processing should take < 5min, got {result.processing_time_ms}ms"
 
     def test_process_extracts_ifc_schema(
         self, processor: IFCProcessor, ifc_path: Path
@@ -1037,7 +1052,9 @@ class TestEdgeCases:
         if not sample_ifc_path.exists():
             pytest.skip(f"Sample IFC file not found: {sample_ifc_path}")
 
-        result = processor.process(str(sample_ifc_path), "", preferred_format="json-mesh")
+        result = processor.process(
+            str(sample_ifc_path), "", preferred_format="json-mesh"
+        )
 
         # Should still work for json-mesh as it doesn't use output_name
         assert result.success is True
@@ -1260,7 +1277,8 @@ class TestMaterialColorHandling:
 
         # Check if any elements have color
         elements_with_color = [
-            elem for elem in result.output_data["elements"]
+            elem
+            for elem in result.output_data["elements"]
             if elem.get("color") is not None
         ]
 
@@ -1317,7 +1335,9 @@ class TestMaterialColorHandling:
             assert isinstance(normals, list)
             # Normals should be in groups of 3 or empty
             if len(normals) > 0:
-                assert len(normals) % 3 == 0, "Normals should be in groups of 3 (nx,ny,nz)"
+                assert (
+                    len(normals) % 3 == 0
+                ), "Normals should be in groups of 3 (nx,ny,nz)"
 
 
 # =============================================================================
@@ -1381,7 +1401,9 @@ class TestProcessMethodBranches:
         """Test that exceptions in process_to_gltf are caught."""
         with tempfile.NamedTemporaryFile(suffix=".ifc", delete=False) as f:
             # Write minimal but malformed IFC content
-            f.write(b"ISO-10303-21;\nHEADER;\nENDSEC;\nDATA;\nENDSEC;\nEND-ISO-10303-21;")
+            f.write(
+                b"ISO-10303-21;\nHEADER;\nENDSEC;\nDATA;\nENDSEC;\nEND-ISO-10303-21;"
+            )
             temp_path = f.name
 
         try:

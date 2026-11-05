@@ -1,5 +1,5 @@
 /**
- * PropertiesPanel styles — BIMcollab-style tabs + compact sections.
+ * PropertiesPanel styles — tabs + compact sections.
  */
 
 .props-panel {
@@ -58,7 +58,7 @@
   color: var(--color-error);
 }
 
-/* Tab bar (BIMcollab style) */
+/* Tab bar (compact layout) */
 .props-tabs {
   display: flex;
   border-bottom: 1px solid var(--color-border);

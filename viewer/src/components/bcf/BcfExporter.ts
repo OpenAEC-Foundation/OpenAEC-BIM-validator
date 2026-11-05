@@ -8,7 +8,7 @@
  *     viewpoint.bcfv
  *     snapshot.png
  *
- * Compatible with BIMcollab, Solibri, Navisworks, etc.
+ * Compatible with compatible BCF tools
  */
 
 import JSZip from "jszip";

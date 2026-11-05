@@ -20,6 +20,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 # Add server to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -32,7 +33,6 @@ from server.models import (
     ValidationResult,
     ValidationStatus,
 )
-
 
 # =============================================================================
 # Test Fixtures
@@ -59,7 +59,10 @@ def sample_failed_element_result():
         element_type="IfcDoor",
         element_name="Door-001",
         status=ValidationStatus.FAIL,
-        messages=["Missing required property: FireRating", "Name does not match pattern"],
+        messages=[
+            "Missing required property: FireRating",
+            "Name does not match pattern",
+        ],
     )
 
 
@@ -221,10 +224,10 @@ class TestElementResult:
 
     def test_element_result_required_fields_validation(self):
         """Test ElementResult raises error when required fields missing."""
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ElementResult(status=ValidationStatus.PASS)
 
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ElementResult(element_type="IfcWall")
 
 
@@ -273,12 +276,16 @@ class TestRequirementResult:
         json_str = sample_requirement_result.model_dump_json()
         data = json.loads(json_str)
 
-        assert data["requirement_description"] == "All walls must have FireRating property"
+        assert (
+            data["requirement_description"] == "All walls must have FireRating property"
+        )
         assert data["status"] == "fail"
         assert data["total_elements"] == 2
         assert len(data["elements"]) == 2
 
-    def test_requirement_result_nested_element_serialization(self, sample_requirement_result):
+    def test_requirement_result_nested_element_serialization(
+        self, sample_requirement_result
+    ):
         """Test RequirementResult nested ElementResults serialize correctly."""
         json_str = sample_requirement_result.model_dump_json()
         data = json.loads(json_str)
@@ -319,7 +326,11 @@ class TestSpecificationResult:
 
     def test_specification_result_severity_levels(self):
         """Test SpecificationResult accepts all severity levels."""
-        for severity in [SeverityLevel.ERROR, SeverityLevel.WARNING, SeverityLevel.INFO]:
+        for severity in [
+            SeverityLevel.ERROR,
+            SeverityLevel.WARNING,
+            SeverityLevel.INFO,
+        ]:
             spec = SpecificationResult(
                 specification_name="Test",
                 severity=severity,
@@ -441,7 +452,10 @@ class TestRoundTripSerialization:
         json_str = sample_requirement_result.model_dump_json()
         restored = RequirementResult.model_validate_json(json_str)
 
-        assert restored.requirement_description == sample_requirement_result.requirement_description
+        assert (
+            restored.requirement_description
+            == sample_requirement_result.requirement_description
+        )
         assert restored.total_elements == sample_requirement_result.total_elements
         assert len(restored.elements) == len(sample_requirement_result.elements)
 
@@ -450,9 +464,14 @@ class TestRoundTripSerialization:
         json_str = sample_specification_result.model_dump_json()
         restored = SpecificationResult.model_validate_json(json_str)
 
-        assert restored.specification_name == sample_specification_result.specification_name
+        assert (
+            restored.specification_name
+            == sample_specification_result.specification_name
+        )
         assert restored.severity == sample_specification_result.severity
-        assert len(restored.requirements) == len(sample_specification_result.requirements)
+        assert len(restored.requirements) == len(
+            sample_specification_result.requirements
+        )
 
     def test_validation_result_round_trip(self, sample_validation_result):
         """Test ValidationResult survives round-trip serialization."""
@@ -460,9 +479,14 @@ class TestRoundTripSerialization:
         restored = ValidationResult.model_validate_json(json_str)
 
         assert restored.success == sample_validation_result.success
-        assert restored.total_specifications == sample_validation_result.total_specifications
+        assert (
+            restored.total_specifications
+            == sample_validation_result.total_specifications
+        )
         assert restored.ifc_file_name == sample_validation_result.ifc_file_name
-        assert len(restored.specifications) == len(sample_validation_result.specifications)
+        assert len(restored.specifications) == len(
+            sample_validation_result.specifications
+        )
 
     def test_full_hierarchy_round_trip(self, sample_validation_result):
         """Test full nested hierarchy survives round-trip serialization."""
@@ -569,7 +593,7 @@ class TestEdgeCases:
         """Test deeply nested validation result."""
         elements = [
             ElementResult(
-                element_type=f"IfcWall",
+                element_type="IfcWall",
                 element_name=f"Wall-{i:03d}",
                 status=ValidationStatus.FAIL if i % 2 == 0 else ValidationStatus.PASS,
             )

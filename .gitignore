@@ -13,6 +13,7 @@ __pycache__/
 venv/
 test/venv/
 .venv/
+.venv-build/
 
 # Coverage
 .coverage
@@ -30,7 +31,6 @@ htmlcov/
 # Node
 node_modules/
 dist/
-package-lock.json
 
 # Python artifacts
 src/ifc_validator.egg-info/
@@ -57,3 +57,11 @@ installer/dist/
 installer/dist_tauri/
 installer/output/
 installer/*.log
+
+# Local assistant state
+.Codex/
+.codex/
+
+# Build outputs
+build/
+*.egg-info/

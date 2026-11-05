@@ -1,5 +1,5 @@
 /**
- * ResultsTree — BIMcollab-style flat tree for validation results.
+ * ResultsTree — flat tree for validation results.
  *
  * Replaces the old card-based SpecificationList with compact 24px rows,
  * expand arrows, severity dots, and indentation levels.

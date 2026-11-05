@@ -128,6 +128,7 @@ async def _save_upload(upload: UploadFile, job_dir: Path) -> Path:
 
 @router.post("")
 async def start_clash(
+    background_tasks: BackgroundTasks,
     ifc_a: UploadFile = File(..., description="First IFC model"),  # noqa: B008
     ifc_b: Optional[UploadFile] = File(  # noqa: B008
         None, description="Second IFC model (omit to clash within the first)"
@@ -135,7 +136,6 @@ async def start_clash(
     mode: str = Form("intersection"),
     tolerance: float = Form(0.002),
     clearance: float = Form(0.05),
-    background_tasks: BackgroundTasks = BackgroundTasks(),
 ) -> JSONResponse:
     """Queue a clash-detection job."""
     if mode not in CLASH_MODES:

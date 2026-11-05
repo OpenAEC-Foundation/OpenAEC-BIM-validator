@@ -191,7 +191,9 @@ def _generate_html_template(result: ValidationResult) -> str:
             failure_rows = []
             for failure in spec.failures[:50]:  # Limit to 50 per spec
                 name = _escape_html(failure.entity_name) if failure.entity_name else "—"
-                global_id = _escape_html(failure.global_id) if failure.global_id else "—"
+                global_id = (
+                    _escape_html(failure.global_id) if failure.global_id else "—"
+                )
                 failure_rows.append(f"""
                     <tr>
                         <td>#{failure.entity_id}</td>
@@ -231,7 +233,11 @@ def _generate_html_template(result: ValidationResult) -> str:
     failure_details_html = "\n".join(failure_sections) if failure_sections else ""
 
     # IDS title section
-    ids_title_html = f"<p><strong>Title:</strong> {_escape_html(result.ids_title)}</p>" if result.ids_title else ""
+    ids_title_html = (
+        f"<p><strong>Title:</strong> {_escape_html(result.ids_title)}</p>"
+        if result.ids_title
+        else ""
+    )
 
     # Not-checkable summary line (honesty rule: never hide unevaluated specs)
     not_checkable_html = (
@@ -514,7 +520,7 @@ def _generate_html_template(result: ValidationResult) -> str:
         </tbody>
     </table>
 
-    {f'<h2>Failed Entities Detail</h2>' + failure_details_html if failure_details_html else ''}
+    {'<h2>Failed Entities Detail</h2>' + failure_details_html if failure_details_html else ''}
 
     <div class="footer">
         <p>Generated: {_escape_html(result.timestamp)}</p>

@@ -1,5 +1,5 @@
 /**
- * ValidationPanel — BIMcollab-style IDS validation workflow.
+ * ValidationPanel — IDS validation workflow.
  *
  * Layout: IDS selection + submit → header bar + ResultsTree + DetailPane.
  * Replaces the old card-based layout with a flat tree and context detail pane.

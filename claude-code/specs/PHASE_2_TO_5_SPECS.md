@@ -229,7 +229,7 @@ function highlightElements(guids: string[], color: string) {
 
 **Duur:** 3-5 dagen  
 **Doel:** Export validatie issues als BCF file  
-**Exit criteria:** BCF importeerbaar in BIMcollab
+**Exit criteria:** BCF importeerbaar in externe BIM-tool
 
 ---
 

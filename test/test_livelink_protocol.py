@@ -117,9 +117,7 @@ class TestMaterialGroups:
 
     def test_single_material_gives_flat_color(self):
         red = (1.0, 0.0, 0.0, 1.0)
-        indices, groups, color = build_material_groups(
-            self.FACES, [0, 0, 0], [red]
-        )
+        indices, groups, color = build_material_groups(self.FACES, [0, 0, 0], [red])
         assert indices == self.FACES
         assert groups is None
         assert color == list(red)
@@ -169,9 +167,7 @@ class TestGeometryPayload:
 
     def test_groups_included_when_given(self):
         groups = [{"start": 0, "count": 3, "color": [1, 0, 0, 1]}]
-        payload, _, _, _ = build_geometry_payload(
-            [0.0] * 9, [0, 1, 2], groups=groups
-        )
+        payload, _, _, _ = build_geometry_payload([0.0] * 9, [0, 1, 2], groups=groups)
         assert payload["groups"] == groups
 
 

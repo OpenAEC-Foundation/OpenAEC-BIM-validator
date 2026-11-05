@@ -94,9 +94,7 @@ def test_tools_list(client):
 
 
 def test_list_standards_tool(client):
-    resp = client.request(
-        "tools/call", {"name": "list_standards", "arguments": {}}
-    )
+    resp = client.request("tools/call", {"name": "list_standards", "arguments": {}})
     result = resp["result"]
     assert result.get("isError") is not True
     text = result["content"][0]["text"]
@@ -184,8 +182,6 @@ def test_unknown_method_returns_error(client):
 
 
 def test_unknown_tool_is_error(client):
-    resp = client.request(
-        "tools/call", {"name": "no_such_tool", "arguments": {}}
-    )
+    resp = client.request("tools/call", {"name": "no_such_tool", "arguments": {}})
     result = resp["result"]
     assert result["isError"] is True

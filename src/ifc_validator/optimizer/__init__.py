@@ -65,10 +65,7 @@ _PASS_INFO = {
 
 def list_passes() -> list[dict[str, str]]:
     """Describe the available passes, in execution order (for UIs)."""
-    return [
-        {"name": name, **_PASS_INFO[name]}
-        for name in PASS_ORDER
-    ]
+    return [{"name": name, **_PASS_INFO[name]} for name in PASS_ORDER]
 
 
 def optimize(

@@ -55,9 +55,9 @@ async def get_passes() -> JSONResponse:
 
 @router.post("")
 async def start_optimize(
+    background_tasks: BackgroundTasks,
     ifc_file: UploadFile = File(..., description="IFC file to optimize"),  # noqa: B008
     passes: str = Form("", description="Comma-separated pass names; empty = all"),
-    background_tasks: BackgroundTasks = BackgroundTasks(),
 ) -> JSONResponse:
     """Queue an optimize job for the uploaded IFC file."""
     if not ifc_file.filename or not ifc_file.filename.lower().endswith(".ifc"):
@@ -98,7 +98,9 @@ async def start_optimize(
         input_path.write_bytes(content)
     except OSError as exc:
         shutil.rmtree(job_dir, ignore_errors=True)
-        raise HTTPException(status_code=500, detail=f"Could not store upload: {exc}")
+        raise HTTPException(
+            status_code=500, detail=f"Could not store upload: {exc}"
+        ) from exc
 
     background_tasks.add_task(
         _run_optimize_task,

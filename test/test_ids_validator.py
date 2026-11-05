@@ -141,7 +141,9 @@ class TestIDSFileLoading:
         assert ids_file is not None, "IDS file should load successfully"
 
         # Verify specifications attribute exists
-        assert hasattr(ids_file, "specifications"), "IDS file should have specifications attribute"
+        assert hasattr(
+            ids_file, "specifications"
+        ), "IDS file should have specifications attribute"
 
         # Verify specification count is exactly 12 for NL_BIM_Basis_ILS_v2.ids
         spec_count = len(ids_file.specifications)
@@ -161,7 +163,9 @@ class TestIDSFileLoading:
         ids_file = ids.open(str(ids_path))
 
         for i, spec in enumerate(ids_file.specifications):
-            assert hasattr(spec, "name"), f"Specification {i} should have 'name' attribute"
+            assert hasattr(
+                spec, "name"
+            ), f"Specification {i} should have 'name' attribute"
             assert spec.name is not None, f"Specification {i} name should not be None"
             assert len(spec.name) > 0, f"Specification {i} name should not be empty"
 
@@ -193,71 +197,76 @@ class TestValidationWorkflow:
         report = validate_ifc_against_ids(ifc_path, ids_path)
 
         # Verify return type is ValidationReport
-        assert isinstance(report, ValidationReport), (
-            f"Expected ValidationReport instance, got {type(report).__name__}"
-        )
+        assert isinstance(
+            report, ValidationReport
+        ), f"Expected ValidationReport instance, got {type(report).__name__}"
 
         # Verify validation completed successfully
-        assert report.success is True, (
-            f"Validation should succeed, error: {report.error}"
-        )
-        assert report.error is None, (
-            f"Error should be None on success, got: {report.error}"
-        )
+        assert (
+            report.success is True
+        ), f"Validation should succeed, error: {report.error}"
+        assert (
+            report.error is None
+        ), f"Error should be None on success, got: {report.error}"
 
         # Verify specification count is exactly 12 for NL_BIM_Basis_ILS_v2.ids
-        assert report.total_specifications == 12, (
-            f"Expected 12 specifications, got {report.total_specifications}"
-        )
+        assert (
+            report.total_specifications == 12
+        ), f"Expected 12 specifications, got {report.total_specifications}"
 
         # Verify aggregate counts are populated and consistent
         assert report.passed_specifications >= 0, "passed_specifications should be >= 0"
         assert report.failed_specifications >= 0, "failed_specifications should be >= 0"
-        assert report.passed_specifications + report.failed_specifications == report.total_specifications, (
+        assert (
+            report.passed_specifications + report.failed_specifications
+            == report.total_specifications
+        ), (
             f"passed ({report.passed_specifications}) + failed ({report.failed_specifications}) "
             f"should equal total ({report.total_specifications})"
         )
 
         # Verify pass rate is calculated correctly
-        expected_pass_rate = (report.passed_specifications / report.total_specifications * 100)
+        expected_pass_rate = (
+            report.passed_specifications / report.total_specifications * 100
+        )
         assert abs(report.pass_rate_percent - expected_pass_rate) < 0.2, (
             f"Pass rate {report.pass_rate_percent}% doesn't match expected "
             f"{expected_pass_rate:.1f}%"
         )
-        assert 0.0 <= report.pass_rate_percent <= 100.0, (
-            f"Pass rate should be between 0-100, got {report.pass_rate_percent}"
-        )
+        assert (
+            0.0 <= report.pass_rate_percent <= 100.0
+        ), f"Pass rate should be between 0-100, got {report.pass_rate_percent}"
 
         # Verify IFC file metadata is populated
-        assert report.ifc_file is not None and len(report.ifc_file) > 0, (
-            "ifc_file should be populated"
-        )
-        assert report.ifc_schema is not None and len(report.ifc_schema) > 0, (
-            "ifc_schema should be populated"
-        )
-        assert report.ifc_entity_count > 0, (
-            f"ifc_entity_count should be > 0 for a valid IFC file, got {report.ifc_entity_count}"
-        )
+        assert (
+            report.ifc_file is not None and len(report.ifc_file) > 0
+        ), "ifc_file should be populated"
+        assert (
+            report.ifc_schema is not None and len(report.ifc_schema) > 0
+        ), "ifc_schema should be populated"
+        assert (
+            report.ifc_entity_count > 0
+        ), f"ifc_entity_count should be > 0 for a valid IFC file, got {report.ifc_entity_count}"
 
         # Verify IDS file metadata is populated
-        assert report.ids_file is not None and len(report.ids_file) > 0, (
-            "ids_file should be populated"
-        )
+        assert (
+            report.ids_file is not None and len(report.ids_file) > 0
+        ), "ids_file should be populated"
 
         # Verify timing metrics are captured
-        assert report.validation_time_seconds >= 0, (
-            f"validation_time_seconds should be >= 0, got {report.validation_time_seconds}"
-        )
+        assert (
+            report.validation_time_seconds >= 0
+        ), f"validation_time_seconds should be >= 0, got {report.validation_time_seconds}"
 
         # Verify timestamp is populated (ISO format string)
-        assert report.timestamp is not None and len(report.timestamp) > 0, (
-            "timestamp should be populated"
-        )
+        assert (
+            report.timestamp is not None and len(report.timestamp) > 0
+        ), "timestamp should be populated"
 
         # Verify specifications list is populated with correct length
-        assert isinstance(report.specifications, list), (
-            f"specifications should be a list, got {type(report.specifications).__name__}"
-        )
+        assert isinstance(
+            report.specifications, list
+        ), f"specifications should be a list, got {type(report.specifications).__name__}"
         assert len(report.specifications) == report.total_specifications, (
             f"specifications list length ({len(report.specifications)}) should match "
             f"total_specifications ({report.total_specifications})"
@@ -265,27 +274,27 @@ class TestValidationWorkflow:
 
         # Verify each specification result is properly structured
         for i, spec in enumerate(report.specifications):
-            assert isinstance(spec, SpecificationResult), (
-                f"Specification {i} should be SpecificationResult, got {type(spec).__name__}"
-            )
-            assert spec.name is not None and len(spec.name) > 0, (
-                f"Specification {i} name should be populated"
-            )
-            assert isinstance(spec.passed, bool), (
-                f"Specification {i} passed should be bool, got {type(spec.passed).__name__}"
-            )
-            assert spec.applicable_count >= 0, (
-                f"Specification {i} applicable_count should be >= 0"
-            )
-            assert spec.passed_count >= 0, (
-                f"Specification {i} passed_count should be >= 0"
-            )
-            assert spec.failed_count >= 0, (
-                f"Specification {i} failed_count should be >= 0"
-            )
-            assert isinstance(spec.failures, list), (
-                f"Specification {i} failures should be a list"
-            )
+            assert isinstance(
+                spec, SpecificationResult
+            ), f"Specification {i} should be SpecificationResult, got {type(spec).__name__}"
+            assert (
+                spec.name is not None and len(spec.name) > 0
+            ), f"Specification {i} name should be populated"
+            assert isinstance(
+                spec.passed, bool
+            ), f"Specification {i} passed should be bool, got {type(spec.passed).__name__}"
+            assert (
+                spec.applicable_count >= 0
+            ), f"Specification {i} applicable_count should be >= 0"
+            assert (
+                spec.passed_count >= 0
+            ), f"Specification {i} passed_count should be >= 0"
+            assert (
+                spec.failed_count >= 0
+            ), f"Specification {i} failed_count should be >= 0"
+            assert isinstance(
+                spec.failures, list
+            ), f"Specification {i} failures should be a list"
 
 
 # =============================================================================
@@ -319,11 +328,14 @@ class TestFailedEntityExtraction:
         report = validate_ifc_against_ids(ifc_path, ids_path)
 
         # Verify validation completed successfully
-        assert report.success is True, f"Validation should succeed, error: {report.error}"
+        assert (
+            report.success is True
+        ), f"Validation should succeed, error: {report.error}"
 
         # Find specifications with failures
         specs_with_failures = [
-            spec for spec in report.specifications
+            spec
+            for spec in report.specifications
             if spec.failed_count > 0 and len(spec.failures) > 0
         ]
 
@@ -373,23 +385,29 @@ class TestFailedEntityExtraction:
                     f"Failure {i} in '{spec.name}': entity_type should be str, "
                     f"got {type(failure.entity_type).__name__}"
                 )
-                assert len(failure.entity_type) > 0, (
-                    f"Failure {i} in '{spec.name}': entity_type should not be empty"
-                )
+                assert (
+                    len(failure.entity_type) > 0
+                ), f"Failure {i} in '{spec.name}': entity_type should not be empty"
 
                 # Verify entity_name is present (can be str or None)
-                assert failure.entity_name is None or isinstance(failure.entity_name, str), (
+                assert failure.entity_name is None or isinstance(
+                    failure.entity_name, str
+                ), (
                     f"Failure {i} in '{spec.name}': entity_name should be str or None, "
                     f"got {type(failure.entity_name).__name__}"
                 )
 
                 # Verify global_id is present (can be str or None)
-                assert failure.global_id is None or isinstance(failure.global_id, str), (
+                assert failure.global_id is None or isinstance(
+                    failure.global_id, str
+                ), (
                     f"Failure {i} in '{spec.name}': global_id should be str or None, "
                     f"got {type(failure.global_id).__name__}"
                 )
 
-    def test_failed_entity_has_valid_ifc_type(self, ifc_path: Path, ids_path: Path) -> None:
+    def test_failed_entity_has_valid_ifc_type(
+        self, ifc_path: Path, ids_path: Path
+    ) -> None:
         """Test that extracted entity_type is a valid IFC type name.
 
         IFC entity types follow a naming convention (e.g., IfcWall, IfcDoor).
@@ -404,15 +422,17 @@ class TestFailedEntityExtraction:
 
                 # IFC type names typically start with "Ifc" or are uppercase
                 # At minimum, they should be non-empty alphanumeric strings
-                assert failure.entity_type.isalnum() or "_" in failure.entity_type, (
-                    f"entity_type '{failure.entity_type}' should be alphanumeric"
-                )
+                assert (
+                    failure.entity_type.isalnum() or "_" in failure.entity_type
+                ), f"entity_type '{failure.entity_type}' should be alphanumeric"
                 return  # Test passed with one failure
 
         # If no failures found, skip with informative message
         pytest.skip("No failures found to test entity_type format")
 
-    def test_failed_entities_global_id_format(self, ifc_path: Path, ids_path: Path) -> None:
+    def test_failed_entities_global_id_format(
+        self, ifc_path: Path, ids_path: Path
+    ) -> None:
         """Test that GlobalId values follow IFC GUID format when present.
 
         IFC GlobalId is a 22-character compressed GUID. This test verifies
@@ -461,12 +481,13 @@ class TestFileNotFoundError:
 
         # Verify error message includes the missing file path
         error_message = str(exc_info.value)
-        assert "IFC file not found" in error_message, (
-            f"Error message should indicate IFC file not found, got: {error_message}"
-        )
-        assert str(nonexistent_ifc_path) in error_message or nonexistent_ifc_path.name in error_message, (
-            f"Error message should include file path, got: {error_message}"
-        )
+        assert (
+            "IFC file not found" in error_message
+        ), f"Error message should indicate IFC file not found, got: {error_message}"
+        assert (
+            str(nonexistent_ifc_path) in error_message
+            or nonexistent_ifc_path.name in error_message
+        ), f"Error message should include file path, got: {error_message}"
 
     def test_missing_ids_file_raises_file_not_found_error(
         self, ifc_path: Path, nonexistent_ids_path: Path
@@ -486,12 +507,13 @@ class TestFileNotFoundError:
 
         # Verify error message includes the missing file path
         error_message = str(exc_info.value)
-        assert "IDS file not found" in error_message, (
-            f"Error message should indicate IDS file not found, got: {error_message}"
-        )
-        assert str(nonexistent_ids_path) in error_message or nonexistent_ids_path.name in error_message, (
-            f"Error message should include file path, got: {error_message}"
-        )
+        assert (
+            "IDS file not found" in error_message
+        ), f"Error message should indicate IDS file not found, got: {error_message}"
+        assert (
+            str(nonexistent_ids_path) in error_message
+            or nonexistent_ids_path.name in error_message
+        ), f"Error message should include file path, got: {error_message}"
 
     def test_both_files_missing_raises_ifc_error_first(
         self, nonexistent_ifc_path: Path, nonexistent_ids_path: Path
@@ -507,9 +529,9 @@ class TestFileNotFoundError:
 
         error_message = str(exc_info.value)
         # Should get IFC error first since it's checked first
-        assert "IFC" in error_message, (
-            f"When both files missing, IFC error should be raised first, got: {error_message}"
-        )
+        assert (
+            "IFC" in error_message
+        ), f"When both files missing, IFC error should be raised first, got: {error_message}"
 
     def test_validator_class_missing_ifc_file_raises_error(
         self, validator: IDSValidator, nonexistent_ifc_path: Path, ids_path: Path
@@ -573,15 +595,15 @@ class TestValidationReportStructure:
         report = validate_ifc_against_ids(ifc_path, ids_path)
 
         # Verify report is ValidationReport instance
-        assert isinstance(report, ValidationReport), (
-            f"Expected ValidationReport instance, got {type(report).__name__}"
-        )
+        assert isinstance(
+            report, ValidationReport
+        ), f"Expected ValidationReport instance, got {type(report).__name__}"
 
         # ===== Test timestamp field =====
         # timestamp should be a string in ISO format
-        assert isinstance(report.timestamp, str), (
-            f"timestamp should be str, got {type(report.timestamp).__name__}"
-        )
+        assert isinstance(
+            report.timestamp, str
+        ), f"timestamp should be str, got {type(report.timestamp).__name__}"
         assert len(report.timestamp) > 0, "timestamp should not be empty"
 
         # Verify timestamp is valid ISO format by parsing it
@@ -593,85 +615,85 @@ class TestValidationReportStructure:
 
         # ===== Test IFC file metadata fields =====
         # ifc_file should be a non-empty string
-        assert isinstance(report.ifc_file, str), (
-            f"ifc_file should be str, got {type(report.ifc_file).__name__}"
-        )
+        assert isinstance(
+            report.ifc_file, str
+        ), f"ifc_file should be str, got {type(report.ifc_file).__name__}"
         assert len(report.ifc_file) > 0, "ifc_file should not be empty"
 
         # ifc_schema should be a non-empty string
-        assert isinstance(report.ifc_schema, str), (
-            f"ifc_schema should be str, got {type(report.ifc_schema).__name__}"
-        )
+        assert isinstance(
+            report.ifc_schema, str
+        ), f"ifc_schema should be str, got {type(report.ifc_schema).__name__}"
         assert len(report.ifc_schema) > 0, "ifc_schema should not be empty"
 
         # ifc_entity_count should be a non-negative integer
-        assert isinstance(report.ifc_entity_count, int), (
-            f"ifc_entity_count should be int, got {type(report.ifc_entity_count).__name__}"
-        )
-        assert report.ifc_entity_count >= 0, (
-            f"ifc_entity_count should be >= 0, got {report.ifc_entity_count}"
-        )
+        assert isinstance(
+            report.ifc_entity_count, int
+        ), f"ifc_entity_count should be int, got {type(report.ifc_entity_count).__name__}"
+        assert (
+            report.ifc_entity_count >= 0
+        ), f"ifc_entity_count should be >= 0, got {report.ifc_entity_count}"
 
         # ===== Test IDS file metadata fields =====
         # ids_file should be a non-empty string
-        assert isinstance(report.ids_file, str), (
-            f"ids_file should be str, got {type(report.ids_file).__name__}"
-        )
+        assert isinstance(
+            report.ids_file, str
+        ), f"ids_file should be str, got {type(report.ids_file).__name__}"
         assert len(report.ids_file) > 0, "ids_file should not be empty"
 
         # ids_title should be str or None
-        assert report.ids_title is None or isinstance(report.ids_title, str), (
-            f"ids_title should be str or None, got {type(report.ids_title).__name__}"
-        )
+        assert report.ids_title is None or isinstance(
+            report.ids_title, str
+        ), f"ids_title should be str or None, got {type(report.ids_title).__name__}"
 
         # ===== Test timing field =====
         # validation_time_seconds should be a non-negative float
-        assert isinstance(report.validation_time_seconds, float), (
-            f"validation_time_seconds should be float, got {type(report.validation_time_seconds).__name__}"
-        )
-        assert report.validation_time_seconds >= 0.0, (
-            f"validation_time_seconds should be >= 0, got {report.validation_time_seconds}"
-        )
+        assert isinstance(
+            report.validation_time_seconds, float
+        ), f"validation_time_seconds should be float, got {type(report.validation_time_seconds).__name__}"
+        assert (
+            report.validation_time_seconds >= 0.0
+        ), f"validation_time_seconds should be >= 0, got {report.validation_time_seconds}"
 
         # ===== Test specification count fields =====
         # total_specifications should be a non-negative integer
-        assert isinstance(report.total_specifications, int), (
-            f"total_specifications should be int, got {type(report.total_specifications).__name__}"
-        )
-        assert report.total_specifications >= 0, (
-            f"total_specifications should be >= 0, got {report.total_specifications}"
-        )
+        assert isinstance(
+            report.total_specifications, int
+        ), f"total_specifications should be int, got {type(report.total_specifications).__name__}"
+        assert (
+            report.total_specifications >= 0
+        ), f"total_specifications should be >= 0, got {report.total_specifications}"
 
         # passed_specifications should be a non-negative integer
-        assert isinstance(report.passed_specifications, int), (
-            f"passed_specifications should be int, got {type(report.passed_specifications).__name__}"
-        )
-        assert report.passed_specifications >= 0, (
-            f"passed_specifications should be >= 0, got {report.passed_specifications}"
-        )
+        assert isinstance(
+            report.passed_specifications, int
+        ), f"passed_specifications should be int, got {type(report.passed_specifications).__name__}"
+        assert (
+            report.passed_specifications >= 0
+        ), f"passed_specifications should be >= 0, got {report.passed_specifications}"
 
         # failed_specifications should be a non-negative integer
-        assert isinstance(report.failed_specifications, int), (
-            f"failed_specifications should be int, got {type(report.failed_specifications).__name__}"
-        )
-        assert report.failed_specifications >= 0, (
-            f"failed_specifications should be >= 0, got {report.failed_specifications}"
-        )
+        assert isinstance(
+            report.failed_specifications, int
+        ), f"failed_specifications should be int, got {type(report.failed_specifications).__name__}"
+        assert (
+            report.failed_specifications >= 0
+        ), f"failed_specifications should be >= 0, got {report.failed_specifications}"
 
         # ===== Test pass rate field =====
         # pass_rate_percent should be a float between 0 and 100
-        assert isinstance(report.pass_rate_percent, float), (
-            f"pass_rate_percent should be float, got {type(report.pass_rate_percent).__name__}"
-        )
-        assert 0.0 <= report.pass_rate_percent <= 100.0, (
-            f"pass_rate_percent should be between 0-100, got {report.pass_rate_percent}"
-        )
+        assert isinstance(
+            report.pass_rate_percent, float
+        ), f"pass_rate_percent should be float, got {type(report.pass_rate_percent).__name__}"
+        assert (
+            0.0 <= report.pass_rate_percent <= 100.0
+        ), f"pass_rate_percent should be between 0-100, got {report.pass_rate_percent}"
 
         # ===== Test specifications list field =====
         # specifications should be a list
-        assert isinstance(report.specifications, list), (
-            f"specifications should be list, got {type(report.specifications).__name__}"
-        )
+        assert isinstance(
+            report.specifications, list
+        ), f"specifications should be list, got {type(report.specifications).__name__}"
 
         # Each item in specifications should be a SpecificationResult
         for i, spec in enumerate(report.specifications):
@@ -682,16 +704,18 @@ class TestValidationReportStructure:
 
         # ===== Test success/error fields =====
         # success should be a boolean
-        assert isinstance(report.success, bool), (
-            f"success should be bool, got {type(report.success).__name__}"
-        )
+        assert isinstance(
+            report.success, bool
+        ), f"success should be bool, got {type(report.success).__name__}"
 
         # error should be str or None
-        assert report.error is None or isinstance(report.error, str), (
-            f"error should be str or None, got {type(report.error).__name__}"
-        )
+        assert report.error is None or isinstance(
+            report.error, str
+        ), f"error should be str or None, got {type(report.error).__name__}"
 
-    def test_validation_report_field_count(self, ifc_path: Path, ids_path: Path) -> None:
+    def test_validation_report_field_count(
+        self, ifc_path: Path, ids_path: Path
+    ) -> None:
         """Test that ValidationReport has exactly 14 fields.
 
         This verifies the dataclass hasn't been modified unexpectedly.
@@ -721,17 +745,19 @@ class TestValidationReportStructure:
             "error",
         ]
 
-        assert len(field_names) == 14, (
-            f"ValidationReport should have 14 fields, got {len(field_names)}: {field_names}"
-        )
+        assert (
+            len(field_names) == 14
+        ), f"ValidationReport should have 14 fields, got {len(field_names)}: {field_names}"
 
         # Verify all expected fields are present
         for expected_field in expected_fields:
-            assert expected_field in field_names, (
-                f"ValidationReport missing expected field: {expected_field}"
-            )
+            assert (
+                expected_field in field_names
+            ), f"ValidationReport missing expected field: {expected_field}"
 
-    def test_specification_result_field_count(self, ifc_path: Path, ids_path: Path) -> None:
+    def test_specification_result_field_count(
+        self, ifc_path: Path, ids_path: Path
+    ) -> None:
         """Test that SpecificationResult has exactly 7 fields.
 
         This verifies the dataclass structure matches the spec.
@@ -758,15 +784,15 @@ class TestValidationReportStructure:
             "failures",
         ]
 
-        assert len(field_names) == 7, (
-            f"SpecificationResult should have 7 fields, got {len(field_names)}: {field_names}"
-        )
+        assert (
+            len(field_names) == 7
+        ), f"SpecificationResult should have 7 fields, got {len(field_names)}: {field_names}"
 
         # Verify all expected fields are present
         for expected_field in expected_fields:
-            assert expected_field in field_names, (
-                f"SpecificationResult missing expected field: {expected_field}"
-            )
+            assert (
+                expected_field in field_names
+            ), f"SpecificationResult missing expected field: {expected_field}"
 
     def test_entity_failure_field_count(self) -> None:
         """Test that EntityFailure has exactly 4 fields.
@@ -789,15 +815,15 @@ class TestValidationReportStructure:
         # Expected 4 fields as documented in spec
         expected_fields = ["entity_id", "entity_type", "entity_name", "global_id"]
 
-        assert len(field_names) == 4, (
-            f"EntityFailure should have 4 fields, got {len(field_names)}: {field_names}"
-        )
+        assert (
+            len(field_names) == 4
+        ), f"EntityFailure should have 4 fields, got {len(field_names)}: {field_names}"
 
         # Verify all expected fields are present
         for expected_field in expected_fields:
-            assert expected_field in field_names, (
-                f"EntityFailure missing expected field: {expected_field}"
-            )
+            assert (
+                expected_field in field_names
+            ), f"EntityFailure missing expected field: {expected_field}"
 
 
 # =============================================================================
@@ -826,9 +852,9 @@ class TestIDSValidatorClass:
         assert validator is not None, "IDSValidator should instantiate successfully"
 
         # Verify it's the correct type
-        assert isinstance(validator, IDSValidator), (
-            f"Expected IDSValidator instance, got {type(validator).__name__}"
-        )
+        assert isinstance(
+            validator, IDSValidator
+        ), f"Expected IDSValidator instance, got {type(validator).__name__}"
 
     def test_ids_validator_validate_returns_validation_report(
         self, validator: IDSValidator, ifc_path: Path, ids_path: Path
@@ -847,14 +873,14 @@ class TestIDSValidatorClass:
         report = validator.validate(ifc_path, ids_path)
 
         # Verify return type is ValidationReport
-        assert isinstance(report, ValidationReport), (
-            f"validate() should return ValidationReport, got {type(report).__name__}"
-        )
+        assert isinstance(
+            report, ValidationReport
+        ), f"validate() should return ValidationReport, got {type(report).__name__}"
 
         # Verify the validation completed successfully
-        assert report.success is True, (
-            f"Validation should succeed, error: {report.error}"
-        )
+        assert (
+            report.success is True
+        ), f"Validation should succeed, error: {report.error}"
 
     def test_ids_validator_validate_matches_function(
         self, validator: IDSValidator, ifc_path: Path, ids_path: Path
@@ -873,11 +899,15 @@ class TestIDSValidatorClass:
             f"total_specifications mismatch: class={class_report.total_specifications}, "
             f"func={func_report.total_specifications}"
         )
-        assert class_report.passed_specifications == func_report.passed_specifications, (
+        assert (
+            class_report.passed_specifications == func_report.passed_specifications
+        ), (
             f"passed_specifications mismatch: class={class_report.passed_specifications}, "
             f"func={func_report.passed_specifications}"
         )
-        assert class_report.failed_specifications == func_report.failed_specifications, (
+        assert (
+            class_report.failed_specifications == func_report.failed_specifications
+        ), (
             f"failed_specifications mismatch: class={class_report.failed_specifications}, "
             f"func={func_report.failed_specifications}"
         )
@@ -904,11 +934,21 @@ class TestIDSValidatorClass:
         assert hasattr(report, "ids_file") and report.ids_file
         assert hasattr(report, "ids_title")  # Can be None
         assert hasattr(report, "validation_time_seconds")
-        assert hasattr(report, "total_specifications") and report.total_specifications >= 0
-        assert hasattr(report, "passed_specifications") and report.passed_specifications >= 0
-        assert hasattr(report, "failed_specifications") and report.failed_specifications >= 0
+        assert (
+            hasattr(report, "total_specifications") and report.total_specifications >= 0
+        )
+        assert (
+            hasattr(report, "passed_specifications")
+            and report.passed_specifications >= 0
+        )
+        assert (
+            hasattr(report, "failed_specifications")
+            and report.failed_specifications >= 0
+        )
         assert hasattr(report, "pass_rate_percent")
-        assert hasattr(report, "specifications") and isinstance(report.specifications, list)
+        assert hasattr(report, "specifications") and isinstance(
+            report.specifications, list
+        )
         assert hasattr(report, "success") and isinstance(report.success, bool)
         assert hasattr(report, "error")  # Can be None
 
@@ -926,9 +966,9 @@ class TestIDSValidatorClass:
         capabilities = validator.get_capabilities()
 
         # Verify return type is dict
-        assert isinstance(capabilities, dict), (
-            f"get_capabilities() should return dict, got {type(capabilities).__name__}"
-        )
+        assert isinstance(
+            capabilities, dict
+        ), f"get_capabilities() should return dict, got {type(capabilities).__name__}"
 
     def test_get_capabilities_has_expected_keys(self, validator: IDSValidator) -> None:
         """Test that get_capabilities() returns dict with all expected keys.
@@ -959,7 +999,9 @@ class TestIDSValidatorClass:
                 f"available keys: {list(capabilities.keys())}"
             )
 
-    def test_get_capabilities_values_have_correct_types(self, validator: IDSValidator) -> None:
+    def test_get_capabilities_values_have_correct_types(
+        self, validator: IDSValidator
+    ) -> None:
         """Test that get_capabilities() values have correct types.
 
         This verifies:
@@ -994,16 +1036,18 @@ class TestIDSValidatorClass:
             f"got {type(capabilities['validation_available']).__name__}"
         )
 
-    def test_get_capabilities_validation_available_is_true(self, validator: IDSValidator) -> None:
+    def test_get_capabilities_validation_available_is_true(
+        self, validator: IDSValidator
+    ) -> None:
         """Test that validation_available capability is True.
 
         The IDS validator module should always report that validation is available.
         """
         capabilities = validator.get_capabilities()
 
-        assert capabilities["validation_available"] is True, (
-            "validation_available should be True for IDS validator"
-        )
+        assert (
+            capabilities["validation_available"] is True
+        ), "validation_available should be True for IDS validator"
 
     def test_get_capabilities_supported_ids_versions_not_empty(
         self, validator: IDSValidator
@@ -1014,9 +1058,9 @@ class TestIDSValidatorClass:
         """
         capabilities = validator.get_capabilities()
 
-        assert len(capabilities["supported_ids_versions"]) > 0, (
-            "supported_ids_versions should not be empty"
-        )
+        assert (
+            len(capabilities["supported_ids_versions"]) > 0
+        ), "supported_ids_versions should not be empty"
 
         # Verify "1.0" is in supported versions
         assert "1.0" in capabilities["supported_ids_versions"], (
@@ -1024,7 +1068,9 @@ class TestIDSValidatorClass:
             f"got {capabilities['supported_ids_versions']}"
         )
 
-    def test_multiple_validators_are_independent(self, ifc_path: Path, ids_path: Path) -> None:
+    def test_multiple_validators_are_independent(
+        self, ifc_path: Path, ids_path: Path
+    ) -> None:
         """Test that multiple IDSValidator instances work independently.
 
         This ensures the validator is stateless and multiple instances
@@ -1072,7 +1118,9 @@ class TestTimingMetrics:
         report = validate_ifc_against_ids(ifc_path, ids_path)
 
         # Verify validation completed successfully
-        assert report.success is True, f"Validation should succeed, error: {report.error}"
+        assert (
+            report.success is True
+        ), f"Validation should succeed, error: {report.error}"
 
         # Verify validation_time_seconds is a float
         assert isinstance(report.validation_time_seconds, float), (
@@ -1159,11 +1207,13 @@ class TestReportSerialization:
         result = report_to_dict(report)
 
         # Verify return type is dict
-        assert isinstance(result, dict), (
-            f"report_to_dict() should return dict, got {type(result).__name__}"
-        )
+        assert isinstance(
+            result, dict
+        ), f"report_to_dict() should return dict, got {type(result).__name__}"
 
-    def test_report_to_dict_json_serializable(self, ifc_path: Path, ids_path: Path) -> None:
+    def test_report_to_dict_json_serializable(
+        self, ifc_path: Path, ids_path: Path
+    ) -> None:
         """Test that the dict from report_to_dict() can be serialized to JSON.
 
         This test verifies:
@@ -1187,9 +1237,9 @@ class TestReportSerialization:
             pytest.fail(f"json.dumps() failed on report_to_dict result: {e}")
 
         # Verify we got a non-empty JSON string
-        assert isinstance(json_str, str), (
-            f"json.dumps() should return str, got {type(json_str).__name__}"
-        )
+        assert isinstance(
+            json_str, str
+        ), f"json.dumps() should return str, got {type(json_str).__name__}"
         assert len(json_str) > 0, "JSON string should not be empty"
 
     def test_report_to_dict_nested_structures_converted(
@@ -1212,18 +1262,18 @@ class TestReportSerialization:
         report_dict = report_to_dict(report)
 
         # Verify specifications is a list
-        assert "specifications" in report_dict, (
-            "report_dict should have 'specifications' key"
-        )
-        assert isinstance(report_dict["specifications"], list), (
-            f"specifications should be list, got {type(report_dict['specifications']).__name__}"
-        )
+        assert (
+            "specifications" in report_dict
+        ), "report_dict should have 'specifications' key"
+        assert isinstance(
+            report_dict["specifications"], list
+        ), f"specifications should be list, got {type(report_dict['specifications']).__name__}"
 
         # Verify each specification is a dict (not SpecificationResult)
         for i, spec in enumerate(report_dict["specifications"]):
-            assert isinstance(spec, dict), (
-                f"specifications[{i}] should be dict, got {type(spec).__name__}"
-            )
+            assert isinstance(
+                spec, dict
+            ), f"specifications[{i}] should be dict, got {type(spec).__name__}"
 
             # Verify spec has expected keys
             expected_spec_keys = [
@@ -1345,8 +1395,12 @@ class TestReportSerialization:
         # Verify key fields match
         assert parsed_dict["timestamp"] == report_dict["timestamp"]
         assert parsed_dict["ifc_file"] == report_dict["ifc_file"]
-        assert parsed_dict["total_specifications"] == report_dict["total_specifications"]
-        assert parsed_dict["passed_specifications"] == report_dict["passed_specifications"]
+        assert (
+            parsed_dict["total_specifications"] == report_dict["total_specifications"]
+        )
+        assert (
+            parsed_dict["passed_specifications"] == report_dict["passed_specifications"]
+        )
         assert parsed_dict["pass_rate_percent"] == report_dict["pass_rate_percent"]
         assert parsed_dict["success"] == report_dict["success"]
 
@@ -1358,9 +1412,7 @@ class TestReportSerialization:
             assert spec["passed"] == orig_spec["passed"]
             assert len(spec["failures"]) == len(orig_spec["failures"])
 
-    def test_report_to_dict_with_failures(
-        self, ifc_path: Path, ids_path: Path
-    ) -> None:
+    def test_report_to_dict_with_failures(self, ifc_path: Path, ids_path: Path) -> None:
         """Test that report with failures serializes correctly.
 
         This specifically tests that EntityFailure objects with various
@@ -1374,14 +1426,13 @@ class TestReportSerialization:
 
         # Find specifications with failures
         specs_with_failures = [
-            spec for spec in report_dict["specifications"]
-            if len(spec["failures"]) > 0
+            spec for spec in report_dict["specifications"] if len(spec["failures"]) > 0
         ]
 
         # Verify we have failures to test
-        assert len(specs_with_failures) > 0, (
-            "Expected at least one specification with failures to test serialization"
-        )
+        assert (
+            len(specs_with_failures) > 0
+        ), "Expected at least one specification with failures to test serialization"
 
         # Verify failure dict structure for each failure
         for spec in specs_with_failures:
@@ -1399,12 +1450,12 @@ class TestReportSerialization:
                 )
 
                 # Verify optional fields are str or None
-                assert failure["entity_name"] is None or isinstance(failure["entity_name"], str), (
-                    "entity_name should be str or None after serialization"
-                )
-                assert failure["global_id"] is None or isinstance(failure["global_id"], str), (
-                    "global_id should be str or None after serialization"
-                )
+                assert failure["entity_name"] is None or isinstance(
+                    failure["entity_name"], str
+                ), "entity_name should be str or None after serialization"
+                assert failure["global_id"] is None or isinstance(
+                    failure["global_id"], str
+                ), "global_id should be str or None after serialization"
 
     def test_report_to_dict_json_pretty_print(
         self, ifc_path: Path, ids_path: Path

@@ -88,7 +88,10 @@ class TestCLIHelp:
         result = runner.invoke(app, ["--help"])
 
         assert result.exit_code == 0
-        assert "ifc-validate" in result.output.lower() or "validate" in result.output.lower()
+        assert (
+            "ifc-validate" in result.output.lower()
+            or "validate" in result.output.lower()
+        )
         assert "--ids" in result.output
         assert "--output" in result.output
 
@@ -118,7 +121,11 @@ class TestCLIHelp:
         assert "-o" in result.output
         # Should mention available formats
         output_lower = result.output.lower()
-        assert "console" in output_lower or "json" in output_lower or "html" in output_lower
+        assert (
+            "console" in output_lower
+            or "json" in output_lower
+            or "html" in output_lower
+        )
 
     def test_version_flag(self, runner):
         """Test that --version flag displays version information."""
@@ -148,7 +155,10 @@ class TestFileNotFound:
 
         assert result.exit_code == 1
         assert "error" in result.output.lower()
-        assert "not found" in result.output.lower() or "nonexistent" in result.output.lower()
+        assert (
+            "not found" in result.output.lower()
+            or "nonexistent" in result.output.lower()
+        )
 
     def test_ids_file_not_found(self, runner, sample_ifc_path):
         """Test that error is shown when IDS file doesn't exist."""
@@ -162,7 +172,10 @@ class TestFileNotFound:
 
         assert result.exit_code == 1
         assert "error" in result.output.lower()
-        assert "not found" in result.output.lower() or "nonexistent" in result.output.lower()
+        assert (
+            "not found" in result.output.lower()
+            or "nonexistent" in result.output.lower()
+        )
 
     def test_both_files_not_found(self, runner):
         """Test that error is shown when both files don't exist."""
@@ -198,7 +211,9 @@ class TestFileNotFound:
 class TestIFCExtensionValidation:
     """Test validation of IFC file extensions."""
 
-    def test_reject_invalid_ifc_extension(self, runner, sample_ids_path, temp_invalid_extension_file):
+    def test_reject_invalid_ifc_extension(
+        self, runner, sample_ids_path, temp_invalid_extension_file
+    ):
         """Test that files without valid IFC extension are rejected."""
         if not sample_ids_path.exists():
             pytest.skip(f"Sample IDS file not found: {sample_ids_path}")
@@ -238,7 +253,9 @@ class TestIFCExtensionValidation:
         # Create a temp file with uppercase extension
         with tempfile.NamedTemporaryFile(suffix=".IFC", delete=False) as f:
             # Write minimal IFC content
-            f.write(b"ISO-10303-21;\nHEADER;\nENDSEC;\nDATA;\nENDSEC;\nEND-ISO-10303-21;")
+            f.write(
+                b"ISO-10303-21;\nHEADER;\nENDSEC;\nDATA;\nENDSEC;\nEND-ISO-10303-21;"
+            )
             temp_path = f.name
 
         try:
@@ -265,7 +282,9 @@ class TestIFCExtensionValidation:
 class TestIDSExtensionValidation:
     """Test validation of IDS file extensions."""
 
-    def test_reject_invalid_ids_extension(self, runner, sample_ifc_path, temp_invalid_ids_extension_file):
+    def test_reject_invalid_ids_extension(
+        self, runner, sample_ifc_path, temp_invalid_ids_extension_file
+    ):
         """Test that files without .ids extension are rejected."""
         if not sample_ifc_path.exists():
             pytest.skip(f"Sample IFC file not found: {sample_ifc_path}")
@@ -342,7 +361,9 @@ class TestMissingArguments:
 class TestExitCodes:
     """Test exit codes for various scenarios."""
 
-    def test_exit_code_0_on_validation_pass(self, runner, sample_ifc_path, sample_ids_path):
+    def test_exit_code_0_on_validation_pass(
+        self, runner, sample_ifc_path, sample_ids_path
+    ):
         """Test that exit code 0 is returned when validation passes."""
         if not sample_ifc_path.exists():
             pytest.skip(f"Sample IFC file not found: {sample_ifc_path}")
@@ -357,7 +378,9 @@ class TestExitCodes:
         # sample.ifc has wall with 'W-001' which should pass the naming convention
         assert result.exit_code == 0
 
-    def test_exit_code_1_on_validation_fail(self, runner, sample_fail_ifc_path, sample_ids_path):
+    def test_exit_code_1_on_validation_fail(
+        self, runner, sample_fail_ifc_path, sample_ids_path
+    ):
         """Test that exit code 1 is returned when validation fails."""
         if not sample_fail_ifc_path.exists():
             pytest.skip(f"Sample fail IFC file not found: {sample_fail_ifc_path}")
@@ -381,7 +404,9 @@ class TestExitCodes:
 
         assert result.exit_code == 1
 
-    def test_exit_code_1_on_invalid_extension(self, runner, sample_ids_path, temp_invalid_extension_file):
+    def test_exit_code_1_on_invalid_extension(
+        self, runner, sample_ids_path, temp_invalid_extension_file
+    ):
         """Test that exit code 1 is returned for invalid file extension."""
         if not sample_ids_path.exists():
             pytest.skip(f"Sample IDS file not found: {sample_ids_path}")
@@ -448,9 +473,12 @@ class TestOutputFormats:
                 app,
                 [
                     str(sample_ifc_path),
-                    "--ids", str(sample_ids_path),
-                    "--output", "html",
-                    "--html-output", str(html_output_path),
+                    "--ids",
+                    str(sample_ids_path),
+                    "--output",
+                    "html",
+                    "--html-output",
+                    str(html_output_path),
                 ],
             )
 
@@ -468,7 +496,13 @@ class TestOutputFormats:
 
         result = runner.invoke(
             app,
-            [str(sample_ifc_path), "--ids", str(sample_ids_path), "--output", "invalid"],
+            [
+                str(sample_ifc_path),
+                "--ids",
+                str(sample_ids_path),
+                "--output",
+                "invalid",
+            ],
         )
 
         # Should fail with invalid output format
@@ -512,9 +546,15 @@ class TestErrorMessages:
         output_lower = result.output.lower()
         # Error message should be clear about what happened
         assert "error" in output_lower
-        assert "not found" in output_lower or "does not exist" in output_lower or "does_not_exist" in output_lower
+        assert (
+            "not found" in output_lower
+            or "does not exist" in output_lower
+            or "does_not_exist" in output_lower
+        )
 
-    def test_invalid_extension_error_is_clear(self, runner, sample_ids_path, temp_invalid_extension_file):
+    def test_invalid_extension_error_is_clear(
+        self, runner, sample_ids_path, temp_invalid_extension_file
+    ):
         """Test that invalid extension error message is clear."""
         if not sample_ids_path.exists():
             pytest.skip(f"Sample IDS file not found: {sample_ids_path}")
@@ -566,7 +606,10 @@ class TestShortOptions:
 
         # Should work just like --ids
         # Either passes validation or fails for other reasons, not missing --ids
-        assert "--ids" not in result.output.lower() or "required" not in result.output.lower()
+        assert (
+            "--ids" not in result.output.lower()
+            or "required" not in result.output.lower()
+        )
 
 
 # =============================================================================
@@ -627,7 +670,9 @@ class TestTyperExitUsage:
 class TestCLIIntegration:
     """Integration-style tests for complete CLI workflows."""
 
-    def test_full_validation_workflow_pass(self, runner, sample_ifc_path, sample_ids_path):
+    def test_full_validation_workflow_pass(
+        self, runner, sample_ifc_path, sample_ids_path
+    ):
         """Test complete validation workflow with passing model."""
         if not sample_ifc_path.exists():
             pytest.skip(f"Sample IFC file not found: {sample_ifc_path}")
@@ -642,9 +687,15 @@ class TestCLIIntegration:
         assert result.exit_code == 0
         # Should show some validation output
         output_lower = result.output.lower()
-        assert "pass" in output_lower or "success" in output_lower or "validation" in output_lower
+        assert (
+            "pass" in output_lower
+            or "success" in output_lower
+            or "validation" in output_lower
+        )
 
-    def test_full_validation_workflow_fail(self, runner, sample_fail_ifc_path, sample_ids_path):
+    def test_full_validation_workflow_fail(
+        self, runner, sample_fail_ifc_path, sample_ids_path
+    ):
         """Test complete validation workflow with failing model."""
         if not sample_fail_ifc_path.exists():
             pytest.skip(f"Sample fail IFC file not found: {sample_fail_ifc_path}")
@@ -659,7 +710,11 @@ class TestCLIIntegration:
         assert result.exit_code == 1
         # Should show failure information
         output_lower = result.output.lower()
-        assert "fail" in output_lower or "error" in output_lower or "validation" in output_lower
+        assert (
+            "fail" in output_lower
+            or "error" in output_lower
+            or "validation" in output_lower
+        )
 
     def test_json_output_is_valid_json(self, runner, sample_ifc_path, sample_ids_path):
         """Test that JSON output is parseable JSON."""

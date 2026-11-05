@@ -33,7 +33,10 @@ from rich.console import Console
 for _std in (sys.stdout, sys.stderr):
     try:
         _std.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
-    except (AttributeError, ValueError):  # pragma: no cover - stream without reconfigure
+    except (
+        AttributeError,
+        ValueError,
+    ):  # pragma: no cover - stream without reconfigure
         pass
 
 # Create the Typer app instance
@@ -154,16 +157,16 @@ def validate(
             # - Is a short string (< 30 chars)
             # - And doesn't exist as a file
             looks_like_shortcut = (
-                '/' not in ids
-                and '\\' not in ids
-                and not ids.lower().endswith('.ids')
+                "/" not in ids
+                and "\\" not in ids
+                and not ids.lower().endswith(".ids")
                 and len(ids) < 30
             )
             ids_path_candidate = Path(ids)
 
             if looks_like_shortcut and not ids_path_candidate.exists():
                 # User likely meant to use a shortcut but typed it wrong
-                valid_shortcuts = ', '.join(list_available_standards())
+                valid_shortcuts = ", ".join(list_available_standards())
                 err_console.print(
                     f"[red]Error:[/red] Unknown shortcut '[yellow]{ids}[/yellow]'. "
                     f"Valid shortcuts are: [cyan]{valid_shortcuts}[/cyan]"
@@ -206,32 +209,32 @@ def validate(
         if result.overall_pass:
             raise typer.Exit(code=0)
         else:
-            raise typer.Exit(code=1)
+            raise typer.Exit(code=1) from None
 
     except FileNotFoundError as e:
         err_console.print(f"[red]Error:[/red] {e}")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
     except ValueError as e:
         err_console.print(f"[red]Validation Error:[/red] {e}")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
     except MemoryError as e:
         err_console.print(f"[red]Memory Error:[/red] {e}")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
-    except click.exceptions.Exit:
+    except (typer.Exit, click.exceptions.Exit):
         # Re-raise typer.Exit/click.Exit - don't catch these
         # (they inherit from RuntimeError but should propagate)
         raise
 
     except RuntimeError as e:
         err_console.print(f"[red]Runtime Error:[/red] {e}")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
     except Exception as e:
         err_console.print(f"[red]Unexpected Error:[/red] {e}")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
 
 if __name__ == "__main__":

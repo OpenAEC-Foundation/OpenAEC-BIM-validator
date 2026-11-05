@@ -9,7 +9,6 @@ Also provides .wefc envelope endpoints that bridge the persistent
 project (DB row) to its corresponding tenant Nextcloud folder.
 """
 
-import json
 import logging
 import os
 import shutil
@@ -19,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -41,14 +40,12 @@ router = APIRouter(prefix="/api/v2", tags=["projects"])
 DEFAULT_TENANT_SLUG = "3bm"
 
 # Base directory for project file storage
-PROJECT_FILES_DIR = Path(
-    os.environ.get("PROJECT_FILES_DIR", "/data/projects")
-)
+PROJECT_FILES_DIR = Path(os.environ.get("PROJECT_FILES_DIR", "/data/projects"))
 
 # Maximum file sizes
 MAX_IFC_SIZE = 1024 * 1024 * 1024  # 1 GB
-MAX_BCF_SIZE = 100 * 1024 * 1024   # 100 MB
-MAX_IDS_SIZE = 5 * 1024 * 1024     # 5 MB
+MAX_BCF_SIZE = 100 * 1024 * 1024  # 100 MB
+MAX_IDS_SIZE = 5 * 1024 * 1024  # 5 MB
 
 ALLOWED_TYPES = {"ifc", "bcf", "ids"}
 TYPE_EXTENSIONS = {
@@ -268,7 +265,9 @@ async def upload_file(
     """Upload a file to a project."""
     # Validate file type
     if file_type not in ALLOWED_TYPES:
-        raise HTTPException(400, f"Invalid file_type: {file_type}. Use: {ALLOWED_TYPES}")
+        raise HTTPException(
+            400, f"Invalid file_type: {file_type}. Use: {ALLOWED_TYPES}"
+        )
 
     if not file.filename:
         raise HTTPException(400, "Filename is required")
@@ -368,9 +367,7 @@ async def delete_file(project_id: str, file_id: str, request: Request):
         file_path.unlink(missing_ok=True)
 
         await session.delete(project_file)
-        logger.info(
-            "Deleted file %s from project %s", file_id, project_id
-        )
+        logger.info("Deleted file %s from project %s", file_id, project_id)
         return {"success": True, "message": f"File {file_id} deleted"}
 
 

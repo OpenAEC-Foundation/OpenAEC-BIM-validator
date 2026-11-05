@@ -20,7 +20,7 @@ const MAX_TOTAL_SIZE = 1024 * 1024;
 
 const FEEDBACK_API_URL = "https://open-feedback-studio.pages.dev/api/feedback";
 const APP_ID = "openaec-bim-validator";
-const APP_VERSION = "0.1.0";
+import { APP_VERSION } from "../../version";
 
 interface FeedbackDialogProps {
   open: boolean;

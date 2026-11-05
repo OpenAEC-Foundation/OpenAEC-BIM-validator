@@ -151,9 +151,7 @@ class TestGenerateBcfZip:
         bcf_bytes = generate_bcf_zip(mock_result)
         zf = zipfile.ZipFile(BytesIO(bcf_bytes))
 
-        markup_files = [
-            n for n in zf.namelist() if n.endswith("/markup.bcf")
-        ]
+        markup_files = [n for n in zf.namelist() if n.endswith("/markup.bcf")]
         assert len(markup_files) == 2
 
     def test_topic_title_format(self, mock_result):
@@ -161,9 +159,7 @@ class TestGenerateBcfZip:
         bcf_bytes = generate_bcf_zip(mock_result)
         zf = zipfile.ZipFile(BytesIO(bcf_bytes))
 
-        markup_files = [
-            n for n in zf.namelist() if n.endswith("/markup.bcf")
-        ]
+        markup_files = [n for n in zf.namelist() if n.endswith("/markup.bcf")]
 
         titles = []
         for mf in markup_files:
@@ -185,9 +181,7 @@ class TestGenerateBcfZip:
         bcf_bytes = generate_bcf_zip(mock_result)
         zf = zipfile.ZipFile(BytesIO(bcf_bytes))
 
-        markup_files = [
-            n for n in zf.namelist() if n.endswith("/markup.bcf")
-        ]
+        markup_files = [n for n in zf.namelist() if n.endswith("/markup.bcf")]
 
         for mf in markup_files:
             root = ElementTree.fromstring(zf.read(mf))
@@ -224,9 +218,7 @@ class TestGenerateBcfZip:
         bcf_bytes = generate_bcf_zip(result)
         zf = zipfile.ZipFile(BytesIO(bcf_bytes))
 
-        markup_files = [
-            n for n in zf.namelist() if n.endswith("/markup.bcf")
-        ]
+        markup_files = [n for n in zf.namelist() if n.endswith("/markup.bcf")]
         assert len(markup_files) == 1
 
         root = ElementTree.fromstring(zf.read(markup_files[0]))
@@ -239,9 +231,7 @@ class TestGenerateBcfZip:
         bcf_bytes = generate_bcf_zip(mock_result)
         zf = zipfile.ZipFile(BytesIO(bcf_bytes))
 
-        markup_files = [
-            n for n in zf.namelist() if n.endswith("/markup.bcf")
-        ]
+        markup_files = [n for n in zf.namelist() if n.endswith("/markup.bcf")]
 
         for mf in markup_files:
             root = ElementTree.fromstring(zf.read(mf))
@@ -255,18 +245,15 @@ class TestGenerateBcfZip:
         bcf_bytes = generate_bcf_zip(mock_result)
         zf = zipfile.ZipFile(BytesIO(bcf_bytes))
 
-        markup_files = [
-            n for n in zf.namelist() if n.endswith("/markup.bcf")
-        ]
+        markup_files = [n for n in zf.namelist() if n.endswith("/markup.bcf")]
 
         for mf in markup_files:
             root = ElementTree.fromstring(zf.read(mf))
-            comments = [
-                e for e in root.iter() if e.tag.endswith("}Comment") or e.tag == "Comment"
-            ]
+            [e for e in root.iter() if e.tag.endswith("}Comment") or e.tag == "Comment"]
             # Filter: the <Comment> element inside the comment block (not the wrapper)
             comment_texts = [
-                e for e in root.iter()
+                e
+                for e in root.iter()
                 if (e.tag.endswith("}Comment") or e.tag == "Comment") and e.text
             ]
             assert len(comment_texts) >= 1
@@ -300,9 +287,7 @@ class TestGenerateBcfZip:
         bcf_bytes = generate_bcf_zip(result)
         zf = zipfile.ZipFile(BytesIO(bcf_bytes))
 
-        markup_files = [
-            n for n in zf.namelist() if n.endswith("/markup.bcf")
-        ]
+        markup_files = [n for n in zf.namelist() if n.endswith("/markup.bcf")]
         assert len(markup_files) == 0
         assert "bcf.version" in zf.namelist()
         assert "extensions.xml" in zf.namelist()
@@ -324,9 +309,7 @@ class TestGenerateBcfZip:
         bcf_bytes = generate_bcf_zip(mock_result, author="3BM Bouwkunde")
         zf = zipfile.ZipFile(BytesIO(bcf_bytes))
 
-        markup_files = [
-            n for n in zf.namelist() if n.endswith("/markup.bcf")
-        ]
+        markup_files = [n for n in zf.namelist() if n.endswith("/markup.bcf")]
 
         for mf in markup_files:
             content = zf.read(mf).decode("utf-8")
@@ -337,9 +320,7 @@ class TestGenerateBcfZip:
         bcf_bytes = generate_bcf_zip(mock_result)
         zf = zipfile.ZipFile(BytesIO(bcf_bytes))
 
-        markup_files = [
-            n for n in zf.namelist() if n.endswith("/markup.bcf")
-        ]
+        markup_files = [n for n in zf.namelist() if n.endswith("/markup.bcf")]
 
         for mf in markup_files:
             root = ElementTree.fromstring(zf.read(mf))
@@ -352,9 +333,7 @@ class TestGenerateBcfZip:
         bcf_bytes = generate_bcf_zip(mock_result)
         zf = zipfile.ZipFile(BytesIO(bcf_bytes))
 
-        markup_files = [
-            n for n in zf.namelist() if n.endswith("/markup.bcf")
-        ]
+        markup_files = [n for n in zf.namelist() if n.endswith("/markup.bcf")]
 
         for mf in markup_files:
             content = zf.read(mf).decode("utf-8")
@@ -365,9 +344,7 @@ class TestGenerateBcfZip:
         bcf_bytes = generate_bcf_zip(mock_result)
         zf = zipfile.ZipFile(BytesIO(bcf_bytes))
 
-        markup_files = [
-            n for n in zf.namelist() if n.endswith("/markup.bcf")
-        ]
+        markup_files = [n for n in zf.namelist() if n.endswith("/markup.bcf")]
         guids = [mf.split("/")[0] for mf in markup_files]
         assert len(guids) == len(set(guids))
 
@@ -400,9 +377,7 @@ class TestGenerateBcfZip:
         bcf_bytes = generate_bcf_zip(result)
         zf = zipfile.ZipFile(BytesIO(bcf_bytes))
 
-        markup_files = [
-            n for n in zf.namelist() if n.endswith("/markup.bcf")
-        ]
+        markup_files = [n for n in zf.namelist() if n.endswith("/markup.bcf")]
         assert len(markup_files) == 1
 
         # Priority should be Minor (info severity)

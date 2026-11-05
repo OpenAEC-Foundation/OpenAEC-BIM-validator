@@ -133,7 +133,7 @@ Additionally support local BCF ZIP download as fallback.
 ### Context
 BCF integratie moet herbruikbaar zijn buiten de web-app:
 - Tauri desktop app
-- Solibri plugin (BCF upload)
+- externe BIM-tool plugin (BCF upload)
 - Revit plugin (BCF download/upload)
 - CLI tools
 
@@ -147,7 +147,7 @@ Python is niet herbruikbaar in deze contexten.
 ### Consequences
 - TypeScript client is snel te bouwen, voldoende voor web-app
 - Later vervangbaar door WASM-compiled Rust crate zonder API-wijzigingen
-- Rust crate herbruikbaar in Tauri, Solibri plugin, Revit plugin
+- Rust crate herbruikbaar in Tauri, externe BIM-tool plugin, Revit plugin
 - Geen Python BCF dependencies
 - Frontend praat direct met BCF Platform API (twee backends)
 
