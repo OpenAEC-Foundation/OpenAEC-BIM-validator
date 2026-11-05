@@ -8,7 +8,7 @@
  * - Property requests from the PropertiesPanel
  */
 
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect } from "react";
 
 import { useViewer } from "../../engine/useViewer";
 import { useStore } from "../../store";
@@ -16,8 +16,7 @@ import type { HighlightGroup } from "../../store";
 import type { CreateViewpointRequest } from "../../types/bcfPlatform";
 import type { BcfCameraState } from "../../types/bcf";
 import { getModelBytes, setCachedFile } from "../../engine/modelCache";
-import { ViewCube } from "../viewcube/ViewCube";
-import type { CubeTarget } from "../viewcube/ViewCube";
+import { ViewNavigation } from "../viewcube/ViewNavigation";
 
 export function CenterPanel() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -28,35 +27,6 @@ export function CenterPanel() {
   const isReadyRef = useRef(isReady);
   engineRef.current = engine;
   isReadyRef.current = isReady;
-
-  // ViewCube camera sync
-  const [cameraQuaternion, setCameraQuaternion] = useState<
-    [number, number, number, number] | undefined
-  >(undefined);
-
-  const handleNavigate = useCallback(
-    (target: CubeTarget) => {
-      const currentEngine = engineRef.current;
-      if (currentEngine && isReadyRef.current) {
-        currentEngine.navigateToFace(target);
-      }
-    },
-    []
-  );
-
-  // Sync camera quaternion to ViewCube via animation frame loop
-  useEffect(() => {
-    if (!isReady || !engine) return;
-
-    let rafId: number;
-    const syncQuaternion = () => {
-      const q = engine.getCameraQuaternion();
-      if (q) setCameraQuaternion(q);
-      rafId = requestAnimationFrame(syncQuaternion);
-    };
-    rafId = requestAnimationFrame(syncQuaternion);
-    return () => cancelAnimationFrame(rafId);
-  }, [isReady, engine]);
 
   // Model file loading handler
   useEffect(() => {
@@ -565,12 +535,7 @@ export function CenterPanel() {
     <div className="viewer-container">
       <div ref={containerRef} className="viewer-container__canvas" />
 
-      {isReady && (
-        <ViewCube
-          onNavigate={handleNavigate}
-          cameraQuaternion={cameraQuaternion}
-        />
-      )}
+      {isReady && engine && <ViewNavigation engine={engine} />}
 
       {error && (
         <div

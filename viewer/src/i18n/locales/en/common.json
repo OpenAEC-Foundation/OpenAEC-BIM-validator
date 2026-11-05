@@ -22,5 +22,23 @@
   "statusElements": "Elements",
   "statusIssues": "Issues",
   "statusOnline": "Online",
-  "statusOffline": "Offline"
+  "statusOffline": "Offline",
+  "viewer": {
+    "orientation": "3D orientation",
+    "front": "Front",
+    "back": "Back",
+    "left": "Left",
+    "right": "Right",
+    "top": "Top",
+    "bottom": "Bottom",
+    "home": "Isometric overview",
+    "fit": "Fit all models",
+    "toggleProjection": "Toggle perspective / orthographic",
+    "perspectiveShort": "Persp.",
+    "orthographicShort": "Ortho",
+    "standardView": "View",
+    "chooseView": "Choose view",
+    "isometric": "Isometric",
+    "navigationError": "Camera change failed. Please try again."
+  }
 }

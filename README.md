@@ -118,6 +118,8 @@ npm run build
 
 Integration tests use a temporary database. Release numbers follow **ISO year.week.sequence**, for example `2026.45.0`. Run `python scripts/version.py --next` or `--set 2026.45.1` to update all manifests and displayed versions. A matching `vYYYY.W.N` tag starts the release workflow; tests must pass before publication.
 
+The 3D navigation overlay provides a compact orientation cube with clickable faces, bevels and corners, a standard-view selector, fit-all and isometric overview controls, and a perspective/orthographic toggle. Orientation changes preserve the current focus and zoom; projection changes preserve the visible scale. Fit-all handles portrait viewports and large models without the default distance limit. Cube targets also support Enter and Space.
+
 The viewer uses [OpenAEC Blueprint](https://github.com/OpenAEC-Foundation/OpenAEC-Blueprint) UI 0.4: shared React controls, native dialogs, tabs, status bar, B2 icons and local fonts. **Settings → Appearance** provides light, dark, Blueprint and two high-contrast themes. The exact source revision and compatibility changes are documented in [the Blueprint integration](docs/blueprint-ui.md).
 
 ## Open BCF files
