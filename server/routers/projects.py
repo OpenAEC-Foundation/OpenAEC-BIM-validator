@@ -171,6 +171,7 @@ async def create_project(
             name=name,
             description=description,
             tenant=tenant_slug,
+            files=[],
         )
         session.add(project)
         await session.flush()
@@ -300,7 +301,7 @@ async def upload_file(
         target_dir = _project_dir(project_id, file_type)
         target_dir.mkdir(parents=True, exist_ok=True)
 
-        safe_name = f"{uuid.uuid4().hex[:8]}_{file.filename.replace(' ', '_')}"
+        safe_name = f"{uuid.uuid4().hex}{ext}"
         disk_path = target_dir / safe_name
 
         with open(disk_path, "wb") as f:
