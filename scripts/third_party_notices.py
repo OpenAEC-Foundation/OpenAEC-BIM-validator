@@ -1,8 +1,8 @@
 """Report installed distributions and their bundled license notices."""
 
 import sys
-from pathlib import Path
 from importlib.metadata import distributions
+from pathlib import Path
 
 
 def main():

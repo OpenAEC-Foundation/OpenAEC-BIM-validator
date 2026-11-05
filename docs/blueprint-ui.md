@@ -3,7 +3,7 @@
 The viewer uses OpenAEC Blueprint UI 0.4.0 from revision `5e4b0f3419147d6fe72ecbf48f352bba89662d71`. The source snapshot is committed under `viewer/vendor`; the npm dependency resolves to that local package. No remote stylesheet, font or icon request is required.
 
 - `openaec-web` supplies the canonical tokens, components and fonts, unchanged from upstream.
-- `openaec-ui-react` supplies buttons, selects, tabs, native dialogs, notifications, icons and the status bar. Three source files contain defensive indexed-access checks for the application's strict TypeScript settings. Original and patched hashes are recorded separately.
+- `openaec-ui-react` supplies buttons, selects, tabs, native dialogs, notifications, icons and the status bar. Three source files contain defensive indexed-access checks for the application's strict TypeScript settings. Original and patched hashes are recorded separately. Text hashes normalize CRLF to LF so Windows and Linux checkouts produce the same result; font hashes use the original bytes.
 - `public/openaec/bim.svg` combines the upstream standard and validator sprites, retaining the first symbol for each ID. Both original sprites are included.
 - Application styles contain BIM-specific layout. They use `--oa-*` directly; the old theme definitions and font stylesheet have been removed.
 - `data-oa-theme` selects light, dark, blueprint, high-contrast-dark or high-contrast-light. Persisted forge/openaec values migrate to dark and contrast migrates to high-contrast-dark.

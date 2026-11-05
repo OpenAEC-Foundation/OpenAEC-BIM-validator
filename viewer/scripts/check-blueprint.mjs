@@ -5,7 +5,9 @@ import { resolve } from "node:path";
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const manifest = JSON.parse(readFileSync(resolve(root, "viewer/vendor/blueprint-source.json"), "utf8"));
 for (const [name, expected] of Object.entries({ ...manifest.files, ...manifest.generatedFiles })) {
-  const actual = createHash("sha256").update(readFileSync(resolve(root, name))).digest("hex");
+  const bytes = readFileSync(resolve(root, name));
+  const canonical = /\.(ttf|woff2)$/.test(name) ? bytes : Buffer.from(bytes.toString("utf8").replace(/\r\n/g, "\n"));
+  const actual = createHash("sha256").update(canonical).digest("hex");
   if (actual !== expected) throw new Error(`Blueprint source changed without provenance update: ${name}`);
 }
 const tokens = readFileSync(resolve(root, "viewer/vendor/openaec-web/openaec-tokens.css"), "utf8");
