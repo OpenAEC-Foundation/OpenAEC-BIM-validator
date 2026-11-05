@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 /**
  * ResultsSummary Component
  *
@@ -86,7 +87,7 @@ export function ResultsSummary({ result, onDownloadJson, onDownloadBcf }: Result
         </div>
         <div className="summary-actions">
           {onDownloadBcf && (
-            <button
+            <OaButton
               type="button"
               className="download-btn"
               onClick={onDownloadBcf}
@@ -94,10 +95,10 @@ export function ResultsSummary({ result, onDownloadJson, onDownloadBcf }: Result
             >
               <span className="download-icon" aria-hidden="true">⬇</span>
               <span className="download-text">BCF</span>
-            </button>
+            </OaButton>
           )}
           {onDownloadJson && (
-            <button
+            <OaButton
               type="button"
               className="download-btn"
               onClick={onDownloadJson}
@@ -105,7 +106,7 @@ export function ResultsSummary({ result, onDownloadJson, onDownloadBcf }: Result
             >
               <span className="download-icon" aria-hidden="true">⬇</span>
               <span className="download-text">JSON</span>
-            </button>
+            </OaButton>
           )}
         </div>
       </div>
@@ -149,21 +150,21 @@ export function ResultsSummary({ result, onDownloadJson, onDownloadBcf }: Result
       {/* Styles */}
       <style>{`
         .results-summary {
-          background-color: var(--color-surface);
-          border-radius: var(--radius-lg);
-          border: 1px solid var(--color-border);
-          padding: var(--spacing-lg);
-          box-shadow: var(--shadow-sm);
+          background-color: var(--oa-panel);
+          border-radius: var(--oa-radius-large);
+          border: 1px solid var(--oa-border);
+          padding: var(--oa-space-xl);
+          box-shadow: var(--oa-shadow-panel);
         }
 
         .results-summary--success {
-          border-color: var(--color-success);
-          border-left: 4px solid var(--color-success);
+          border-color: var(--oa-success);
+          border-left: 4px solid var(--oa-success);
         }
 
         .results-summary--failure {
-          border-color: var(--color-error);
-          border-left: 4px solid var(--color-error);
+          border-color: var(--oa-error);
+          border-left: 4px solid var(--oa-error);
         }
 
         /* Header */
@@ -171,78 +172,78 @@ export function ResultsSummary({ result, onDownloadJson, onDownloadBcf }: Result
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: var(--spacing-lg);
+          margin-bottom: var(--oa-space-xl);
           flex-wrap: wrap;
-          gap: var(--spacing-md);
+          gap: var(--oa-space-lg);
         }
 
         .summary-title {
           display: flex;
           align-items: center;
-          gap: var(--spacing-sm);
+          gap: var(--oa-space-sm);
         }
 
         .summary-icon {
-          font-size: var(--font-size-2xl);
+          font-size: var(--oa-size-page-heading);
           line-height: 1;
         }
 
         .summary-heading {
           margin: 0;
-          font-size: var(--font-size-xl);
+          font-size: var(--oa-size-dialog-heading);
           font-weight: 600;
-          color: var(--color-text);
+          color: var(--oa-text);
         }
 
         .results-summary--success .summary-heading {
-          color: var(--color-success);
+          color: var(--oa-success);
         }
 
         .results-summary--failure .summary-heading {
-          color: var(--color-error);
+          color: var(--oa-error);
         }
 
         .summary-actions {
           display: flex;
-          gap: var(--spacing-sm);
+          gap: var(--oa-space-sm);
         }
 
         /* Download button */
         .download-btn {
           display: flex;
           align-items: center;
-          gap: var(--spacing-xs);
-          padding: var(--spacing-sm) var(--spacing-md);
-          border: 1px solid var(--color-border);
-          border-radius: var(--radius-md);
-          background-color: var(--color-background);
-          color: var(--color-text);
-          font-size: var(--font-size-sm);
+          gap: var(--oa-space-xs);
+          padding: var(--oa-space-sm) var(--oa-space-lg);
+          border: 1px solid var(--oa-border);
+          border-radius: var(--oa-radius-medium);
+          background-color: var(--oa-panel);
+          color: var(--oa-text);
+          font-size: var(--oa-size-body);
           font-weight: 500;
           cursor: pointer;
           transition: all var(--transition-fast);
         }
 
         .download-btn:hover {
-          border-color: var(--color-primary);
-          background-color: var(--color-hover);
-          color: var(--color-primary);
+          border-color: var(--oa-accent);
+          background-color: var(--oa-hover);
+          color: var(--oa-accent);
         }
 
         .download-btn:focus-visible {
-          outline: 2px solid var(--color-primary);
+          outline: 2px solid var(--oa-accent);
           outline-offset: 2px;
         }
 
         .download-icon {
-          font-size: var(--font-size-base);
+          font-size: var(--oa-size-body);
         }
 
         /* Statistics cards */
         .summary-stats {
           display: flex;
-          gap: var(--spacing-md);
-          margin-bottom: var(--spacing-lg);
+          gap: var(--oa-space-lg);
+          margin-bottom: var(--oa-space-xl);
         }
 
         .stat-card {
@@ -251,77 +252,77 @@ export function ResultsSummary({ result, onDownloadJson, onDownloadBcf }: Result
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          padding: var(--spacing-md) var(--spacing-sm);
-          border-radius: var(--radius-md);
-          background-color: var(--color-background);
-          border: 1px solid var(--color-border);
+          padding: var(--oa-space-lg) var(--oa-space-sm);
+          border-radius: var(--oa-radius-medium);
+          background-color: var(--oa-panel);
+          border: 1px solid var(--oa-border);
           min-width: 80px;
         }
 
         .stat-value {
-          font-size: var(--font-size-2xl);
+          font-size: var(--oa-size-page-heading);
           font-weight: 700;
           line-height: 1.2;
           font-variant-numeric: tabular-nums;
         }
 
         .stat-label {
-          font-size: var(--font-size-sm);
-          color: var(--color-text-secondary);
+          font-size: var(--oa-size-body);
+          color: var(--oa-text-secondary);
           text-transform: uppercase;
           letter-spacing: 0.05em;
         }
 
         .stat-card--total {
-          border-color: var(--color-border);
+          border-color: var(--oa-border);
         }
 
         .stat-card--total .stat-value {
-          color: var(--color-text);
+          color: var(--oa-text);
         }
 
         .stat-card--passed {
-          border-color: var(--color-success);
+          border-color: var(--oa-success);
           background-color: rgba(68, 182, 168, 0.1);
         }
 
         .stat-card--passed .stat-value {
-          color: var(--color-success);
+          color: var(--oa-success);
         }
 
         .stat-card--failed {
-          border-color: var(--color-error);
+          border-color: var(--oa-error);
           background-color: rgba(219, 76, 64, 0.1);
         }
 
         .stat-card--failed .stat-value {
-          color: var(--color-error);
+          color: var(--oa-error);
         }
 
         /* Details section */
         .summary-details {
           display: flex;
           flex-direction: column;
-          gap: var(--spacing-sm);
-          padding-top: var(--spacing-md);
-          border-top: 1px solid var(--color-border);
+          gap: var(--oa-space-sm);
+          padding-top: var(--oa-space-lg);
+          border-top: 1px solid var(--oa-border);
         }
 
         .detail-row {
           display: flex;
           align-items: center;
-          gap: var(--spacing-sm);
-          font-size: var(--font-size-sm);
+          gap: var(--oa-space-sm);
+          font-size: var(--oa-size-body);
         }
 
         .detail-label {
-          color: var(--color-text-secondary);
+          color: var(--oa-text-secondary);
           min-width: 140px;
           flex-shrink: 0;
         }
 
         .detail-value {
-          color: var(--color-text);
+          color: var(--oa-text);
           font-weight: 500;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -350,11 +351,11 @@ export function ResultsSummary({ result, onDownloadJson, onDownloadBcf }: Result
           .stat-card {
             flex-direction: row;
             justify-content: space-between;
-            padding: var(--spacing-md);
+            padding: var(--oa-space-lg);
           }
 
           .stat-value {
-            font-size: var(--font-size-xl);
+            font-size: var(--oa-size-dialog-heading);
           }
 
           .stat-label {
@@ -364,7 +365,7 @@ export function ResultsSummary({ result, onDownloadJson, onDownloadBcf }: Result
           .detail-row {
             flex-direction: column;
             align-items: flex-start;
-            gap: var(--spacing-xs);
+            gap: var(--oa-space-xs);
           }
 
           .detail-label {
@@ -379,11 +380,11 @@ export function ResultsSummary({ result, onDownloadJson, onDownloadBcf }: Result
 
         @media (max-width: 400px) {
           .results-summary {
-            padding: var(--spacing-md);
+            padding: var(--oa-space-lg);
           }
 
           .summary-heading {
-            font-size: var(--font-size-lg);
+            font-size: var(--oa-size-panel-heading);
           }
         }
       `}</style>

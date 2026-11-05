@@ -33,7 +33,7 @@
 
 .vc-dir {
   position: absolute;
-  font-family: var(--font-family-body);
+  font-family: var(--oa-font-body);
   font-size: 10px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.5);
@@ -104,14 +104,14 @@
 .vc-face:hover {
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--theme-accent) 60%, transparent) 0%,
-    color-mix(in srgb, var(--theme-accent) 40%, transparent) 100%
+    color-mix(in srgb, var(--oa-accent) 60%, transparent) 0%,
+    color-mix(in srgb, var(--oa-accent) 40%, transparent) 100%
   );
-  border-color: color-mix(in srgb, var(--theme-accent) 80%, transparent);
+  border-color: color-mix(in srgb, var(--oa-accent) 80%, transparent);
 }
 
 .vc-label {
-  font-family: var(--font-family-body);
+  font-family: var(--oa-font-body);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -121,7 +121,7 @@
 }
 
 .vc-face:hover .vc-label {
-  color: var(--theme-btn-primary-text);
+  color: var(--oa-text-on-accent);
 }
 
 /* Face transforms — half of 80px = 40px */
@@ -142,7 +142,7 @@
 }
 
 .vc-edge:hover {
-  background: color-mix(in srgb, var(--theme-accent) 50%, transparent);
+  background: color-mix(in srgb, var(--oa-accent) 50%, transparent);
 }
 
 /* ── Corner hit zones ── */
@@ -155,5 +155,5 @@
 }
 
 .vc-corner:hover {
-  background: color-mix(in srgb, var(--domain-warning) 60%, transparent);
+  background: color-mix(in srgb, var(--oa-warning) 60%, transparent);
 }

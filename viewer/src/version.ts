@@ -1,2 +1,2 @@
 /** Product version, synchronized by scripts/version.py. */
-export const APP_VERSION = "2026.45.4";
+export const APP_VERSION = "2026.45.5";

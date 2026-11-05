@@ -25,6 +25,7 @@ export interface BcfCameraState {
   up: Point3D;
   /** Field of view in degrees (perspective only) */
   fieldOfView?: number;
+  viewToWorldScale?: number;
   /** Aspect ratio (width/height) */
   aspectRatio?: number;
   /** Camera type */

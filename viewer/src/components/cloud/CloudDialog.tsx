@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 /**
  * CloudDialog — modal for saving/opening BCF files to/from Nextcloud.
  *
@@ -149,28 +150,28 @@ export default function CloudDialog({
     <div className="cloud-dialog__footer">
       {cloudError && <span className="cloud-dialog__error">{cloudError}</span>}
       <div className="cloud-dialog__actions">
-        <button
+        <OaButton
           className="cloud-dialog__btn cloud-dialog__btn--secondary"
           onClick={onClose}
         >
           {t("cancel")}
-        </button>
+        </OaButton>
         {mode === "save" ? (
-          <button
+          <OaButton kind="primary"
             className="cloud-dialog__btn cloud-dialog__btn--primary"
             onClick={handleSave}
             disabled={!cloudSelectedProject || !filename || isBusy}
           >
             {cloudPhase === "uploading" ? t("uploading") : confirmOverwrite ? t("overwriteConfirm") : t("save")}
-          </button>
+          </OaButton>
         ) : (
-          <button
+          <OaButton kind="primary"
             className="cloud-dialog__btn cloud-dialog__btn--primary"
             onClick={handleOpen}
             disabled={!cloudSelectedProject || !selectedFile || isBusy}
           >
             {cloudPhase === "downloading" ? t("downloading") : t("open")}
-          </button>
+          </OaButton>
         )}
       </div>
     </div>
@@ -194,7 +195,7 @@ export default function CloudDialog({
           <label className="cloud-dialog__label">{t("project")}</label>
           <div className="cloud-dialog__project-row">
             <select
-              className="cloud-dialog__select"
+              className="oa-field cloud-dialog__select"
               value={cloudSelectedProject ?? ""}
               onChange={handleProjectChange}
               disabled={isBusy}
@@ -206,7 +207,7 @@ export default function CloudDialog({
                 </option>
               ))}
             </select>
-            <button
+            <OaButton
               className="cloud-dialog__btn cloud-dialog__btn--icon"
               onClick={() => cloudLoadProjects()}
               disabled={isBusy}
@@ -217,7 +218,7 @@ export default function CloudDialog({
                 <polyline points="1 20 1 14 7 14" />
                 <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
               </svg>
-            </button>
+            </OaButton>
           </div>
         </div>
 
@@ -226,7 +227,7 @@ export default function CloudDialog({
           <div className="cloud-dialog__row">
             <label className="cloud-dialog__label">{t("filename")}</label>
             <input
-              className="cloud-dialog__input"
+              className="oa-field cloud-dialog__input"
               type="text"
               value={filename}
               onChange={(e) => {
@@ -273,7 +274,7 @@ export default function CloudDialog({
                       <td>{formatFileSize(file.size)}</td>
                       <td>{file.last_modified}</td>
                       <td>
-                        <button
+                        <OaButton kind="danger"
                           className="cloud-dialog__btn cloud-dialog__btn--danger cloud-dialog__btn--small"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -287,7 +288,7 @@ export default function CloudDialog({
                           }
                         >
                           {confirmDelete === file.name ? "!" : "\u00d7"}
-                        </button>
+                        </OaButton>
                       </td>
                     </tr>
                   ))}

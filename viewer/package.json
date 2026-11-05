@@ -1,7 +1,7 @@
 {
   "name": "ifc-viewer-poc",
-  "version": "2026.45.4",
-  "description": "That Open Engine IFC Viewer - Proof of Concept for Phase 0 Research",
+  "version": "2026.45.5",
+  "description": "OpenAEC BIM Validator desktop and browser viewer",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,8 @@
     "serve": "python -m http.server 8080",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "check:blueprint": "node scripts/check-blueprint.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.1",
@@ -27,7 +28,8 @@
     "react-resizable-panels": "^4.7.2",
     "three": "^0.183.2",
     "web-ifc": "^0.0.77",
-    "zustand": "^5.0.11"
+    "zustand": "^5.0.11",
+    "@openaec/ui-react": "file:vendor/openaec-ui-react"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.11.2",

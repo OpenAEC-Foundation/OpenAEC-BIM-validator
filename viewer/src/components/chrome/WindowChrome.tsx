@@ -1,3 +1,4 @@
+import { IconButton, Button as OaButton } from "@openaec/ui-react";
 /**
  * WindowChrome — slim OS-level title bar for the Tauri desktop app.
  *
@@ -71,7 +72,7 @@ export function WindowChrome() {
       <div className="window-chrome__controls">
         {OPENAEC_ENABLED && accountsUser ? (
           <div className="window-chrome__account" onClick={(e) => e.stopPropagation()}>
-            <button
+            <OaButton
               type="button"
               className="window-chrome__account-btn"
               onClick={() => setAccountMenuOpen((v) => !v)}
@@ -81,14 +82,14 @@ export function WindowChrome() {
               <span className="window-chrome__account-name">
                 {accountsUser.name || accountsUser.email}
               </span>
-            </button>
+            </OaButton>
             {accountMenuOpen && (
               <div className="window-chrome__account-menu">
                 <div className="window-chrome__account-menu-header">
                   <div className="window-chrome__account-menu-name">{accountsUser.name}</div>
                   <div className="window-chrome__account-menu-email">{accountsUser.email}</div>
                 </div>
-                <button
+                <OaButton kind="quiet"
                   type="button"
                   className="window-chrome__account-menu-item"
                   onClick={() => {
@@ -97,58 +98,23 @@ export function WindowChrome() {
                   }}
                 >
                   Uitloggen
-                </button>
+                </OaButton>
               </div>
             )}
           </div>
         ) : OPENAEC_ENABLED ? (
-          <button
+          <OaButton
             type="button"
             className="window-chrome__signin-btn"
             onClick={handleSignIn}
             disabled={accountsBusy}
           >
             {accountsBusy ? "Bezig met inloggen…" : "Inloggen met OpenAEC"}
-          </button>
+          </OaButton>
         ) : null}
-        <button
-          type="button"
-          className="window-chrome__btn"
-          title="Minimaliseren"
-          onClick={() => void win.minimize()}
-        >
-          <svg width="10" height="10" viewBox="0 0 10 10">
-            <rect x="1" y="5" width="8" height="1" fill="currentColor" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          className="window-chrome__btn"
-          title="Maximaliseren"
-          onClick={() => void win.toggleMaximize()}
-        >
-          <svg width="10" height="10" viewBox="0 0 10 10">
-            <rect
-              x="1.5"
-              y="1.5"
-              width="7"
-              height="7"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1"
-            />
-          </svg>
-        </button>
-        <button
-          type="button"
-          className="window-chrome__btn window-chrome__btn--close"
-          title="Sluiten"
-          onClick={() => void win.close()}
-        >
-          <svg width="10" height="10" viewBox="0 0 10 10">
-            <path d="M1 1 L9 9 M9 1 L1 9" stroke="currentColor" strokeWidth="1.2" />
-          </svg>
-        </button>
+        <IconButton className="window-chrome__btn" icon="window.minimize" label="Minimaliseren" onClick={() => void win.minimize()} />
+        <IconButton className="window-chrome__btn" icon="window.maximize" label="Maximaliseren" onClick={() => void win.toggleMaximize()} />
+        <IconButton className="window-chrome__btn" icon="window.close" label="Sluiten" onClick={() => void win.close()} />
       </div>
     </div>
   );

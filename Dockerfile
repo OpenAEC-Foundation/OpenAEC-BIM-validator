@@ -6,6 +6,7 @@
 FROM node:22-slim AS frontend-build
 WORKDIR /app/viewer
 COPY viewer/package.json viewer/package-lock.json ./
+COPY viewer/vendor/openaec-ui-react ./vendor/openaec-ui-react
 RUN npm ci
 COPY viewer/ ./
 COPY scripts/dependency-notices.mjs /app/scripts/dependency-notices.mjs
@@ -18,7 +19,7 @@ ENV VITE_OIDC_AUTHORITY=$VITE_OIDC_AUTHORITY
 ENV VITE_OIDC_CLIENT_ID=$VITE_OIDC_CLIENT_ID
 
 ENV NODE_OPTIONS="--max-old-space-size=3072"
-RUN npm run build
+RUN npm run check:blueprint && npm run build
 
 # --- Stage 2: Production image ---
 FROM python:3.11-slim
@@ -36,12 +37,14 @@ COPY requirements-release.txt ./requirements-release.txt
 RUN pip install --no-cache-dir -r requirements-release.txt
 
 # Install the ifc_validator package
-COPY pyproject.toml README.md LICENSE ./
+COPY pyproject.toml README.md LICENSE THIRD-PARTY-NOTICES.txt ./
 COPY src/ ./src/
 RUN pip install --no-cache-dir --no-deps -e .
 
 COPY scripts/third_party_notices.py ./scripts/third_party_notices.py
-RUN python scripts/third_party_notices.py > /app/THIRD-PARTY-NOTICES.txt
+COPY --from=frontend-build /app/viewer/vendor ./viewer/vendor
+RUN python scripts/third_party_notices.py > /tmp/THIRD-PARTY-NOTICES.txt \
+    && mv /tmp/THIRD-PARTY-NOTICES.txt /app/THIRD-PARTY-NOTICES.txt
 
 # Copy server code
 COPY server/ ./server/

@@ -1,16 +1,20 @@
+import { Banner, Button as OaButton } from "@openaec/ui-react";
 /**
  * BcfLocalExport — BCF ZIP download section.
  */
 
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useStore } from "../../store";
 
 export function BcfLocalExport() {
+  const { t } = useTranslation("bcf");
   const issues = useStore((s) => s.bcfIssues);
   const downloadZip = useStore((s) => s.bcfDownloadZip);
   const [downloading, setDownloading] = useState(false);
 
-  const queuedCount = issues.filter((i) => i.pushState === "queued" || i.pushState === "failed").length;
+  const issueCount = issues.length;
+  const error = useStore(s => s.bcfError);
 
   const handleDownload = async () => {
     setDownloading(true);
@@ -23,23 +27,24 @@ export function BcfLocalExport() {
 
   return (
     <div className="bcf-panel__section">
-      <h4 className="bcf-panel__heading">Lokale export</h4>
-      <button
+      <h4 className="bcf-panel__heading">{t("localExport")}</h4>
+      <OaButton kind="primary"
         type="button"
         className="bcf-panel__btn bcf-panel__btn--primary"
-        disabled={queuedCount === 0 || downloading}
+        disabled={issueCount === 0 || downloading}
         onClick={handleDownload}
         style={{ width: "100%" }}
       >
         {downloading ? (
           <span style={{ display: "flex", alignItems: "center", gap: "6px", justifyContent: "center" }}>
             <span className="bcf-panel__spinner" />
-            Genereren...
+            {t("downloading")}
           </span>
         ) : (
-          `Download als BCF ZIP (${queuedCount} issues)`
+          t("download", { count: issueCount })
         )}
-      </button>
+      </OaButton>
+      {error && <Banner tone="error" word={t("error")}>{error}</Banner>}
     </div>
   );
 }

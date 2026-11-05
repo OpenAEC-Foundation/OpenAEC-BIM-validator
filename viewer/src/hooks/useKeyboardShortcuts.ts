@@ -23,6 +23,8 @@ export function useKeyboardShortcuts({
 }: ShortcutHandlers): void {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Native dialogs own focus, Escape and shortcuts while open.
+      if (e.defaultPrevented || document.querySelector("dialog[open]")) return;
       // Skip if user is typing in an input/textarea
       const tag = (e.target as HTMLElement).tagName;
       const isInput = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";

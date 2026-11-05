@@ -69,7 +69,7 @@ print(resultaat.overall_pass)
 | IFC2X3 / IFC4 STEP `.ifc` | Tonen en valideren |
 | IDS XML `.ids` | Eigen en meegeleverde eisen |
 | JSON / HTML | CLI-rapporten |
-| BCF 2.1 | Bevindingen en viewpoints exporteren |
+| BCF 2.1 | Importeren, viewpoint openen, status wijzigen en opnieuw exporteren |
 | HTTP | Upload, validatiejobs, status en BCF-download |
 | MCP stdio | Lokale validatie, standaarden opvragen en rapporten schrijven |
 
@@ -108,19 +108,26 @@ python -m pytest test tests server/tests
 python scripts/version.py --check
 cd viewer
 npm ci
+npm run check:blueprint
 npm run test:run
 npm run build
 ```
 
 Integratietests gebruiken een tijdelijke database. Versies volgen **ISO-jaar.week.volgnummer**, bijvoorbeeld `2026.45.0`. `python scripts/version.py --next` of `--set 2026.45.1` werkt de manifests en getoonde versies bij. Een overeenkomstige tag `vYYYY.W.N` start de releaseworkflow. Tests moeten slagen vóór publicatie.
 
-Release- en README-opbouw volgen [OpenAEC Blueprint](https://github.com/OpenAEC-Foundation/OpenAEC-Blueprint). De viewer bevat nog een eerdere OpenAEC-thema-implementatie; migratie naar de actuele gedeelde Blueprint-componenten is nog niet afgerond.
+De viewer gebruikt [OpenAEC Blueprint](https://github.com/OpenAEC-Foundation/OpenAEC-Blueprint) UI 0.4: gedeelde React-bedieningselementen, native dialoogvensters, tabs, statusbalk, B2-iconen en lokale lettertypen. Kies bij **Instellingen → Uiterlijk** uit licht, donker, Blueprint en twee hoogcontrastthema’s. De exacte bronrevisie en lokale compatibiliteitswijzigingen zijn vastgelegd in [de Blueprint-integratie](docs/blueprint-ui.md).
+
+## BCF-bestanden openen
+
+Open het tabblad **BCF → BCF importeren** en kies een `.bcf` of `.bcfzip` (maximaal 50 MB, 100 MB uitgepakt). Klik op een issue om de camera, componentselectie en zichtbaarheid toe te passen op het geladen model. Reacties en metadata staan in het detailpaneel; pas daar de status aan en gebruik **Download als BCF ZIP** om de wijzigingen op te slaan.
+
+Een opnieuw geïmporteerde topic-ID overschrijft bestaande lokale issues niet. Export behoudt topic-ID’s, auteurs, oorspronkelijke reacties, viewpoints en afbeeldingen. Cloudbestanden openen gebruikt dezelfde import. De lokale wachtrij blijft alleen tijdens de huidige sessie beschikbaar: exporteer wijzigingen voordat je de app sluit.
 
 ## Huidige beperkingen
 
 - Grote modellen vragen veel RAM; de API leest uploads momenteel volledig in geheugen.
 - API-keys, isolatie per key, HTTP-MCP, automatisch hertoetsen en modelversievergelijking zijn nog open werk.
-- De BCF-importer is niet aangesloten op de huidige issuewachtrij in de UI.
+- BCF-bestandsimport ondersteunt versie 2.1. De UI opent het eerste viewpoint; alle oorspronkelijke topicbestanden blijven bij export behouden. Externe BCF API 3.0/OAuth2-statussynchronisatie en weergave van geïmporteerde clippingplanes blijven open in #18.
 - IDS-bewerking, hoeveelheden, meetgereedschap en classificatie-interpretatie hebben afzonderlijke issues.
 - Beoordeel signingbewijs en platformondersteuning per gepubliceerde release.
 

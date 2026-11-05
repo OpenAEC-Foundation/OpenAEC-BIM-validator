@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 /**
  * OpenDialog — modal for choosing between local and cloud open.
  *
@@ -194,19 +195,19 @@ export default function OpenDialog({
         </span>
       )}
       <div className="open-dialog__actions">
-        <button
+        <OaButton
           className="open-dialog__btn open-dialog__btn--secondary"
           onClick={() => setTarget("choose")}
         >
           {t("cancel")}
-        </button>
-        <button
+        </OaButton>
+        <OaButton kind="primary"
           className="open-dialog__btn open-dialog__btn--primary"
           onClick={handleCloudOpen}
           disabled={!canOpenCloud}
         >
           {isOpening ? t("opening") : t("open")}
-        </button>
+        </OaButton>
       </div>
     </div>
   ) : undefined;
@@ -222,7 +223,7 @@ export default function OpenDialog({
       <div className="open-dialog__body">
         {target === "choose" && (
           <div className="open-dialog__options">
-            <button
+            <OaButton
               className="open-dialog__option"
               onClick={handleLocalOpen}
             >
@@ -237,9 +238,9 @@ export default function OpenDialog({
                 <strong>{t("openLocal")}</strong>
                 <span>{t("openLocalDesc")}</span>
               </div>
-            </button>
+            </OaButton>
 
-            <button
+            <OaButton
               className="open-dialog__option"
               onClick={() => setTarget("cloud")}
               disabled={!cloudEnabled}
@@ -259,7 +260,7 @@ export default function OpenDialog({
                     : t("cloudNotConfigured")}
                 </span>
               </div>
-            </button>
+            </OaButton>
           </div>
         )}
 
@@ -271,7 +272,7 @@ export default function OpenDialog({
               </label>
               <div className="open-dialog__project-row">
                 <select
-                  className="open-dialog__select"
+                  className="oa-field open-dialog__select"
                   value={selectedCloudProject}
                   onChange={(e) => {
                     setSelectedCloudProject(e.target.value);
@@ -286,7 +287,7 @@ export default function OpenDialog({
                     </option>
                   ))}
                 </select>
-                <button
+                <OaButton
                   className="open-dialog__btn open-dialog__btn--icon"
                   onClick={() => cloudLoadProjects()}
                   disabled={isCloudBusy || isOpening}
@@ -297,7 +298,7 @@ export default function OpenDialog({
                     <polyline points="1 20 1 14 7 14" />
                     <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
                   </svg>
-                </button>
+                </OaButton>
               </div>
             </div>
 
@@ -322,7 +323,7 @@ export default function OpenDialog({
                         );
                       })
                       .map((file) => (
-                        <button
+                        <OaButton
                           key={file.name}
                           className={`open-dialog__file-item${
                             selectedCloudFile === file.name
@@ -337,7 +338,7 @@ export default function OpenDialog({
                           <span className="open-dialog__file-meta">
                             {formatFileSize(file.size)}
                           </span>
-                        </button>
+                        </OaButton>
                       ))}
                   </div>
                 )}

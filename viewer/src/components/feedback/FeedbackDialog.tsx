@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import Modal from "../chrome/Modal";
@@ -158,16 +159,16 @@ export default function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
 
   const footer = !submitted ? (
     <>
-      <button className="feedback-btn feedback-btn-secondary" onClick={onClose}>
+      <OaButton className="feedback-btn feedback-btn-secondary" onClick={onClose}>
         {tCommon("cancel")}
-      </button>
-      <button
+      </OaButton>
+      <OaButton kind="primary"
         className="feedback-btn feedback-btn-primary"
         onClick={handleSubmit}
         disabled={!canSubmit}
       >
         {submitting ? t("submitting") : t("submit")}
-      </button>
+      </OaButton>
     </>
   ) : undefined;
 
@@ -178,9 +179,9 @@ export default function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
           <div className="feedback-success-emoji">{"\u{2705}"}</div>
           <h3>{t("successTitle")}</h3>
           <p>{t("successMessage")}</p>
-          <button className="feedback-btn feedback-btn-primary" onClick={handleSendAnother}>
+          <OaButton kind="primary" className="feedback-btn feedback-btn-primary" onClick={handleSendAnother}>
             {t("sendAnother")}
-          </button>
+          </OaButton>
         </div>
       ) : (
         <div className="feedback-content">
@@ -191,7 +192,7 @@ export default function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
               </label>
               <input
                 type="email"
-                className="feedback-input"
+                className="oa-field feedback-input"
                 placeholder={t("emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -201,7 +202,7 @@ export default function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
               <label className="feedback-field-label">{t("fullName")}</label>
               <input
                 type="text"
-                className="feedback-input"
+                className="oa-field feedback-input"
                 placeholder={t("fullNamePlaceholder")}
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
@@ -212,20 +213,20 @@ export default function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
           <div className="feedback-section">
             <div className="feedback-categories">
               {CATEGORIES.map((cat) => (
-                <button
+                <OaButton
                   key={cat}
                   className={`feedback-category${category === cat ? " active" : ""}`}
                   onClick={() => setCategory(cat)}
                 >
                   {t(`category${cat.charAt(0).toUpperCase() + cat.slice(1)}`)}
-                </button>
+                </OaButton>
               ))}
             </div>
           </div>
 
           <div className="feedback-section">
             <textarea
-              className="feedback-textarea"
+              className="oa-field feedback-textarea"
               placeholder={t("messagePlaceholder")}
               value={message}
               onChange={(e) => setMessage(e.target.value.slice(0, MAX_CHARS))}
@@ -238,7 +239,7 @@ export default function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
 
           <div className="feedback-section">
             <div className="feedback-images-row">
-              <button
+              <OaButton
                 className="feedback-attach-btn"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={images.length >= MAX_IMAGES}
@@ -249,7 +250,7 @@ export default function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
                   <polyline points="21 15 16 10 5 21" />
                 </svg>
                 {t("attachImages")}
-              </button>
+              </OaButton>
               <span className="feedback-image-limit">{t("imageLimit")}</span>
             </div>
             <input
@@ -265,9 +266,9 @@ export default function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
                 {previews.map((src, i) => (
                   <div key={i} className="feedback-preview">
                     <img src={src} alt="" />
-                    <button className="feedback-preview-remove" onClick={() => handleImageRemove(i)}>
+                    <OaButton className="feedback-preview-remove" onClick={() => handleImageRemove(i)}>
                       &times;
-                    </button>
+                    </OaButton>
                   </div>
                 ))}
               </div>
@@ -278,7 +279,7 @@ export default function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
             <div className="feedback-sentiment-label">{t("sentiment")}</div>
             <div className="feedback-sentiments">
               {SENTIMENTS.map((s) => (
-                <button
+                <OaButton
                   key={s.id}
                   className={`feedback-sentiment${sentiment === s.id ? " active" : ""}`}
                   onClick={() => setSentiment(sentiment === s.id ? null : s.id)}
@@ -288,7 +289,7 @@ export default function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
                   <span className="feedback-sentiment-text">
                     {t(`sentiment${s.id.charAt(0).toUpperCase() + s.id.slice(1)}`)}
                   </span>
-                </button>
+                </OaButton>
               ))}
             </div>
           </div>

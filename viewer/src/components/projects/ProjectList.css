@@ -6,16 +6,16 @@
 }
 
 .project-list__title {
+  margin: 0 0 6px;
   font-size: 20px;
   font-weight: 600;
-  color: var(--theme-text);
-  margin: 0 0 6px;
+  color: var(--oa-text);
 }
 
 .project-list__desc {
-  font-size: 13px;
-  color: var(--theme-text-muted);
   margin: 0 0 20px;
+  font-size: 13px;
+  color: var(--oa-text-muted);
 }
 
 .project-list__actions {
@@ -31,51 +31,10 @@
   align-items: center;
   gap: 6px;
   padding: 7px 14px;
-  border-radius: 4px;
-  border: 1px solid var(--theme-border);
-  background: var(--theme-bg-lighter);
-  color: var(--theme-text);
-  font-size: 13px;
-  cursor: default;
-  transition: background 0.15s;
-}
-
-.project-list__btn:hover:not(:disabled) {
-  background: var(--theme-bg-hover);
-}
-
-.project-list__btn:disabled {
-  opacity: 0.5;
-}
-
-.project-list__btn--primary {
-  background: var(--theme-accent);
-  color: var(--theme-accent-text);
-  border-color: var(--theme-accent);
-}
-
-.project-list__btn--primary:hover:not(:disabled) {
-  background: var(--theme-accent-hover);
-}
-
-.project-list__btn--secondary {
-  background: transparent;
-}
-
-.project-list__btn--danger {
-  color: var(--theme-danger-color);
-  border-color: transparent;
-  background: transparent;
-}
-
-.project-list__btn--danger:hover:not(:disabled) {
-  background: rgba(238, 85, 85, 0.1);
 }
 
 .project-list__btn--small {
   padding: 4px 8px;
-  font-size: 14px;
-  font-weight: 700;
 }
 
 .project-list__btn--icon {
@@ -84,11 +43,11 @@
 
 /* Create form */
 .project-list__create-form {
-  background: var(--theme-bg-lighter);
-  border: 1px solid var(--theme-border);
-  border-radius: 6px;
   padding: 16px;
   margin-bottom: 16px;
+  background: var(--oa-panel);
+  border: 1px solid var(--oa-border);
+  border-radius: 6px;
 }
 
 .project-list__field {
@@ -97,26 +56,16 @@
 
 .project-list__label {
   display: block;
+  margin-bottom: 4px;
   font-size: 12px;
   font-weight: 500;
-  color: var(--theme-text-muted);
-  margin-bottom: 4px;
+  color: var(--oa-text-muted);
 }
 
 .project-list__input {
   width: 100%;
   padding: 7px 10px;
-  border: 1px solid var(--theme-border);
-  border-radius: 4px;
-  background: var(--theme-bg);
-  color: var(--theme-text);
-  font-size: 13px;
   box-sizing: border-box;
-}
-
-.project-list__input:focus {
-  outline: none;
-  border-color: var(--theme-accent);
 }
 
 .project-list__form-actions {
@@ -131,19 +80,19 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
+  margin-bottom: 12px;
   background: rgba(238, 85, 85, 0.08);
   border-radius: 4px;
-  color: var(--theme-danger-color);
+  color: var(--oa-error);
   font-size: 13px;
-  margin-bottom: 12px;
 }
 
 .project-list__error-dot {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
-  background: var(--theme-danger-color);
   flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--oa-error);
 }
 
 /* Project items */
@@ -154,9 +103,9 @@
 }
 
 .project-list__notice {
-  color: var(--theme-text-muted);
-  font-size: 13px;
   padding: 16px 0;
+  color: var(--oa-text-muted);
+  font-size: 13px;
 }
 
 .project-list__item {
@@ -168,23 +117,19 @@
   transition: background 0.1s;
 }
 
-.project-list__item:hover {
-  background: var(--theme-bg-hover);
-}
-
 .project-list__item-main {
   display: flex;
   align-items: center;
   gap: 12px;
   flex: 1;
   padding: 8px;
-  cursor: default;
   min-width: 0;
+  cursor: default;
 }
 
 .project-list__item-icon {
-  color: var(--theme-accent);
   flex-shrink: 0;
+  color: var(--oa-accent);
 }
 
 .project-list__item-info {
@@ -195,15 +140,15 @@
 }
 
 .project-list__item-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--theme-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--oa-text);
 }
 
 .project-list__item-meta {
   font-size: 12px;
-  color: var(--theme-text-muted);
+  color: var(--oa-text-muted);
 }

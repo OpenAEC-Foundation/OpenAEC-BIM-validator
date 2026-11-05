@@ -7,6 +7,7 @@
  */
 
 import JSZip from "jszip";
+import { updateArchivedMarkup } from "./bcfArchive";
 import type { BcfIssue } from "../types/bcfIssue";
 
 // ── XML helpers ────────────────────────────────────────────
@@ -73,11 +74,11 @@ function markupXml(
 ): string {
   const t = issue.mapping.topic;
   const c = issue.mapping.comment;
-  const now = new Date().toISOString();
+  const now = issue.createdAt;
   const hasSnapshot = !!issue.screenshot;
 
   const labelsXml = (t.labels ?? [])
-    .map((l) => `      <Label>${esc(l)}</Label>`)
+    .map((l) => `    <Labels>${esc(l)}</Labels>`)
     .join("\n");
 
   return [
@@ -86,15 +87,15 @@ function markupXml(
     `  xsi:noNamespaceSchemaLocation="markup.xsd">`,
     `  <Topic Guid="${topicGuid}" TopicType="${esc(t.topic_type ?? "IDS Validation")}" TopicStatus="${esc(t.topic_status ?? "Open")}">`,
     `    <Title>${esc(t.title)}</Title>`,
-    `    <Description>${esc(t.description)}</Description>`,
     `    <Priority>${esc(t.priority ?? "Normal")}</Priority>`,
-    `    <CreationDate>${now}</CreationDate>`,
-    `    <CreationAuthor>OpenAEC BIM Validator</CreationAuthor>`,
-    labelsXml ? `    <Labels>\n${labelsXml}\n    </Labels>` : "",
     t.index != null ? `    <Index>${t.index}</Index>` : "",
-    t.assigned_to ? `    <AssignedTo>${esc(t.assigned_to)}</AssignedTo>` : "",
+    labelsXml,
+    `    <CreationDate>${esc(now)}</CreationDate>`,
+    `    <CreationAuthor>OpenAEC BIM Validator</CreationAuthor>`,
     t.due_date ? `    <DueDate>${esc(t.due_date)}</DueDate>` : "",
+    t.assigned_to ? `    <AssignedTo>${esc(t.assigned_to)}</AssignedTo>` : "",
     t.stage ? `    <Stage>${esc(t.stage)}</Stage>` : "",
+    `    <Description>${esc(t.description)}</Description>`,
     `  </Topic>`,
     `  <Comment Guid="${commentGuid}">`,
     `    <Date>${now}</Date>`,
@@ -102,11 +103,9 @@ function markupXml(
     `    <Comment>${esc(c.comment)}</Comment>`,
     `    <Viewpoint Guid="${viewpointGuid}" />`,
     `  </Comment>`,
-    `  <Viewpoints>`,
-    `    <ViewPoint Guid="${viewpointGuid}">`,
+    `  <Viewpoints Guid="${viewpointGuid}">`,
     `      <Viewpoint>viewpoint.bcfv</Viewpoint>`,
     hasSnapshot ? `      <Snapshot>snapshot.png</Snapshot>` : "",
-    `    </ViewPoint>`,
     `  </Viewpoints>`,
     `</Markup>`,
   ]
@@ -155,16 +154,26 @@ function viewpointXml(viewpointGuid: string, issue: BcfIssue): string {
     `  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"`,
     `  xsi:noNamespaceSchemaLocation="visinfo.xsd">`,
     `  <Components>`,
-    `    <Visibility DefaultVisibility="true">`,
-    `      <Exceptions />`,
-    `    </Visibility>`,
     selectionXml,
+    `    <Visibility DefaultVisibility="${comps?.visibility?.default_visibility ?? true}">`,
+    ...(comps?.visibility?.exceptions?.length ? ["<Exceptions>", ...comps.visibility.exceptions.map(c => `<Component IfcGuid="${esc(c.ifc_guid)}" />`), "</Exceptions>"] : []),
+    `    </Visibility>`,
     coloringXml,
     `  </Components>`,
+    cameraXml(issue),
     `</VisualizationInfo>`,
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+function cameraXml(issue: BcfIssue): string {
+  const camera = issue.mapping.viewpoint.camera;
+  if (!camera) return "";
+  const tag = camera.camera_type === "orthogonal" ? "OrthogonalCamera" : "PerspectiveCamera";
+  const vector = (name: string, value: { x: number; y: number; z: number }) => `<${name}><X>${value.x}</X><Y>${value.y}</Y><Z>${value.z}</Z></${name}>`;
+  return [`<${tag}>`, vector("CameraViewPoint", camera.position), vector("CameraDirection", camera.direction), vector("CameraUpVector", camera.up),
+    camera.camera_type === "orthogonal" ? `<ViewToWorldScale>${camera.view_to_world_scale ?? 1}</ViewToWorldScale>` : `<FieldOfView>${camera.field_of_view ?? 60}</FieldOfView>`, `</${tag}>`].join("\n");
 }
 
 // ── Snapshot helpers ───────────────────────────────────────
@@ -195,12 +204,20 @@ export async function generateBcfZip(issues: BcfIssue[]): Promise<Blob> {
 
   // One folder per issue/topic
   for (const issue of issues) {
-    const topicGuid = uuid();
+    const topicGuid = issue.id;
     const viewpointGuid = uuid();
     const commentGuid = uuid();
 
     const folder = zip.folder(topicGuid);
     if (!folder) continue;
+
+    if (issue.archive) {
+      for (const [name, data] of Object.entries(issue.archive.files)) folder.file(name, data, { base64: true });
+      const markup = folder.file("markup.bcf");
+      if (!markup) throw new Error("Missing archived BCF markup.");
+      folder.file("markup.bcf", updateArchivedMarkup(await markup.async("text"), issue));
+      continue;
+    }
 
     folder.file(
       "markup.bcf",

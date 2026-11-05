@@ -13,6 +13,7 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import { useViewer } from "../../engine/useViewer";
 import { useStore } from "../../store";
 import type { HighlightGroup } from "../../store";
+import type { CreateViewpointRequest } from "../../types/bcfPlatform";
 import type { BcfCameraState } from "../../types/bcf";
 import { getModelBytes, setCachedFile } from "../../engine/modelCache";
 import { ViewCube } from "../viewcube/ViewCube";
@@ -238,8 +239,7 @@ export function CenterPanel() {
       if (currentEngine && isReadyRef.current) {
         // Clear store selection first so the subscribe bridge doesn't re-trigger isolation
         useStore.getState().selectElement(null);
-        await currentEngine.clearIsolation();
-        await currentEngine.clearHighlights();
+        await currentEngine.applyBcfComponents();
         currentEngine.fitToAllModels();
       }
     };
@@ -314,6 +314,22 @@ export function CenterPanel() {
     return () => {
       window.removeEventListener("capture-viewpoint", handleCaptureViewpoint);
     };
+  }, []);
+
+  useEffect(() => {
+    const showViewpoint = async (event: Event) => {
+      const currentEngine = engineRef.current;
+      if (!currentEngine || !isReadyRef.current) return;
+      const { camera, components } = (event as CustomEvent<CreateViewpointRequest>).detail;
+      try {
+        await currentEngine.applyBcfComponents(components);
+        const ids = components?.selection?.map(ref => ref.ifc_guid) ?? [];
+        if (camera) await currentEngine.restoreCameraState({ type: camera.camera_type, position: camera.position, direction: camera.direction, up: camera.up, fieldOfView: camera.field_of_view, viewToWorldScale: camera.view_to_world_scale });
+        else if (ids[0]) await currentEngine.zoomToElement(ids[0]);
+      } catch (error) { console.error("BCF viewpoint could not be displayed", error); }
+    };
+    window.addEventListener("bcf-show-viewpoint", showViewpoint);
+    return () => window.removeEventListener("bcf-show-viewpoint", showViewpoint);
   }, []);
 
   // Restore-camera event handler: BCF panel requests camera state restore

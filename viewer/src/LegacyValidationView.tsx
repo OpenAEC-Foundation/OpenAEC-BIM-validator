@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 /**
  * LegacyValidationView — the original validation-only UI.
  *
@@ -276,7 +277,7 @@ export function LegacyValidationView() {
           />
 
           <div className="submit-section">
-            <button
+            <OaButton kind="primary"
               type="button"
               className="submit-btn"
               onClick={handleSubmit}
@@ -296,17 +297,17 @@ export function LegacyValidationView() {
                   Validate
                 </>
               )}
-            </button>
+            </OaButton>
 
             {(phase === "completed" || validationResult) && (
-              <button
+              <OaButton
                 type="button"
                 className="reset-btn"
                 onClick={handleReset}
                 aria-label="Start new validation"
               >
                 New Validation
-              </button>
+              </OaButton>
             )}
           </div>
         </section>

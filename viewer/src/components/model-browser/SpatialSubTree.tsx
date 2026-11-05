@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 /**
  * SpatialSubTree — inline spatial hierarchy for a single model.
  *
@@ -65,14 +66,14 @@ function ElementItem({
       style={{ paddingLeft: `${depth * 16 + 4}px` }}
     >
       <span className="spatial-node__toggle" style={{ visibility: "hidden" }} />
-      <button
+      <OaButton
         type="button"
         className="spatial-node__label"
         onClick={handleClick}
         title={`${globalId}: ${name}`}
       >
         <span className="spatial-node__name">{name}</span>
-      </button>
+      </OaButton>
     </div>
   );
 }
@@ -93,14 +94,14 @@ function ElementTypeGroupNode({ group, depth }: ElementTypeGroupProps) {
         className="spatial-node__row spatial-node__row--type-group"
         style={{ paddingLeft: `${depth * 16 + 4}px` }}
       >
-        <button
+        <OaButton kind="quiet"
           type="button"
           className="spatial-node__toggle"
           onClick={() => setExpanded((p) => !p)}
           aria-label={expanded ? "Inklappen" : "Uitklappen"}
         >
           {expanded ? "\u25BE" : "\u25B8"}
-        </button>
+        </OaButton>
         <span className="spatial-node__label spatial-node__label--type-group">
           <span className="spatial-node__type-name">{group.displayName}</span>
           <span className="spatial-node__count">({group.count})</span>
@@ -122,13 +123,13 @@ function ElementTypeGroupNode({ group, depth }: ElementTypeGroupProps) {
               className="spatial-node__show-all"
               style={{ paddingLeft: `${(depth + 1) * 16 + 4}px` }}
             >
-              <button
+              <OaButton
                 type="button"
                 className="spatial-node__show-all-btn"
                 onClick={() => setShowAll(true)}
               >
                 Toon alle ({group.elements.length})
-              </button>
+              </OaButton>
             </div>
           )}
         </div>
@@ -211,7 +212,7 @@ function SpatialNodeItem({ node, depth, engineModelId }: SpatialNodeProps) {
         }`}
         style={{ paddingLeft: `${depth * 16 + 4}px` }}
       >
-        <button
+        <OaButton kind="quiet"
           type="button"
           className="spatial-node__toggle"
           onClick={handleToggle}
@@ -219,9 +220,9 @@ function SpatialNodeItem({ node, depth, engineModelId }: SpatialNodeProps) {
           aria-label={expanded ? "Inklappen" : "Uitklappen"}
         >
           {expanded ? "\u25BE" : "\u25B8"}
-        </button>
+        </OaButton>
 
-        <button
+        <OaButton
           type="button"
           className="spatial-node__label"
           onClick={handleSelect}
@@ -236,7 +237,7 @@ function SpatialNodeItem({ node, depth, engineModelId }: SpatialNodeProps) {
               ({node.elementCount})
             </span>
           )}
-        </button>
+        </OaButton>
       </div>
 
       {expanded && (

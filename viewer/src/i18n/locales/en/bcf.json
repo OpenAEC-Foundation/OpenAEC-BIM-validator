@@ -1,0 +1,20 @@
+{
+  "import": "Import BCF",
+  "opening": "Opening BCF…",
+  "file": "BCF file",
+  "tooLarge": "BCF file exceeds 50 MB.",
+  "failed": "BCF import failed.",
+  "imported": "{{count}} issues added; {{skipped}} existing issues skipped.",
+  "success": "Done.",
+  "error": "Error.",
+  "localExport": "Local export",
+  "download": "Download as BCF ZIP ({{count}} issues)",
+  "downloading": "Downloading…",
+  "empty": "No BCF issues. Import a BCF file or create issues from the validation results.",
+  "clear": "Clear all",
+  "remove": "Remove issue",
+  "sourceBcf": "BCF",
+  "sourceSpec": "Specification",
+  "sourceReq": "Requirement",
+  "sourceElement": "Element"
+}

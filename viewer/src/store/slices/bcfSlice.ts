@@ -46,6 +46,7 @@ export interface BcfSlice {
   bcfIssues: BcfIssue[];
   bcfAddIssue: (issue: BcfIssue) => void;
   bcfAddIssues: (issues: BcfIssue[]) => void;
+  bcfImportIssues: (issues: BcfIssue[]) => number;
   bcfUpdateIssue: (id: string, partial: Partial<BcfIssue>) => void;
   bcfRemoveIssue: (id: string) => void;
   bcfClearIssues: () => void;
@@ -109,6 +110,16 @@ export const createBcfSlice: StateCreator<BcfSlice> = (set, get) => ({
 
   bcfAddIssues: (issues: BcfIssue[]) => {
     set((s) => ({ bcfIssues: [...s.bcfIssues, ...issues] }));
+  },
+
+  bcfImportIssues: (issues: BcfIssue[]) => {
+    const ids = new Set(get().bcfIssues.map(issue => issue.id));
+    const added = issues.filter(issue => {
+      if (ids.has(issue.id)) return false;
+      ids.add(issue.id); return true;
+    });
+    set(state => ({ bcfIssues: [...state.bcfIssues, ...added] }));
+    return added.length;
   },
 
   bcfUpdateIssue: (id: string, partial: Partial<BcfIssue>) => {
@@ -455,6 +466,7 @@ export const createBcfSlice: StateCreator<BcfSlice> = (set, get) => ({
 
   // ── Local export ───────────────────────────────────────
   bcfDownloadZip: async (issueIds?: string[]) => {
+    set({ bcfError: null });
     const { bcfIssues } = get();
     const toExport = issueIds
       ? bcfIssues.filter((i) => issueIds.includes(i.id))

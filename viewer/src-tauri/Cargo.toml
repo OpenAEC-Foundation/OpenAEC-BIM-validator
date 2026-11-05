@@ -1,6 +1,6 @@
 [package]
 name = "openaec-bim-validator"
-version = "2026.45.4"
+version = "2026.45.5"
 description = "OpenAEC BIM Validator — IFC validation desktop app"
 authors = ["OpenAEC / 3BM Bouwkunde"]
 license = "MIT"

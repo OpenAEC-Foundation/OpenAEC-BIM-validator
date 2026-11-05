@@ -1,3 +1,4 @@
+import { Select, Button as OaButton } from "@openaec/ui-react";
 /**
  * BcfIssueQueue — displays the local BCF issue queue with thumbnails
  * and expandable detail panes.
@@ -6,6 +7,7 @@
  * Expanded: metadata table, larger thumbnail, description, remove button.
  */
 
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useStore } from "../../store";
 import type { BcfIssue } from "../../types/bcfIssue";
@@ -29,9 +31,10 @@ function statusClass(state: BcfIssue["pushState"]): string {
 }
 
 function sourceLabel(issue: BcfIssue): string {
-  if (issue.source.elementGlobalId) return "Element";
-  if (issue.source.requirementDescription) return "Requirement";
-  return "Specificatie";
+  if (issue.archive) return "sourceBcf";
+  if (issue.source.elementGlobalId) return "sourceElement";
+  if (issue.source.requirementDescription) return "sourceReq";
+  return "sourceSpec";
 }
 
 /** Placeholder SVG for issues without screenshot */
@@ -60,6 +63,7 @@ function ThumbnailPlaceholder({ size }: { size: number }) {
 }
 
 function IssueDetail({ issue }: { issue: BcfIssue }) {
+  const { t } = useTranslation("bcf");
   const removeIssue = useStore((s) => s.bcfRemoveIssue);
   const topic = issue.mapping.topic;
   const selectionCount = issue.mapping.viewpoint.components?.selection?.length ?? 0;
@@ -113,6 +117,10 @@ function IssueDetail({ issue }: { issue: BcfIssue }) {
         </div>
       </div>
 
+      <Select label="Status" value={topic.topic_status ?? "Open"}
+        options={Array.from(new Set([topic.topic_status ?? "Open", "Open", "In Progress", "Closed"])).map(value => ({ value, label: value }))}
+        onChange={event => useStore.getState().bcfUpdateIssue(issue.id, { mapping: { ...issue.mapping, topic: { ...topic, topic_status: event.target.value } } })} />
+      {issue.mapping.comment.comment && <p className="bcf-issue__detail-desc">{issue.mapping.comment.comment}</p>}
       {/* Description */}
       {topic.description && (
         <div className="bcf-issue__detail-desc">
@@ -146,23 +154,24 @@ function IssueDetail({ issue }: { issue: BcfIssue }) {
 
       {/* Actions */}
       {issue.pushState === "queued" && (
-        <button
+        <OaButton kind="danger"
           type="button"
           className="bcf-panel__btn bcf-panel__btn--danger bcf-panel__btn--sm"
           onClick={(e) => {
             e.stopPropagation();
             removeIssue(issue.id);
           }}
-          style={{ alignSelf: "flex-start", marginTop: "var(--spacing-xs)" }}
+          style={{ alignSelf: "flex-start", marginTop: "var(--oa-space-xs)" }}
         >
-          Verwijder issue
-        </button>
+          {t("remove")}
+        </OaButton>
       )}
     </div>
   );
 }
 
 export function BcfIssueQueue() {
+  const { t } = useTranslation("bcf");
   const issues = useStore((s) => s.bcfIssues);
   const clearIssues = useStore((s) => s.bcfClearIssues);
 
@@ -170,14 +179,17 @@ export function BcfIssueQueue() {
 
   const toggleExpand = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
+    if (expandedId !== id) {
+      const issue = issues.find(item => item.id === id);
+      if (issue) window.dispatchEvent(new CustomEvent("bcf-show-viewpoint", { detail: issue.mapping.viewpoint }));
+    }
   };
 
   if (issues.length === 0) {
     return (
       <div className="bcf-queue bcf-queue--empty">
         <p className="bcf-queue__empty-text">
-          Geen BCF issues. Maak ze aan vanuit de validatieresultaten via de
-          <strong> +BCF</strong> knoppen of de <strong>Alle failures → BCF</strong> knop.
+          {t("empty")}
         </p>
       </div>
     );
@@ -192,13 +204,13 @@ export function BcfIssueQueue() {
           {issues.length} issue{issues.length !== 1 ? "s" : ""}
         </span>
         {queuedCount > 0 && (
-          <button
+          <OaButton kind="danger"
             type="button"
             className="bcf-panel__btn bcf-panel__btn--danger bcf-panel__btn--sm"
             onClick={clearIssues}
           >
-            Wis alles
-          </button>
+            {t("clear")}
+          </OaButton>
         )}
       </div>
       <div className="bcf-queue__list">
@@ -241,7 +253,7 @@ export function BcfIssueQueue() {
                     {issue.title}
                   </span>
                   <span className="bcf-issue__source">
-                    {sourceLabel(issue)}
+                    {t(sourceLabel(issue))}
                   </span>
                 </div>
 

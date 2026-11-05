@@ -1,6 +1,6 @@
 /* Ribbon Container */
 .ribbon-container {
-  background: var(--theme-bg);
+  background: var(--oa-frame);
   border-bottom: none;
   flex-shrink: 0;
   user-select: none;
@@ -11,86 +11,15 @@
   transform: translateZ(0);
 }
 
-/* Ribbon Tabs */
-.ribbon-tabs {
-  background: var(--theme-bg-lighter);
-  border-bottom: 1px solid var(--theme-accent);
-  display: flex;
-  padding: 0 8px;
-  gap: 2px;
-  height: 28px;
-  align-items: flex-end;
-  position: relative;
-  overflow: visible;
-}
-
-/* Animated border that slides between tabs */
-.ribbon-tab-border {
-  position: absolute;
-  border: 1px solid var(--theme-accent);
-  border-bottom: none;
-  border-radius: 4px 4px 0 0;
-  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), top 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1), height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
-  pointer-events: none;
-  z-index: 2;
-}
-
-/* Gap that covers the amber bottom line under the active tab */
-.ribbon-tab-gap {
-  position: absolute;
-  bottom: -1px;
-  height: 2px;
-  background: var(--theme-bg);
-  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.ribbon-tab {
-  padding: 6px 16px;
-  font-size: 12px;
-  background: transparent;
-  border: 1px solid transparent;
-  border-bottom: 1px solid transparent;
-  color: var(--theme-text);
-  font-weight: 500;
-  border-radius: 4px 4px 0 0;
-  cursor: default;
-  transition: background 0.15s ease, color 0.15s ease;
-  box-shadow: none;
-  margin-bottom: -1px;
-}
-
-.ribbon-tab:hover {
-  background: var(--theme-ribbon-btn-hover);
-  color: var(--theme-accent);
-}
-
-.ribbon-tab.active {
-  background: var(--theme-bg);
-  color: var(--theme-accent);
-  border-color: transparent;
-}
-
-.ribbon-tab.file-tab {
-  background: var(--theme-file-tab-bg);
-  color: var(--theme-file-tab-text);
-  font-weight: 600;
-  border-color: var(--theme-file-tab-bg);
-}
-
-.ribbon-tab.file-tab:hover {
-  background: var(--theme-file-tab-hover);
-  color: var(--theme-file-tab-text);
-  border-color: var(--theme-file-tab-hover);
-}
+.ribbon-tabs { display: flex; align-items: center; padding: 0 8px; gap: 8px; }
+.ribbon-tabs > .oa-tabs { flex: 1; }
 
 /* Ribbon Content */
 .ribbon-content-wrapper {
   position: relative;
   height: 94px;
   overflow: hidden;
-  background: var(--theme-bg);
+  background: var(--oa-frame);
 }
 
 .ribbon-content-panel {
@@ -160,7 +89,7 @@
   display: flex;
   flex-direction: column;
   padding: 0 8px;
-  border-right: 1px solid var(--theme-ribbon-group-separator);
+  border-right: 1px solid var(--oa-border);
   min-width: 50px;
   height: 100%;
 }
@@ -179,7 +108,7 @@
 
 .ribbon-group-label {
   font-size: 9px;
-  color: var(--theme-ribbon-group-label);
+  color: var(--oa-text-secondary);
   text-align: center;
   font-weight: 500;
   padding: 2px 0;
@@ -187,7 +116,7 @@
   white-space: nowrap;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  border-top: 1px solid var(--theme-border-subtle);
+  border-top: 1px solid var(--oa-border-subtle);
 }
 
 /* Button Stack */
@@ -206,34 +135,12 @@
   align-items: center;
   justify-content: flex-start;
   padding: 3px 3px 1px 3px;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 2px;
-  cursor: default;
-  transition: all 0.15s ease;
-  min-width: 44px;
+  min-width: 64px;
   gap: 1px;
   height: 66px;
-  box-shadow: none;
-  color: var(--theme-text);
-}
-
-.ribbon-btn:hover {
-  background: var(--theme-ribbon-btn-hover);
-  border-color: var(--theme-ribbon-btn-hover-border);
-}
-
-.ribbon-btn.active {
-  background: var(--theme-ribbon-btn-active-bg);
-  border-color: var(--theme-ribbon-btn-active-border);
-}
-
-.ribbon-btn:active {
-  background: var(--theme-ribbon-btn-hover);
 }
 
 .ribbon-btn:disabled {
-  opacity: 0.4;
   pointer-events: none;
 }
 
@@ -249,24 +156,25 @@
 .ribbon-btn-icon svg {
   width: 24px;
   height: 24px;
-  stroke: var(--theme-text);
+  stroke: var(--oa-text);
   shape-rendering: geometricPrecision;
 }
 
 .ribbon-btn:hover .ribbon-btn-icon svg {
-  stroke: var(--theme-accent);
+  stroke: var(--oa-accent);
 }
 
 .ribbon-btn.active .ribbon-btn-icon svg {
-  stroke: var(--theme-ribbon-icon-active);
+  stroke: var(--oa-accent-text);
 }
 
 .ribbon-btn-label {
   font-size: 10px;
-  color: var(--theme-text);
+  color: var(--oa-text);
   text-align: center;
   line-height: 1.15;
-  max-width: 58px;
+  max-width: 64px;
+  white-space: normal;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -275,11 +183,11 @@
 }
 
 .ribbon-btn:hover .ribbon-btn-label {
-  color: var(--theme-accent);
+  color: var(--oa-accent);
 }
 
 .ribbon-btn.active .ribbon-btn-label {
-  color: var(--theme-ribbon-btn-active-text);
+  color: var(--oa-accent-text);
   font-weight: 500;
 }
 
@@ -291,7 +199,6 @@
   padding: 2px 6px;
   gap: 6px;
   justify-content: flex-start;
-  border-radius: 1px;
 }
 
 .ribbon-btn.small .ribbon-btn-icon {
@@ -319,7 +226,6 @@
   padding: 2px 6px;
   gap: 6px;
   justify-content: flex-start;
-  border-radius: 1px;
 }
 
 .ribbon-btn.medium .ribbon-btn-icon {

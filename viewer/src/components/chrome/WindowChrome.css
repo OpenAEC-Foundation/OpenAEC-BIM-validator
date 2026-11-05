@@ -25,11 +25,11 @@
   display: flex;
   align-items: stretch;
   justify-content: space-between;
-  background: var(--theme-bg);
-  color: var(--theme-text);
   user-select: none;
   -webkit-user-select: none;
-  font-family: var(--font-family-body);
+  background: var(--oa-frame);
+  color: var(--oa-text);
+  font-family: var(--oa-font-body);
 }
 .window-chrome__drag {
   flex: 1 1 auto;
@@ -42,15 +42,15 @@
 .window-chrome__mark {
   width: 10px;
   height: 10px;
-  border-radius: 2px;
-  background: var(--theme-accent);
   flex: 0 0 auto;
+  border-radius: 2px;
+  background: var(--oa-accent);
 }
 .window-chrome__title {
-  font-size: 12px;
-  font-weight: 600;
   letter-spacing: 0.02em;
   white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
 }
 .window-chrome__controls {
   display: flex;
@@ -59,21 +59,9 @@
 .window-chrome__btn {
   width: 44px;
   height: 100%;
-  border: 0;
-  background: transparent;
-  color: var(--theme-text);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: background 0.12s ease;
-}
-.window-chrome__btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-.window-chrome__btn--close:hover {
-  background: var(--theme-danger-color);
-  color: var(--theme-text);
 }
 
 /* ── OpenAEC account (sign-in button / avatar + menu) ───────────────── */
@@ -81,23 +69,7 @@
   align-self: center;
   margin-right: 8px;
   padding: 4px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 4px;
-  background: transparent;
-  color: var(--theme-text);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
   white-space: nowrap;
-  transition: background 0.12s ease, border-color 0.12s ease;
-}
-.window-chrome__signin-btn:hover:not(:disabled) {
-  background: var(--theme-accent);
-  border-color: var(--theme-accent);
-}
-.window-chrome__signin-btn:disabled {
-  opacity: 0.6;
-  cursor: default;
 }
 
 .window-chrome__account {
@@ -110,81 +82,65 @@
   align-items: center;
   gap: 8px;
   padding: 3px 8px 3px 3px;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--theme-text);
-  cursor: pointer;
   max-width: 220px;
-  transition: background 0.12s ease;
-}
-.window-chrome__account-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
 }
 .window-chrome__avatar {
   flex: 0 0 auto;
   width: 22px;
   height: 22px;
-  border-radius: 50%;
-  background: var(--theme-accent);
-  color: var(--theme-btn-primary-text);
-  font-size: 10px;
-  font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border-radius: 50%;
+  background: var(--oa-accent);
+  color: var(--oa-text-on-accent);
+  font-size: 10px;
+  font-weight: 700;
 }
 .window-chrome__account-name {
-  font-size: 12px;
-  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 12px;
+  font-weight: 600;
 }
 .window-chrome__account-menu {
   position: absolute;
   top: calc(100% + 4px);
   right: 0;
   min-width: 200px;
-  background: var(--theme-bg-lighter);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   padding: 4px;
   z-index: 1000;
+  background: var(--oa-panel);
+  border: 1px solid var(--oa-border);
+  border-radius: 6px;
+  box-shadow: var(--oa-shadow-popup);
 }
 .window-chrome__account-menu-header {
   padding: 8px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   margin-bottom: 4px;
+  border-bottom: 1px solid var(--oa-border-subtle);
 }
 .window-chrome__account-menu-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 12px;
   font-weight: 600;
-  color: var(--theme-text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: var(--oa-text);
 }
 .window-chrome__account-menu-email {
-  font-size: 11px;
-  color: rgba(250, 250, 249, 0.6);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 11px;
+  color: var(--oa-text-secondary);
 }
 .window-chrome__account-menu-item {
   display: block;
   width: 100%;
   text-align: left;
   padding: 7px 10px;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--theme-text);
-  font-size: 12px;
-  cursor: pointer;
 }
-.window-chrome__account-menu-item:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
+
+.window-chrome__mark { background: var(--oa-accent); }

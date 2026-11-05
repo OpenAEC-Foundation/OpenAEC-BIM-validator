@@ -18,7 +18,9 @@
     "light": "Licht",
     "forge": "Forge (donker amber)",
     "blueprint": "Blueprint (blauw)",
-    "contrast": "Hoog contrast"
+    "contrast": "Hoog contrast",
+    "contrastDark": "Hoog contrast donker",
+    "contrastLight": "Hoog contrast licht"
   },
   "about": {
     "appName": "OpenAEC BIM Validator",

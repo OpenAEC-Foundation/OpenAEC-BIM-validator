@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 /**
  * BcfGenerateDialog — modal overlay for configuring BCF generation settings.
  *
@@ -5,6 +6,7 @@
  * in localStorage so the user's preferences carry over between sessions.
  */
 
+import Modal from "../chrome/Modal";
 import { useCallback, useEffect, useState } from "react";
 
 import type { BcfGenerationSettings } from "../../types/bcfGenerationSettings";
@@ -38,15 +40,6 @@ export function BcfGenerateDialog({
     saveBcfSettings(settings);
   }, [settings]);
 
-  /** Close on Escape */
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCancel();
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [onCancel]);
-
   const update = useCallback(
     <K extends keyof BcfGenerationSettings>(key: K, value: BcfGenerationSettings[K]) => {
       setSettings((prev) => ({ ...prev, [key]: value }));
@@ -58,27 +51,8 @@ export function BcfGenerateDialog({
     onGenerate(settings);
   }, [onGenerate, settings]);
 
-  /** Prevent overlay click from bubbling to underlying panels */
-  const handleOverlayClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (e.target === e.currentTarget) onCancel();
-    },
-    [onCancel],
-  );
-
   return (
-    <div className="bcf-dialog-overlay" onClick={handleOverlayClick}>
-      <div className="bcf-dialog" role="dialog" aria-labelledby="bcf-dialog-title">
-        {/* Header */}
-        <div className="bcf-dialog__header">
-          <h2 id="bcf-dialog-title" className="bcf-dialog__title">
-            BCF Export Settings
-          </h2>
-          <span className="bcf-dialog__issue-count">
-            {issueCount} issue{issueCount !== 1 ? "s" : ""}
-          </span>
-        </div>
-
+    <Modal open onClose={onCancel} title={`BCF Export Settings (${issueCount})`} width={560}>
         {/* Body */}
         <div className="bcf-dialog__body">
           <div className="bcf-dialog__grid">
@@ -89,7 +63,7 @@ export function BcfGenerateDialog({
               </label>
               <input
                 id="bcf-title-prefix"
-                className="bcf-dialog__input"
+                className="oa-field bcf-dialog__input"
                 type="text"
                 placeholder="bijv. REV01"
                 value={settings.titlePrefix}
@@ -128,7 +102,7 @@ export function BcfGenerateDialog({
               </label>
               <select
                 id="bcf-type"
-                className="bcf-dialog__select"
+                className="oa-field bcf-dialog__select"
                 value={settings.topicType}
                 onChange={(e) => update("topicType", e.target.value)}
               >
@@ -146,7 +120,7 @@ export function BcfGenerateDialog({
               </label>
               <select
                 id="bcf-priority"
-                className="bcf-dialog__select"
+                className="oa-field bcf-dialog__select"
                 value={settings.priority}
                 onChange={(e) =>
                   update("priority", e.target.value as BcfGenerationSettings["priority"])
@@ -166,7 +140,7 @@ export function BcfGenerateDialog({
               </label>
               <input
                 id="bcf-assigned"
-                className="bcf-dialog__input"
+                className="oa-field bcf-dialog__input"
                 type="text"
                 placeholder="naam of email"
                 value={settings.assignedTo}
@@ -180,7 +154,7 @@ export function BcfGenerateDialog({
               </label>
               <input
                 id="bcf-label"
-                className="bcf-dialog__input"
+                className="oa-field bcf-dialog__input"
                 type="text"
                 placeholder="bijv. Sprint 3"
                 value={settings.label}
@@ -194,7 +168,7 @@ export function BcfGenerateDialog({
               </label>
               <input
                 id="bcf-milestone"
-                className="bcf-dialog__input"
+                className="oa-field bcf-dialog__input"
                 type="text"
                 placeholder="bijv. DO fase"
                 value={settings.milestone}
@@ -208,7 +182,7 @@ export function BcfGenerateDialog({
               </label>
               <input
                 id="bcf-deadline"
-                className="bcf-dialog__input"
+                className="oa-field bcf-dialog__input"
                 type="date"
                 value={settings.deadline}
                 onChange={(e) => update("deadline", e.target.value)}
@@ -224,7 +198,7 @@ export function BcfGenerateDialog({
               </label>
               <input
                 id="bcf-desc-prefix"
-                className="bcf-dialog__input"
+                className="oa-field bcf-dialog__input"
                 type="text"
                 placeholder="bijv. Actie vereist voor oplevering"
                 value={settings.descriptionPrefix}
@@ -236,22 +210,21 @@ export function BcfGenerateDialog({
 
         {/* Footer */}
         <div className="bcf-dialog__footer">
-          <button
+          <OaButton
             type="button"
             className="bcf-dialog__btn bcf-dialog__btn--cancel"
             onClick={onCancel}
           >
             Cancel
-          </button>
-          <button
+          </OaButton>
+          <OaButton
             type="button"
-            className="bcf-dialog__btn bcf-dialog__btn--generate"
+            kind="primary" className="bcf-dialog__btn bcf-dialog__btn--generate"
             onClick={handleGenerate}
           >
             Generate {issueCount} issue{issueCount !== 1 ? "s" : ""}
-          </button>
+          </OaButton>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

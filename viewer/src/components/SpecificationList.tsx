@@ -26,13 +26,13 @@ export interface ResultsTreeProps {
 function severityColor(severity: string): string {
   switch (severity) {
     case "error":
-      return "var(--domain-fail)";
+      return "var(--oa-error)";
     case "warning":
-      return "var(--domain-warning)";
+      return "var(--oa-warning)";
     case "info":
-      return "var(--theme-accent)";
+      return "var(--oa-accent)";
     default:
-      return "var(--theme-text-muted)";
+      return "var(--oa-text-muted)";
   }
 }
 
@@ -190,7 +190,7 @@ function ReqRow({
       <span
         className="vt-row__dot"
         style={{
-          backgroundColor: isFail ? "var(--domain-fail)" : "var(--domain-pass)",
+          backgroundColor: isFail ? "var(--oa-error)" : "var(--oa-success)",
         }}
       />
       <span className="vt-row__label" title={req.requirement_description}>
@@ -235,7 +235,7 @@ function ElRow({
       <span
         className="vt-row__dot"
         style={{
-          backgroundColor: isFail ? "var(--domain-fail)" : "var(--domain-pass)",
+          backgroundColor: isFail ? "var(--oa-error)" : "var(--oa-success)",
         }}
       />
       <span className="vt-row__label" title={formatElementName(el)}>

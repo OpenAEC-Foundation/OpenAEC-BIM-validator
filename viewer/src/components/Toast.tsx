@@ -5,6 +5,7 @@
  * with theme-token styling. Auto-dismisses after 3 seconds.
  */
 
+import { Toast as BlueprintToast } from "@openaec/ui-react";
 import { useState, useEffect, useCallback } from "react";
 
 import "./Toast.css";
@@ -25,8 +26,6 @@ export function showToast(text: string, type: ToastMessage["type"] = "success"):
   );
 }
 
-/** Auto-dismiss duration in ms */
-const DISMISS_DELAY = 3000;
 
 export function ToastContainer() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -40,9 +39,7 @@ export function ToastContainer() {
       const detail = (e as CustomEvent<ToastMessage>).detail;
       setToasts((prev) => [...prev, detail]);
 
-      setTimeout(() => {
-        removeToast(detail.id);
-      }, DISMISS_DELAY);
+
     };
 
     window.addEventListener("toast", handleToast);
@@ -54,13 +51,7 @@ export function ToastContainer() {
   return (
     <div className="toast-container">
       {toasts.map((toast) => (
-        <div
-          key={toast.id}
-          className={`toast toast--${toast.type ?? "success"}`}
-          onClick={() => removeToast(toast.id)}
-        >
-          {toast.text}
-        </div>
+        <BlueprintToast key={toast.id} tone={toast.type ?? "success"} title={toast.text} onClose={() => removeToast(toast.id)} />
       ))}
     </div>
   );

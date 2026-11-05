@@ -13,9 +13,11 @@ import * as FRAGS from "@thatopen/fragments";
 import * as THREE from "three";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 
+import { restoreBcfCamera } from "./bcfCamera";
 import { PropertyClient } from "./PropertyClient";
 import type { IfcElementProperties } from "./PropertyExtractor";
 import type { SpatialNode, ElementTypeGroup } from "../types/project";
+import type { BcfComponents } from "../types/bcfPlatform";
 import type { BcfCameraState } from "../types/bcf";
 
 const WORKER_URL =
@@ -26,7 +28,7 @@ const WASM_PATH = "https://unpkg.com/web-ifc@0.0.77/";
 const CAMERA_FIT_PADDING = 1.5;
 
 /** Default scene background color */
-const DEFAULT_BACKGROUND = "#1a1a2e";
+const DEFAULT_BACKGROUND = "#dfe4e8";
 
 /** Default highlight opacity */
 const HIGHLIGHT_OPACITY = 0.6;
@@ -90,6 +92,7 @@ export interface LoadResult {
  * Core 3D viewer engine wrapping That Open Engine v3.
  */
 export class ViewerEngine {
+  private themeObserver: MutationObserver | null = null;
   private container: HTMLElement;
   private callbacks: ViewerEngineCallbacks;
   private options: ViewerEngineOptions;
@@ -168,7 +171,6 @@ export class ViewerEngine {
     this.container = container;
     this.callbacks = callbacks;
     this.options = {
-      backgroundColor: DEFAULT_BACKGROUND,
       gridEnabled: true,
       ...options,
     };
@@ -210,9 +212,13 @@ export class ViewerEngine {
       // Scene
       world.scene = new OBC.SimpleScene(components);
       world.scene.setup();
-      world.scene.three.background = new THREE.Color(
-        this.options.backgroundColor ?? DEFAULT_BACKGROUND
-      );
+      const updateBackground = () => {
+        const color = this.options.backgroundColor ?? (getComputedStyle(document.documentElement).getPropertyValue("--oa-workspace").trim() || DEFAULT_BACKGROUND);
+        world.scene.three.background = new THREE.Color(color);
+      };
+      updateBackground();
+      this.themeObserver = new MutationObserver(updateBackground);
+      this.themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-oa-theme", "data-oa-workspace"] });
 
       // Renderer
       world.renderer = new OBC.SimpleRenderer(components, this.container);
@@ -386,6 +392,26 @@ export class ViewerEngine {
     };
 
     await this.fragments.highlight(style, modelIdMap);
+  }
+
+  /** Apply BCF visibility exceptions and colour groups before selecting components. */
+  async applyBcfComponents(components?: BcfComponents): Promise<void> {
+    if (!this.components || !this.fragments) return;
+    await this.clearIsolation();
+    await this.clearHighlights();
+    const hider = this.components.get(OBC.Hider);
+    const visibility = components?.visibility;
+    await hider.set(visibility?.default_visibility ?? true);
+    if (visibility?.exceptions.length) {
+      const ids = await this.fragments.guidsToModelIdMap(visibility.exceptions.map(ref => ref.ifc_guid));
+      await hider.set(!visibility.default_visibility, ids);
+    }
+    for (const group of components?.coloring ?? []) {
+      const hex = group.color.replace(/^#/, "");
+      if (/^(?:[a-f0-9]{6}|[a-f0-9]{8})$/i.test(hex)) await this.highlightByGlobalIds(group.components.map(ref => ref.ifc_guid), `#${hex.slice(-6)}`);
+    }
+    const selection = components?.selection?.map(ref => ref.ifc_guid) ?? [];
+    if (selection.length) await this.highlightByGlobalIds(selection, "#D97706");
   }
 
   /**
@@ -1173,18 +1199,7 @@ export class ViewerEngine {
     if (!this.world) return;
 
     const cam = this.world.camera as OBC.OrthoPerspectiveCamera;
-    const { position: p, direction: d } = state;
-
-    // Compute a target point at a reasonable distance along the direction
-    const dist = 10; // arbitrary look-at distance
-    await cam.controls.setLookAt(
-      p.x,
-      p.y,
-      p.z,
-      p.x + d.x * dist,
-      p.y + d.y * dist,
-      p.z + d.z * dist
-    );
+    await restoreBcfCamera(cam, state);
   }
 
   /**
@@ -1233,6 +1248,8 @@ export class ViewerEngine {
    * Dispose all engine resources.
    */
   dispose(): void {
+    this.themeObserver?.disconnect();
+    this.themeObserver = null;
     this._disposed = true;
     this._isInitialized = false;
     // Clean up section plane pointer handler before removing planes

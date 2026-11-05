@@ -1,0 +1,5 @@
+OpenAEC Blueprint UI 0.4.0 — LGPL-3.0-only
+Source and local changes: https://github.com/OpenAEC-Foundation/OpenAEC-BIM-validator/tree/master/viewer/vendor
+Upstream: https://github.com/OpenAEC-Foundation/OpenAEC-Blueprint
+Rebuild instructions: npm ci && npm run build (viewer directory).
+Fonts: SIL Open Font License; full notices in viewer/vendor/openaec-web/fonts.

@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 /**
  * DetailPane — context-sensitive detail panel for validation tree selection.
  *
@@ -80,12 +81,12 @@ function SpecDetail({
           <Row label="Requirements" value={spec.total_requirements} />
           <Row
             label="Passed"
-            value={<span style={{ color: "var(--domain-pass)" }}>{passed}</span>}
+            value={<span style={{ color: "var(--oa-success)" }}>{passed}</span>}
           />
           <Row
             label="Failed"
             value={
-              <span style={{ color: "var(--domain-fail)" }}>
+              <span style={{ color: "var(--oa-error)" }}>
                 {spec.failed_requirements}
               </span>
             }
@@ -95,13 +96,13 @@ function SpecDetail({
 
       {spec.status === "fail" && onCreateBcf && (
         <div className="vt-detail__actions">
-          <button
+          <OaButton
             type="button"
             className="vt-detail__btn vt-detail__btn--bcf"
             onClick={() => onCreateBcf(spec)}
           >
             +BCF issue
-          </button>
+          </OaButton>
         </div>
       )}
     </>
@@ -130,12 +131,12 @@ function ReqDetail({
           <Row label="Elements" value={req.total_elements} />
           <Row
             label="Passed"
-            value={<span style={{ color: "var(--domain-pass)" }}>{passed}</span>}
+            value={<span style={{ color: "var(--oa-success)" }}>{passed}</span>}
           />
           <Row
             label="Failed"
             value={
-              <span style={{ color: "var(--domain-fail)" }}>
+              <span style={{ color: "var(--oa-error)" }}>
                 {req.failed_elements}
               </span>
             }
@@ -145,13 +146,13 @@ function ReqDetail({
 
       {req.status === "fail" && onCreateBcf && (
         <div className="vt-detail__actions">
-          <button
+          <OaButton
             type="button"
             className="vt-detail__btn vt-detail__btn--bcf"
             onClick={() => onCreateBcf(spec, req)}
           >
             +BCF issue
-          </button>
+          </OaButton>
         </div>
       )}
     </>
@@ -217,22 +218,22 @@ function ElDetail({
 
       <div className="vt-detail__actions">
         {el.global_id && onZoom && (
-          <button
+          <OaButton
             type="button"
             className="vt-detail__btn vt-detail__btn--zoom"
             onClick={handleZoom}
           >
             Zoom
-          </button>
+          </OaButton>
         )}
         {el.status === "fail" && onCreateBcf && (
-          <button
+          <OaButton
             type="button"
             className="vt-detail__btn vt-detail__btn--bcf"
             onClick={() => onCreateBcf(spec, req, el)}
           >
             +BCF
-          </button>
+          </OaButton>
         )}
       </div>
     </>

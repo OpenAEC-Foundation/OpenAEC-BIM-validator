@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 /**
  * ValidationPanel — IDS validation workflow.
  *
@@ -347,7 +348,7 @@ export function ValidationPanel() {
 
       {/* Submit button */}
       <div className="validation-panel__section validation-panel__actions">
-        <button
+        <OaButton kind="primary"
           type="button"
           className="validation-panel__btn validation-panel__btn--primary"
           onClick={handleSubmit}
@@ -355,16 +356,16 @@ export function ValidationPanel() {
           aria-busy={phase === "submitting"}
         >
           {phase === "submitting" ? "Bezig..." : "Valideer"}
-        </button>
+        </OaButton>
 
         {phase === "completed" && (
-          <button
+          <OaButton
             type="button"
             className="validation-panel__btn validation-panel__btn--secondary"
             onClick={resetValidation}
           >
             Reset
-          </button>
+          </OaButton>
         )}
       </div>
 
@@ -418,7 +419,7 @@ export function ValidationPanel() {
               <span className="vt-header__fail">{failedSpecs}</span>
             </span>
             <div className="vt-header__actions">
-              <button
+              <OaButton kind="quiet"
                 type="button"
                 className="vt-header__icon-btn"
                 onClick={handleHighlightFailures}
@@ -427,8 +428,8 @@ export function ValidationPanel() {
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
                   <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 2a2 2 0 110 4 2 2 0 010-4z" />
                 </svg>
-              </button>
-              <button
+              </OaButton>
+              <OaButton kind="quiet"
                 type="button"
                 className="vt-header__icon-btn"
                 onClick={handleClearHighlights}
@@ -437,8 +438,8 @@ export function ValidationPanel() {
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
                   <path d="M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z" />
                 </svg>
-              </button>
-              <button
+              </OaButton>
+              <OaButton kind="quiet"
                 type="button"
                 className="vt-header__icon-btn"
                 onClick={handleDownloadJson}
@@ -447,16 +448,16 @@ export function ValidationPanel() {
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
                   <path d="M4 1h8a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1zm1 2v2h6V3H5zm0 4v1h6V7H5zm0 3v1h4v-1H5z" />
                 </svg>
-              </button>
+              </OaButton>
               {failedSpecs > 0 && (
-                <button
+                <OaButton kind="quiet"
                   type="button"
                   className="vt-header__icon-btn vt-header__icon-btn--bcf"
                   onClick={handleCreateBcfBulk}
                   title="Alle failures → BCF"
                 >
                   BCF
-                </button>
+                </OaButton>
               )}
             </div>
           </div>

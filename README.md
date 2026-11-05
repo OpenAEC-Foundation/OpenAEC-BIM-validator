@@ -72,7 +72,7 @@ print(result.overall_pass)
 | IFC2X3 / IFC4 STEP `.ifc` | Model viewing and IDS validation |
 | IDS XML `.ids` | Custom or bundled information requirements |
 | JSON / HTML | CLI validation reports |
-| BCF 2.1 | Export findings and viewpoints |
+| BCF 2.1 | Import, open viewpoints, edit status and export again |
 | HTTP | Upload, validation jobs, polling and BCF download |
 | MCP stdio | Local validation, standards listing and report export |
 
@@ -111,19 +111,26 @@ python -m pytest test tests server/tests
 python scripts/version.py --check
 cd viewer
 npm ci
+npm run check:blueprint
 npm run test:run
 npm run build
 ```
 
 Integration tests use a temporary database. Release numbers follow **ISO year.week.sequence**, for example `2026.45.0`. Run `python scripts/version.py --next` or `--set 2026.45.1` to update all manifests and displayed versions. A matching `vYYYY.W.N` tag starts the release workflow; tests must pass before publication.
 
-The release and README structure follows [OpenAEC Blueprint](https://github.com/OpenAEC-Foundation/OpenAEC-Blueprint). The viewer currently contains an earlier OpenAEC theme implementation; migration to the current shared Blueprint components remains work in progress.
+The viewer uses [OpenAEC Blueprint](https://github.com/OpenAEC-Foundation/OpenAEC-Blueprint) UI 0.4: shared React controls, native dialogs, tabs, status bar, B2 icons and local fonts. **Settings → Appearance** provides light, dark, Blueprint and two high-contrast themes. The exact source revision and compatibility changes are documented in [the Blueprint integration](docs/blueprint-ui.md).
+
+## Open BCF files
+
+Open **BCF → Import BCF** and select a `.bcf` or `.bcfzip` file (maximum 50 MB compressed, 100 MB expanded). Select an issue to apply its camera, component selection and visibility to the loaded model. Review comments and metadata in the detail pane, change its status, then use **Download as BCF ZIP** to save the changes.
+
+Reimporting an existing topic ID does not overwrite local issues. Export retains topic IDs, authors, original comments, viewpoints and images. Opening cloud files uses the same import path. The local queue lasts for the current session: export changes before closing the app.
 
 ## Current limitations
 
 - Large-model processing is memory-intensive; the API currently buffers uploaded files.
 - API keys, per-key isolation, HTTP MCP, automated reruns and model revision comparison are open work.
-- The BCF importer is not connected to the current issue queue UI.
+- BCF file import supports version 2.1. The UI opens the first viewpoint; all original topic files are retained on export. External BCF API 3.0/OAuth2 status synchronization and displaying imported clipping planes remain open in #18.
 - IDS editing, takeoff, measurements and classification interpretation have separate open issues.
 - Signing evidence and platform support must be assessed per published release.
 
