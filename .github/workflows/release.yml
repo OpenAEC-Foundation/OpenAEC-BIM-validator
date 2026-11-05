@@ -213,8 +213,12 @@ jobs:
           ref: ${{ env.RELEASE_TAG }}
       - uses: actions/download-artifact@v4
         with:
+          name: python
           path: artifacts
-          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows
+          path: artifacts
       - name: Flatten artifacts and calculate checksums
         run: |
           mkdir release
