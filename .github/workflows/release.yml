@@ -223,6 +223,11 @@ jobs:
         run: |
           mkdir release
           find artifacts -type f -exec cp {} release/ \;
+          # GitHub normalizes spaces in asset names on upload.
+          for file in release/*; do
+            name="${file##*/}"
+            if [[ "$name" == *" "* ]]; then mv "$file" "release/${name// /.}"; fi
+          done
           cd release
           sha256sum * > SHA256SUMS
       - uses: actions/attest-build-provenance@v2
