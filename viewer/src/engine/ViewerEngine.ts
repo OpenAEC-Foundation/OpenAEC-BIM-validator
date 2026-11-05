@@ -20,12 +20,12 @@ import type { SpatialNode, ElementTypeGroup } from "../types/project";
 import type { BcfComponents } from "../types/bcfPlatform";
 import type { BcfCameraState } from "../types/bcf";
 
+import { fitBounds, navigateView, switchProjection } from "./viewNavigation";
+
 const WORKER_URL =
   "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
 const WASM_PATH = "https://unpkg.com/web-ifc@0.0.77/";
 
-/** Camera fit distance multiplier */
-const CAMERA_FIT_PADDING = 1.5;
 
 /** Default scene background color */
 const DEFAULT_BACKGROUND = "#dfe4e8";
@@ -499,8 +499,9 @@ export class ViewerEngine {
    */
   async resetView(): Promise<void> {
     if (!this.world) return;
-    const cam = this.world.camera as OBC.OrthoPerspectiveCamera;
-    await cam.controls.setLookAt(15, 15, 15, 0, 0, 0);
+    await this.navigateToFace("front-top-right");
+    const bounds = this.getModelBoundingBox();
+    if (!bounds.isEmpty()) await fitBounds(this.world.camera as OBC.OrthoPerspectiveCamera, bounds);
   }
 
   /**
@@ -1065,62 +1066,21 @@ export class ViewerEngine {
   /**
    * Navigate camera to a named view target (for ViewCube).
    * Supports faces, edges (e.g. "front-top"), and corners (e.g. "front-top-right").
-   * Keeps the camera pointed at the center of all loaded models.
+   * Preserves the current orbit focus, distance and orthographic zoom.
    */
   async navigateToFace(target: string): Promise<void> {
     if (!this.world) return;
 
-    const center = new THREE.Vector3();
-    let dist = 15;
-    const modelBox = this.getModelBoundingBox();
-    if (!modelBox.isEmpty()) {
-      modelBox.getCenter(center);
-      const size = modelBox.getSize(new THREE.Vector3());
-      dist = Math.max(size.x, size.y, size.z) * CAMERA_FIT_PADDING;
-    }
+    await navigateView(this.world.camera as OBC.OrthoPerspectiveCamera, target);
+  }
 
-    // Build direction vector from target components
-    const parts = target.split("-");
-    const dir = new THREE.Vector3(0, 0, 0);
-    let needsCustomUp = false;
-    let up: [number, number, number] = [0, 1, 0];
+  getProjection(): "Perspective" | "Orthographic" {
+    return (this.world?.camera as OBC.OrthoPerspectiveCamera | undefined)?.projection.current ?? "Perspective";
+  }
 
-    for (const part of parts) {
-      switch (part) {
-        case "front":  dir.z += 1; break;
-        case "back":   dir.z -= 1; break;
-        case "right":  dir.x += 1; break;
-        case "left":   dir.x -= 1; break;
-        case "top":    dir.y += 1; break;
-        case "bottom": dir.y -= 1; break;
-      }
-    }
-
-    // Pure top/bottom views need a custom up vector
-    if (dir.x === 0 && dir.z === 0 && dir.y !== 0) {
-      needsCustomUp = true;
-      up = dir.y > 0 ? [0, 0, -1] : [0, 0, 1];
-    }
-
-    if (dir.lengthSq() === 0) return;
-    dir.normalize().multiplyScalar(dist);
-
-    const cam = this.world.camera as OBC.OrthoPerspectiveCamera;
-
-    if (needsCustomUp) {
-      cam.three.up.set(up[0], up[1], up[2]);
-    } else {
-      cam.three.up.set(0, 1, 0);
-    }
-
-    await cam.controls.setLookAt(
-      center.x + dir.x,
-      center.y + dir.y,
-      center.z + dir.z,
-      center.x,
-      center.y,
-      center.z
-    );
+  async setProjection(projection: "Perspective" | "Orthographic"): Promise<void> {
+    if (!this.world) return;
+    await switchProjection(this.world.camera as OBC.OrthoPerspectiveCamera, projection);
   }
 
   // -- BCF Viewpoint Methods --
@@ -1290,25 +1250,12 @@ export class ViewerEngine {
 
   /**
    * Fit camera to a bounding box.
-   * Positions camera at an isometric-ish angle looking at the box center.
+   * Preserves orientation and fits both projection modes to the viewport.
    */
   private fitCameraToBox(box: THREE.Box3): void {
     if (!this.world) return;
 
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const dist = maxDim * CAMERA_FIT_PADDING;
-
-    const cam = this.world.camera as OBC.OrthoPerspectiveCamera;
-    cam.controls.setLookAt(
-      center.x + dist,
-      center.y + dist * 0.8,
-      center.z + dist,
-      center.x,
-      center.y,
-      center.z
-    );
+    void fitBounds(this.world.camera as OBC.OrthoPerspectiveCamera, box);
   }
 
   private setupHighlighter(): void {

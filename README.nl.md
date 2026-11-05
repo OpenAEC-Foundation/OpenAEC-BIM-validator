@@ -115,6 +115,8 @@ npm run build
 
 Integratietests gebruiken een tijdelijke database. Versies volgen **ISO-jaar.week.volgnummer**, bijvoorbeeld `2026.45.0`. `python scripts/version.py --next` of `--set 2026.45.1` werkt de manifests en getoonde versies bij. Een overeenkomstige tag `vYYYY.W.N` start de releaseworkflow. Tests moeten slagen vóór publicatie.
 
+De 3D-navigatie bevat een compacte oriëntatiekubus met klikbare vlakken, randen en hoeken, een aanzichtkeuze, passend beeld, isometrisch overzicht en een perspectief/orthografisch-schakelaar. Een ander aanzicht behoudt de huidige focus en zoom; een projectiewissel behoudt de zichtbare schaal. Passend beeld werkt ook in smalle vensters en bij grote modellen. De kubus is tevens met Enter en spatie te bedienen.
+
 De viewer gebruikt [OpenAEC Blueprint](https://github.com/OpenAEC-Foundation/OpenAEC-Blueprint) UI 0.4: gedeelde React-bedieningselementen, native dialoogvensters, tabs, statusbalk, B2-iconen en lokale lettertypen. Kies bij **Instellingen → Uiterlijk** uit licht, donker, Blueprint en twee hoogcontrastthema’s. De exacte bronrevisie en lokale compatibiliteitswijzigingen zijn vastgelegd in [de Blueprint-integratie](docs/blueprint-ui.md).
 
 ## BCF-bestanden openen
