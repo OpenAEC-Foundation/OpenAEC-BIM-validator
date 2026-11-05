@@ -25,6 +25,13 @@ describe("BCF issue queue", () => {
     useStore.getState().bcfAddIssues(rest);
     expect(useStore.getState().bcfIssues).toEqual([first, ...rest]);
   });
+  it("imports unique topic IDs without overwriting an existing local issue", () => {
+    const first = issue(); const second = issue("Second");
+    useStore.getState().bcfAddIssue(first);
+    const added = useStore.getState().bcfImportIssues([{ ...first, title: "Remote overwrite" }, second, second]);
+    expect(added).toBe(1);
+    expect(useStore.getState().bcfIssues).toEqual([first, second]);
+  });
   it("updates only the identified issue and preserves the viewpoint", () => {
     const first = issue();
     const second = issue("Other");

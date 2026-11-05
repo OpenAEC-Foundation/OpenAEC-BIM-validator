@@ -1,19 +1,19 @@
-import { useState, useEffect, useRef, type CSSProperties } from "react";
+import { Tabs, Button as OaButton } from "@openaec/ui-react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { LANGUAGES, changeLanguage } from "../../../i18n/config";
 import { getSetting, setSetting, applyTheme } from "../../../utils/settingsStore";
 import Modal from "../Modal";
 import ThemedSelect from "../ThemedSelect";
-import "../ThemedSelect.css";
 import "./SettingsDialog.css";
 import { APP_VERSION } from "../../../version";
 
 const THEME_OPTIONS = [
-  { value: "light", labelKey: "appearance.light", swatches: ["#FAFAF9", "#D97706", "#36363E", "#E7E5E4"] },
-  { value: "forge", labelKey: "appearance.forge", swatches: ["#36363E", "#D97706", "#FAFAF9", "#44444C"] },
-  { value: "openaec", labelKey: "appearance.dark", swatches: ["#27272A", "#D97706", "#FAFAF9", "#1C1917"] },
-  { value: "blueprint", labelKey: "appearance.blueprint", swatches: ["#0F1B2D", "#60A5FA", "#F1F5F9", "#1E293B"] },
-  { value: "contrast", labelKey: "appearance.contrast", swatches: ["#000000", "#FFD700", "#FFFFFF", "#333333"] },
+  { value: "light", labelKey: "appearance.light" },
+  { value: "dark", labelKey: "appearance.dark" },
+  { value: "blueprint", labelKey: "appearance.blueprint" },
+  { value: "high-contrast-dark", labelKey: "appearance.contrastDark" },
+  { value: "high-contrast-light", labelKey: "appearance.contrastLight" },
 ];
 
 const TAB_IDS = ["general", "appearance", "about"] as const;
@@ -79,16 +79,16 @@ export default function SettingsDialog({
 
   const footer = (
     <>
-      <button className="settings-btn settings-btn-secondary" onClick={handleReset}>
+      <OaButton className="settings-btn settings-btn-secondary" onClick={handleReset}>
         {t("resetToDefaults")}
-      </button>
+      </OaButton>
       <div className="settings-footer-right">
-        <button className="settings-btn settings-btn-secondary" onClick={handleCancel}>
+        <OaButton className="settings-btn settings-btn-secondary" onClick={handleCancel}>
           {tCommon("cancel")}
-        </button>
-        <button className="settings-btn settings-btn-primary" onClick={handleSave}>
+        </OaButton>
+        <OaButton kind="primary" className="settings-btn" onClick={handleSave}>
           {tCommon("save")}
-        </button>
+        </OaButton>
       </div>
     </>
   );
@@ -97,17 +97,7 @@ export default function SettingsDialog({
     <>
       <Modal open={open} onClose={handleCancel} title={t("title")} width={560} height={440} className="settings-dialog" footer={footer}>
         <div className="settings-body">
-          <div className="settings-sidebar">
-            {TAB_IDS.map((id) => (
-              <button
-                key={id}
-                className={`settings-tab${activeTab === id ? " active" : ""}`}
-                onClick={() => setActiveTab(id)}
-              >
-                {t(`tabs.${id}`)}
-              </button>
-            ))}
-          </div>
+          <Tabs label={t("title")} tabs={TAB_IDS.map(id => ({ id, label: t(`tabs.${id}`) }))} active={activeTab} onSelect={setActiveTab} />
 
           <div className="settings-content">
             {activeTab === "general" && (
@@ -128,12 +118,12 @@ export default function SettingsDialog({
         width={340}
         footer={
           <>
-            <button className="settings-btn settings-btn-secondary" onClick={() => setConfirmResetOpen(false)}>
+            <OaButton className="settings-btn settings-btn-secondary" onClick={() => setConfirmResetOpen(false)}>
               {tCommon("cancel")}
-            </button>
-            <button className="settings-btn settings-btn-primary" onClick={handleConfirmReset}>
+            </OaButton>
+            <OaButton kind="primary" className="settings-btn" onClick={handleConfirmReset}>
               {t("resetToDefaults")}
-            </button>
+            </OaButton>
           </>
         }
       >
@@ -156,8 +146,9 @@ function GeneralTabContent({
     <div className="settings-section">
       <h3>{t("general.application")}</h3>
       <div className="settings-row">
-        <span className="settings-label">{t("general.language")}</span>
+
         <ThemedSelect
+          label={t("general.language")}
           value={lang}
           options={LANGUAGES.map((l) => ({ value: l.code, label: l.name }))}
           onChange={onLangChange}
@@ -192,53 +183,9 @@ function ThemeDropdown({
   onThemeSelect: (value: string) => void;
 }) {
   const { t } = useTranslation("settings");
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [open]);
-
-  const selected = THEME_OPTIONS.find((o) => o.value === theme) ?? THEME_OPTIONS[0]!;
-
-  const swatchRow = (swatches: string[]) => (
-    <div className="theme-dropdown-swatches">
-      {swatches.map((color, i) => (
-        <span key={i} className="theme-dropdown-swatch" style={{ backgroundColor: color } as CSSProperties} />
-      ))}
-    </div>
-  );
-
-  return (
-    <div className="theme-dropdown" ref={ref}>
-      <button className="theme-dropdown-trigger" onClick={() => setOpen(!open)}>
-        {swatchRow(selected.swatches)}
-        <span className="theme-dropdown-label">{t(selected.labelKey)}</span>
-        <svg className="theme-dropdown-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none">
-          <path d="M2.5 4L5 6.5L7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-      {open && (
-        <div className="theme-dropdown-menu">
-          {THEME_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              className={`theme-dropdown-item${theme === opt.value ? " active" : ""}`}
-              onClick={() => { onThemeSelect(opt.value); setOpen(false); }}
-            >
-              {swatchRow(opt.swatches)}
-              <span className="theme-dropdown-label">{t(opt.labelKey)}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  return <ThemedSelect label={t("appearance.theme")} value={theme}
+    options={THEME_OPTIONS.map(option => ({ value: option.value, label: t(option.labelKey) }))}
+    onChange={onThemeSelect} />;
 }
 
 function AboutTabContent() {
@@ -250,7 +197,7 @@ function AboutTabContent() {
         <p><strong>{t("about.version")}:</strong> {APP_VERSION}</p>
         <p><strong>{t("about.framework")}:</strong> React + TypeScript + That Open Engine</p>
         <p><strong>{t("about.license")}:</strong> MIT</p>
-        <p style={{ marginTop: 8, color: "var(--theme-dialog-content-secondary)" }}>
+        <p style={{ marginTop: 8, color: "var(--oa-text-secondary)" }}>
           {t("about.description")}
         </p>
       </div>

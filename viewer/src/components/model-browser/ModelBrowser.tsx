@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 /**
  * ModelBrowser — list of loaded models with expandable spatial trees.
  *
@@ -130,7 +131,7 @@ function ModelItem({ model }: { model: ModelInfo }) {
     <div className="model-item-wrapper">
       <div className="model-item">
         {/* Expand/collapse chevron */}
-        <button
+        <OaButton kind="quiet"
           type="button"
           className="model-item__expand"
           onClick={handleExpand}
@@ -138,7 +139,7 @@ function ModelItem({ model }: { model: ModelInfo }) {
           aria-label={expanded ? "Inklappen" : "Uitklappen"}
         >
           {expanded ? "\u25BE" : "\u25B8"}
-        </button>
+        </OaButton>
 
         <LoadStateIndicator model={model} />
 
@@ -151,7 +152,7 @@ function ModelItem({ model }: { model: ModelInfo }) {
           </span>
         </div>
 
-        <button
+        <OaButton
           type="button"
           className={`model-item__visibility ${
             !model.visible ? "model-item__visibility--hidden" : ""
@@ -165,7 +166,7 @@ function ModelItem({ model }: { model: ModelInfo }) {
           }
         >
           {model.visible ? "V" : "-"}
-        </button>
+        </OaButton>
       </div>
 
       {/* Expanded spatial tree */}

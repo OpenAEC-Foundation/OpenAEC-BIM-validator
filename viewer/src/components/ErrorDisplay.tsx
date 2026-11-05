@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 /**
  * ErrorDisplay Component
  *
@@ -142,7 +143,7 @@ export function ErrorDisplay({
         {(onRetry || onDismiss) && (
           <div className="error-actions">
             {onRetry && (
-              <button
+              <OaButton
                 type="button"
                 className="error-retry-btn"
                 onClick={onRetry}
@@ -152,17 +153,17 @@ export function ErrorDisplay({
                   ↻
                 </span>
                 {retryLabel}
-              </button>
+              </OaButton>
             )}
             {onDismiss && (
-              <button
+              <OaButton
                 type="button"
                 className="error-dismiss-btn"
                 onClick={onDismiss}
                 aria-label="Dismiss error"
               >
                 Dismiss
-              </button>
+              </OaButton>
             )}
           </div>
         )}
@@ -170,14 +171,14 @@ export function ErrorDisplay({
 
       {/* Close button (always visible if onDismiss provided) */}
       {onDismiss && !compact && (
-        <button
+        <OaButton kind="quiet"
           type="button"
           className="error-close-btn"
           onClick={onDismiss}
           aria-label="Close error message"
         >
           ✕
-        </button>
+        </OaButton>
       )}
 
       {/* Styles */}
@@ -185,42 +186,42 @@ export function ErrorDisplay({
         .error-display {
           display: flex;
           align-items: flex-start;
-          gap: var(--spacing-md);
-          padding: var(--spacing-lg);
+          gap: var(--oa-space-lg);
+          padding: var(--oa-space-xl);
           background-color: rgba(219, 76, 64, 0.1);
-          border: 1px solid var(--color-error);
-          border-radius: var(--radius-lg);
-          border-left: 4px solid var(--color-error);
+          border: 1px solid var(--oa-error);
+          border-radius: var(--oa-radius-large);
+          border-left: 4px solid var(--oa-error);
           position: relative;
         }
 
         .error-display--compact {
-          padding: var(--spacing-md);
+          padding: var(--oa-space-lg);
           align-items: center;
         }
 
         /* Error type variations */
         .error-display--upload {
-          border-color: var(--color-error);
-          border-left-color: var(--color-error);
+          border-color: var(--oa-error);
+          border-left-color: var(--oa-error);
           background-color: rgba(219, 76, 64, 0.08);
         }
 
         .error-display--validation {
-          border-color: var(--color-warning);
-          border-left-color: var(--color-warning);
+          border-color: var(--oa-warning);
+          border-left-color: var(--oa-warning);
           background-color: rgba(239, 189, 117, 0.15);
         }
 
         .error-display--network {
-          border-color: var(--color-error);
-          border-left-color: var(--color-error);
+          border-color: var(--oa-error);
+          border-left-color: var(--oa-error);
           background-color: rgba(219, 76, 64, 0.08);
         }
 
         .error-display--generic {
-          border-color: var(--color-error);
-          border-left-color: var(--color-error);
+          border-color: var(--oa-error);
+          border-left-color: var(--oa-error);
           background-color: rgba(219, 76, 64, 0.08);
         }
 
@@ -232,13 +233,13 @@ export function ErrorDisplay({
           width: 48px;
           height: 48px;
           min-width: 48px;
-          background-color: var(--color-background);
-          border-radius: var(--radius-full);
-          border: 2px solid var(--color-error);
+          background-color: var(--oa-panel);
+          border-radius: var(--oa-radius-full);
+          border: 2px solid var(--oa-error);
         }
 
         .error-display--validation .error-icon-container {
-          border-color: var(--color-warning);
+          border-color: var(--oa-warning);
         }
 
         .error-display--compact .error-icon-container {
@@ -248,12 +249,12 @@ export function ErrorDisplay({
         }
 
         .error-icon {
-          font-size: var(--font-size-xl);
+          font-size: var(--oa-size-dialog-heading);
           line-height: 1;
         }
 
         .error-display--compact .error-icon {
-          font-size: var(--font-size-lg);
+          font-size: var(--oa-size-panel-heading);
         }
 
         /* Content area */
@@ -261,62 +262,62 @@ export function ErrorDisplay({
           flex: 1;
           display: flex;
           flex-direction: column;
-          gap: var(--spacing-sm);
+          gap: var(--oa-space-sm);
           min-width: 0;
         }
 
         .error-display--compact .error-content {
-          gap: var(--spacing-xs);
+          gap: var(--oa-space-xs);
         }
 
         /* Title */
         .error-title {
           margin: 0;
-          font-size: var(--font-size-lg);
+          font-size: var(--oa-size-panel-heading);
           font-weight: 600;
-          color: var(--color-error);
+          color: var(--oa-error);
         }
 
         .error-display--validation .error-title {
-          color: var(--color-warning-dark, #c99a40);
+          color: var(--oa-warning, #c99a40);
         }
 
         /* Message */
         .error-message {
           margin: 0;
-          font-size: var(--font-size-base);
-          color: var(--color-text);
+          font-size: var(--oa-size-body);
+          color: var(--oa-text);
           line-height: 1.5;
         }
 
         .error-display--compact .error-message {
-          font-size: var(--font-size-sm);
+          font-size: var(--oa-size-body);
         }
 
         /* Details (expandable) */
         .error-details {
-          margin-top: var(--spacing-xs);
+          margin-top: var(--oa-space-xs);
         }
 
         .error-details-summary {
-          font-size: var(--font-size-sm);
-          color: var(--color-text-secondary);
+          font-size: var(--oa-size-body);
+          color: var(--oa-text-secondary);
           cursor: pointer;
           user-select: none;
         }
 
         .error-details-summary:hover {
-          color: var(--color-text);
+          color: var(--oa-text);
         }
 
         .error-details-content {
-          margin: var(--spacing-sm) 0 0 0;
-          padding: var(--spacing-md);
-          background-color: var(--color-background);
-          border-radius: var(--radius-sm);
-          font-size: var(--font-size-xs);
+          margin: var(--oa-space-sm) 0 0 0;
+          padding: var(--oa-space-lg);
+          background-color: var(--oa-panel);
+          border-radius: var(--oa-radius-small);
+          font-size: var(--oa-size-label);
           font-family: monospace;
-          color: var(--color-text-secondary);
+          color: var(--oa-text-secondary);
           overflow-x: auto;
           white-space: pre-wrap;
           word-break: break-word;
@@ -327,16 +328,16 @@ export function ErrorDisplay({
         /* Hint text */
         .error-hint {
           margin: 0;
-          font-size: var(--font-size-sm);
-          color: var(--color-text-secondary);
+          font-size: var(--oa-size-body);
+          color: var(--oa-text-secondary);
           font-style: italic;
         }
 
         /* Action buttons */
         .error-actions {
           display: flex;
-          gap: var(--spacing-sm);
-          margin-top: var(--spacing-sm);
+          gap: var(--oa-space-sm);
+          margin-top: var(--oa-space-sm);
           flex-wrap: wrap;
         }
 
@@ -349,13 +350,13 @@ export function ErrorDisplay({
         .error-retry-btn {
           display: inline-flex;
           align-items: center;
-          gap: var(--spacing-xs);
-          padding: var(--spacing-sm) var(--spacing-lg);
+          gap: var(--oa-space-xs);
+          padding: var(--oa-space-sm) var(--oa-space-xl);
           border: none;
-          border-radius: var(--radius-md);
-          background-color: var(--color-error);
-          color: var(--color-text-light);
-          font-size: var(--font-size-sm);
+          border-radius: var(--oa-radius-medium);
+          background-color: var(--oa-error);
+          color: var(--oa-text-on-accent);
+          font-size: var(--oa-size-body);
           font-weight: 600;
           cursor: pointer;
           transition: all var(--transition-fast);
@@ -372,12 +373,12 @@ export function ErrorDisplay({
         }
 
         .error-retry-btn:focus-visible {
-          outline: 2px solid var(--color-error);
+          outline: 2px solid var(--oa-error);
           outline-offset: 2px;
         }
 
         .retry-icon {
-          font-size: var(--font-size-lg);
+          font-size: var(--oa-size-panel-heading);
           display: inline-block;
           transition: transform var(--transition-fast);
         }
@@ -390,12 +391,12 @@ export function ErrorDisplay({
         .error-dismiss-btn {
           display: inline-flex;
           align-items: center;
-          padding: var(--spacing-sm) var(--spacing-lg);
-          border: 1px solid var(--color-border);
-          border-radius: var(--radius-md);
-          background-color: var(--color-surface);
-          color: var(--color-text-secondary);
-          font-size: var(--font-size-sm);
+          padding: var(--oa-space-sm) var(--oa-space-xl);
+          border: 1px solid var(--oa-border);
+          border-radius: var(--oa-radius-medium);
+          background-color: var(--oa-panel);
+          color: var(--oa-text-secondary);
+          font-size: var(--oa-size-body);
           font-weight: 500;
           cursor: pointer;
           transition: all var(--transition-fast);
@@ -403,20 +404,20 @@ export function ErrorDisplay({
         }
 
         .error-dismiss-btn:hover {
-          border-color: var(--color-text-secondary);
-          color: var(--color-text);
+          border-color: var(--oa-text-secondary);
+          color: var(--oa-text);
         }
 
         .error-dismiss-btn:focus-visible {
-          outline: 2px solid var(--color-primary);
+          outline: 2px solid var(--oa-accent);
           outline-offset: 2px;
         }
 
         /* Close button (top-right corner) */
         .error-close-btn {
           position: absolute;
-          top: var(--spacing-sm);
-          right: var(--spacing-sm);
+          top: var(--oa-space-sm);
+          right: var(--oa-space-sm);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -424,21 +425,21 @@ export function ErrorDisplay({
           height: 28px;
           padding: 0;
           border: none;
-          border-radius: var(--radius-full);
+          border-radius: var(--oa-radius-full);
           background-color: transparent;
-          color: var(--color-text-secondary);
-          font-size: var(--font-size-base);
+          color: var(--oa-text-secondary);
+          font-size: var(--oa-size-body);
           cursor: pointer;
           transition: all var(--transition-fast);
         }
 
         .error-close-btn:hover {
           background-color: rgba(219, 76, 64, 0.2);
-          color: var(--color-error);
+          color: var(--oa-error);
         }
 
         .error-close-btn:focus-visible {
-          outline: 2px solid var(--color-error);
+          outline: 2px solid var(--oa-error);
           outline-offset: 2px;
         }
 
@@ -447,7 +448,7 @@ export function ErrorDisplay({
           .error-display {
             flex-direction: column;
             align-items: stretch;
-            padding: var(--spacing-md);
+            padding: var(--oa-space-lg);
           }
 
           .error-display--compact {
@@ -457,7 +458,7 @@ export function ErrorDisplay({
 
           .error-icon-container {
             align-self: center;
-            margin-bottom: var(--spacing-sm);
+            margin-bottom: var(--oa-space-sm);
           }
 
           .error-display--compact .error-icon-container {
@@ -479,14 +480,14 @@ export function ErrorDisplay({
 
           .error-display--compact .error-actions {
             width: 100%;
-            margin-top: var(--spacing-sm);
+            margin-top: var(--oa-space-sm);
             margin-left: 0;
           }
 
           .error-close-btn {
             position: static;
             align-self: flex-end;
-            margin-bottom: var(--spacing-sm);
+            margin-bottom: var(--oa-space-sm);
           }
         }
 
@@ -495,7 +496,7 @@ export function ErrorDisplay({
           .error-retry-btn,
           .error-dismiss-btn {
             min-height: 44px;
-            padding: var(--spacing-md) var(--spacing-lg);
+            padding: var(--oa-space-lg) var(--oa-space-xl);
           }
 
           .error-close-btn {

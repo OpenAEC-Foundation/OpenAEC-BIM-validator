@@ -37,7 +37,8 @@ import { OptimizeDialog } from "../tools/OptimizeDialog";
 import { LeftPanel } from "./LeftPanel";
 import { CenterPanel } from "./CenterPanel";
 import { RightPanel } from "./RightPanel";
-import { ToastContainer } from "../Toast";
+import { importBcfArchive } from "../../lib/bcfArchive";
+import { ToastContainer, showToast } from "../Toast";
 
 // import { ServerProjectStorage } from "../../services/ServerProjectStorage";
 
@@ -258,13 +259,15 @@ export function AppShell() {
   }, []);
 
   const handleCloudFileOpened = useCallback((blob: Blob, filename: string) => {
-    // Download the BCF file to local filesystem
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+    void (async () => {
+      try {
+        if (blob.size > 50 * 1024 * 1024) throw new Error("BCF-bestand is groter dan 50 MB.");
+        const imported = await importBcfArchive(await blob.arrayBuffer());
+        const added = useStore.getState().bcfImportIssues(imported);
+        useStore.getState().setActiveRightTab("bcf");
+        showToast(`${filename}: ${added} issues toegevoegd.`);
+      } catch (error) { showToast(error instanceof Error ? error.message : "BCF-import mislukt", "error"); }
+    })();
   }, []);
 
   // --- Save / Save As / Open handlers ---
@@ -375,7 +378,7 @@ export function AppShell() {
     validationPhase === "submitting" || validationPhase === "polling";
 
   return (
-    <div className="app-shell" data-theme={theme}>
+    <div className="app-shell">
       <TitleBar
         onUploadClick={handleUploadClick}
         onSettingsClick={() => setSettingsOpen(true)}

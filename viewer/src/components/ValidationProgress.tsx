@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 /**
  * ValidationProgress Component
  *
@@ -170,14 +171,14 @@ export function ValidationProgress({
 
       {/* Cancel button (only if callback provided and in progress) */}
       {isInProgress && onCancel && (
-        <button
+        <OaButton
           type="button"
           className="progress-cancel-btn"
           onClick={onCancel}
           aria-label="Cancel validation"
         >
           Cancel
-        </button>
+        </OaButton>
       )}
 
       {/* Styles */}
@@ -185,30 +186,30 @@ export function ValidationProgress({
         .validation-progress {
           display: flex;
           align-items: flex-start;
-          gap: var(--spacing-md);
-          padding: var(--spacing-lg);
-          background-color: var(--color-surface);
-          border-radius: var(--radius-lg);
-          border: 1px solid var(--color-border);
+          gap: var(--oa-space-lg);
+          padding: var(--oa-space-xl);
+          background-color: var(--oa-panel);
+          border-radius: var(--oa-radius-large);
+          border: 1px solid var(--oa-border);
         }
 
         .validation-progress--pending {
-          border-color: var(--color-warning);
+          border-color: var(--oa-warning);
           background-color: rgba(239, 189, 117, 0.1);
         }
 
         .validation-progress--processing {
-          border-color: var(--color-primary);
+          border-color: var(--oa-accent);
           background-color: rgba(68, 182, 168, 0.1);
         }
 
         .validation-progress--completed {
-          border-color: var(--color-success);
+          border-color: var(--oa-success);
           background-color: rgba(68, 182, 168, 0.15);
         }
 
         .validation-progress--failed {
-          border-color: var(--color-error);
+          border-color: var(--oa-error);
           background-color: rgba(219, 76, 64, 0.1);
         }
 
@@ -233,14 +234,14 @@ export function ValidationProgress({
           position: absolute;
           width: 100%;
           height: 100%;
-          border: 4px solid var(--color-border);
-          border-top-color: var(--color-primary);
-          border-radius: var(--radius-full);
+          border: 4px solid var(--oa-border);
+          border-top-color: var(--oa-accent);
+          border-radius: var(--oa-radius-full);
           animation: spin 1s linear infinite;
         }
 
         .validation-progress--pending .spinner-ring {
-          border-top-color: var(--color-warning);
+          border-top-color: var(--oa-warning);
         }
 
         @keyframes spin {
@@ -254,7 +255,7 @@ export function ValidationProgress({
 
         /* Status icon (for completed/failed states) */
         .progress-icon {
-          font-size: var(--font-size-2xl);
+          font-size: var(--oa-size-page-heading);
           line-height: 1;
         }
 
@@ -263,7 +264,7 @@ export function ValidationProgress({
           flex: 1;
           display: flex;
           flex-direction: column;
-          gap: var(--spacing-xs);
+          gap: var(--oa-space-xs);
           min-width: 0;
         }
 
@@ -271,71 +272,71 @@ export function ValidationProgress({
         .progress-status {
           display: flex;
           align-items: center;
-          gap: var(--spacing-md);
+          gap: var(--oa-space-lg);
           flex-wrap: wrap;
         }
 
         .status-label {
-          font-size: var(--font-size-lg);
+          font-size: var(--oa-size-panel-heading);
           font-weight: 600;
-          color: var(--color-text);
+          color: var(--oa-text);
         }
 
         .validation-progress--pending .status-label {
-          color: var(--color-warning-dark, #c99a40);
+          color: var(--oa-warning, #c99a40);
         }
 
         .validation-progress--processing .status-label {
-          color: var(--color-primary);
+          color: var(--oa-accent);
         }
 
         .validation-progress--completed .status-label {
-          color: var(--color-success);
+          color: var(--oa-success);
         }
 
         .validation-progress--failed .status-label {
-          color: var(--color-error);
+          color: var(--oa-error);
         }
 
         /* Elapsed time */
         .elapsed-time {
-          font-size: var(--font-size-sm);
-          color: var(--color-text-secondary);
-          padding: var(--spacing-xs) var(--spacing-sm);
-          background-color: var(--color-background);
-          border-radius: var(--radius-sm);
+          font-size: var(--oa-size-body);
+          color: var(--oa-text-secondary);
+          padding: var(--oa-space-xs) var(--oa-space-sm);
+          background-color: var(--oa-panel);
+          border-radius: var(--oa-radius-small);
           font-variant-numeric: tabular-nums;
         }
 
         /* Progress message from API */
         .progress-message {
-          font-size: var(--font-size-base);
-          color: var(--color-text);
-          padding: var(--spacing-sm) var(--spacing-md);
-          background-color: var(--color-background);
-          border-radius: var(--radius-sm);
-          border-left: 3px solid var(--color-primary);
+          font-size: var(--oa-size-body);
+          color: var(--oa-text);
+          padding: var(--oa-space-sm) var(--oa-space-lg);
+          background-color: var(--oa-panel);
+          border-radius: var(--oa-radius-small);
+          border-left: 3px solid var(--oa-accent);
         }
 
         .validation-progress--pending .progress-message {
-          border-left-color: var(--color-warning);
+          border-left-color: var(--oa-warning);
         }
 
         /* Hint text */
         .progress-hint {
-          font-size: var(--font-size-sm);
-          color: var(--color-text-secondary);
+          font-size: var(--oa-size-body);
+          color: var(--oa-text-secondary);
           font-style: italic;
         }
 
         /* Cancel button */
         .progress-cancel-btn {
-          padding: var(--spacing-sm) var(--spacing-md);
-          border: 1px solid var(--color-border);
-          border-radius: var(--radius-md);
-          background-color: var(--color-surface);
-          color: var(--color-text-secondary);
-          font-size: var(--font-size-sm);
+          padding: var(--oa-space-sm) var(--oa-space-lg);
+          border: 1px solid var(--oa-border);
+          border-radius: var(--oa-radius-medium);
+          background-color: var(--oa-panel);
+          color: var(--oa-text-secondary);
+          font-size: var(--oa-size-body);
           font-weight: 500;
           cursor: pointer;
           transition: all var(--transition-fast);
@@ -343,13 +344,13 @@ export function ValidationProgress({
         }
 
         .progress-cancel-btn:hover {
-          border-color: var(--color-error);
-          color: var(--color-error);
+          border-color: var(--oa-error);
+          color: var(--oa-error);
           background-color: rgba(219, 76, 64, 0.1);
         }
 
         .progress-cancel-btn:focus-visible {
-          outline: 2px solid var(--color-primary);
+          outline: 2px solid var(--oa-accent);
           outline-offset: 2px;
         }
 
@@ -371,11 +372,11 @@ export function ValidationProgress({
 
           .progress-message {
             border-left: none;
-            border-top: 3px solid var(--color-primary);
+            border-top: 3px solid var(--oa-accent);
           }
 
           .validation-progress--pending .progress-message {
-            border-top-color: var(--color-warning);
+            border-top-color: var(--oa-warning);
           }
 
           .progress-cancel-btn {

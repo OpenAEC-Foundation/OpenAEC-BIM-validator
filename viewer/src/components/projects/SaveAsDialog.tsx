@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 /**
  * SaveAsDialog — modal for choosing between local and cloud save.
  *
@@ -273,29 +274,29 @@ export default function SaveAsDialog({
         </span>
       )}
       <div className="saveas-dialog__actions">
-        <button
+        <OaButton
           className="saveas-dialog__btn saveas-dialog__btn--secondary"
           onClick={target === "choose" ? onClose : () => setTarget("choose")}
         >
           {target === "choose" ? t("cancel") : t("cancel")}
-        </button>
+        </OaButton>
         {target === "local" && (
-          <button
+          <OaButton kind="primary"
             className="saveas-dialog__btn saveas-dialog__btn--primary"
             onClick={handleLocalSave}
             disabled={!canSaveLocal}
           >
             {isSaving ? t("saving") : t("save")}
-          </button>
+          </OaButton>
         )}
         {target === "cloud" && (
-          <button
+          <OaButton kind="primary"
             className="saveas-dialog__btn saveas-dialog__btn--primary"
             onClick={handleCloudSave}
             disabled={!canSaveCloud}
           >
             {isSaving ? t("saving") : t("save")}
-          </button>
+          </OaButton>
         )}
       </div>
     </div>
@@ -312,7 +313,7 @@ export default function SaveAsDialog({
       <div className="saveas-dialog__body">
         {target === "choose" && (
           <div className="saveas-dialog__options">
-            <button
+            <OaButton
               className="saveas-dialog__option"
               onClick={() => setTarget("local")}
             >
@@ -327,9 +328,9 @@ export default function SaveAsDialog({
                 <strong>{t("saveLocal")}</strong>
                 <span>{t("saveLocalDesc")}</span>
               </div>
-            </button>
+            </OaButton>
 
-            <button
+            <OaButton
               className="saveas-dialog__option"
               onClick={() => setTarget("cloud")}
               disabled={!cloudEnabled}
@@ -349,7 +350,7 @@ export default function SaveAsDialog({
                     : t("cloudNotConfigured")}
                 </span>
               </div>
-            </button>
+            </OaButton>
           </div>
         )}
 
@@ -360,7 +361,7 @@ export default function SaveAsDialog({
                 {t("projectName")}
               </label>
               <input
-                className="saveas-dialog__input"
+                className="oa-field saveas-dialog__input"
                 type="text"
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
@@ -395,7 +396,7 @@ export default function SaveAsDialog({
               </label>
               <div className="saveas-dialog__project-row">
                 <select
-                  className="saveas-dialog__select"
+                  className="oa-field saveas-dialog__select"
                   value={selectedCloudProject}
                   onChange={(e) => setSelectedCloudProject(e.target.value)}
                   disabled={isCloudBusy || isSaving}
@@ -407,7 +408,7 @@ export default function SaveAsDialog({
                     </option>
                   ))}
                 </select>
-                <button
+                <OaButton
                   className="saveas-dialog__btn saveas-dialog__btn--icon"
                   onClick={() => cloudLoadProjects()}
                   disabled={isCloudBusy || isSaving}
@@ -418,7 +419,7 @@ export default function SaveAsDialog({
                     <polyline points="1 20 1 14 7 14" />
                     <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
                   </svg>
-                </button>
+                </OaButton>
               </div>
             </div>
             {project && project.models.length > 0 && (

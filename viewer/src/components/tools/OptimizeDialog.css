@@ -5,9 +5,9 @@
 }
 
 .optimize-dialog__empty {
-  color: var(--theme-text-muted);
-  font-size: 13px;
   margin: 0;
+  color: var(--oa-text-muted);
+  font-size: 13px;
 }
 
 .optimize-dialog__label {
@@ -15,16 +15,11 @@
   flex-direction: column;
   gap: 4px;
   font-size: 12px;
-  color: var(--theme-text-muted);
+  color: var(--oa-text-muted);
 }
 
 .optimize-dialog__select {
-  background: var(--theme-dialog-input-bg);
-  color: var(--theme-text);
-  border: 1px solid var(--theme-border);
-  border-radius: 4px;
   padding: 6px 8px;
-  font-size: 13px;
 }
 
 .optimize-dialog__passes {
@@ -46,61 +41,43 @@
 }
 
 .optimize-dialog__pass small {
-  color: var(--theme-text-muted);
+  color: var(--oa-text-muted);
 }
 
 .optimize-dialog__btn {
-  border: 1px solid var(--theme-border);
-  border-radius: 4px;
   padding: 8px 12px;
-  font-size: 13px;
-  cursor: pointer;
-  background: var(--theme-dialog-input-bg);
-  color: var(--theme-text);
   text-align: center;
   text-decoration: none;
   display: inline-block;
 }
 
-.optimize-dialog__btn--primary {
-  background: var(--theme-accent);
-  border-color: var(--theme-accent);
-  color: var(--theme-btn-primary-text);
-  font-weight: 600;
-}
-
-.optimize-dialog__btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .optimize-dialog__error {
-  color: var(--theme-danger-color);
-  font-size: 12px;
   margin: 0;
+  color: var(--oa-error);
+  font-size: 12px;
 }
 
 .optimize-dialog__report {
-  border-top: 1px solid var(--theme-border);
   padding-top: 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  border-top: 1px solid var(--oa-border);
 }
 
 .optimize-dialog__delta {
+  margin: 0;
   font-size: 14px;
   font-weight: 600;
-  margin: 0;
 }
 
 .optimize-dialog__pass-results {
   list-style: none;
   margin: 0;
   padding: 0;
-  font-size: 12px;
-  color: var(--theme-text-muted);
   display: flex;
   flex-direction: column;
   gap: 3px;
+  font-size: 12px;
+  color: var(--oa-text-muted);
 }

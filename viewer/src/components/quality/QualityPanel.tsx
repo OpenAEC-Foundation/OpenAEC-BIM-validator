@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 /**
  * QualityPanel — data-quality checks on a loaded model.
  *
@@ -74,7 +75,7 @@ export function QualityPanel() {
           <label className="quality-panel__label">
             Model
             <select
-              className="quality-panel__select"
+              className="oa-field quality-panel__select"
               value={effectiveModel}
               onChange={(e) => setModel(e.target.value)}
             >
@@ -87,14 +88,14 @@ export function QualityPanel() {
           </label>
         )}
 
-        <button
+        <OaButton kind="primary"
           type="button"
           className="quality-panel__btn quality-panel__btn--primary"
           onClick={handleRun}
           disabled={running || !effectiveModel}
         >
           {running ? "Bezig met controleren…" : "Controleer kwaliteit"}
-        </button>
+        </OaButton>
 
         {error && <p className="quality-panel__error">{error}</p>}
       </div>
@@ -109,7 +110,7 @@ export function QualityPanel() {
           <ul className="quality-panel__list">
             {report.checks.map((check) => (
               <li key={check.id} className="quality-panel__check">
-                <button
+                <OaButton
                   type="button"
                   className={`quality-panel__check-header quality-panel__check-header--${
                     check.passed ? "pass" : check.severity
@@ -131,14 +132,14 @@ export function QualityPanel() {
                           SEVERITY_LABEL[check.severity]
                         }`}
                   </span>
-                </button>
+                </OaButton>
 
                 {openCheck === check.id && check.findings.length > 0 && (
                   <ul className="quality-panel__findings">
                     {check.findings.map((finding, i) => (
                       <li key={`${finding.global_id ?? "x"}-${i}`}>
                         {finding.global_id ? (
-                          <button
+                          <OaButton kind="quiet"
                             type="button"
                             className="quality-panel__finding-link"
                             onClick={() =>
@@ -147,7 +148,7 @@ export function QualityPanel() {
                           >
                             {finding.entity_type}:{" "}
                             {finding.entity_name || finding.global_id}
-                          </button>
+                          </OaButton>
                         ) : (
                           <span>
                             {finding.entity_type}: {finding.message}

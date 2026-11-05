@@ -100,6 +100,7 @@ export interface BcfCamera {
   direction: Point3D;
   up: Point3D;
   field_of_view?: number;
+  view_to_world_scale?: number;
   aspect_ratio?: number;
 }
 

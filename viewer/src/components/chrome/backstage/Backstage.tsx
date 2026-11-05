@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../../stores/authStore";
@@ -80,7 +81,7 @@ function MenuItem({
   onClick: () => void;
 }) {
   return (
-    <button
+    <OaButton
       className={`backstage-item${active ? " active" : ""}`}
       onClick={onClick}
     >
@@ -92,7 +93,7 @@ function MenuItem({
       {shortcut && (
         <span className="backstage-item-shortcut">{shortcut}</span>
       )}
-    </button>
+    </OaButton>
   );
 }
 
@@ -108,7 +109,7 @@ function SubMenuItem({
   disabled?: boolean;
 }) {
   return (
-    <button
+    <OaButton kind="quiet"
       className="backstage-item backstage-sub-item"
       onClick={onClick}
       disabled={disabled}
@@ -122,7 +123,7 @@ function SubMenuItem({
       <span className="backstage-item-label" style={{ fontSize: 12 }}>
         {label}
       </span>
-    </button>
+    </OaButton>
   );
 }
 
@@ -365,7 +366,7 @@ export default function Backstage({
   return (
     <div className="backstage-overlay">
       <div className="backstage-sidebar">
-        <button className="backstage-back" onClick={onClose}>
+        <OaButton className="backstage-back" onClick={onClose}>
           <svg
             width="16"
             height="16"
@@ -379,7 +380,7 @@ export default function Backstage({
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
           <span>{t("file")}</span>
-        </button>
+        </OaButton>
         <div className="backstage-items">
           {/* Nieuw */}
           <MenuItem
@@ -516,7 +517,7 @@ function AboutPanel() {
           <svg
             viewBox="0 0 24 24"
             fill="none"
-            stroke="var(--theme-accent)"
+            stroke="var(--oa-accent)"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"

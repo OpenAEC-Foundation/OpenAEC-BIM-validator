@@ -22,7 +22,7 @@ Een werkende deelimplementatie sluit een issue niet automatisch. De acceptatiecr
 | #3 Browservalidatie | Servervalidatie als referentie | Pyodide/wasm-proef met gelijkwaardige resultaten, tijd- en geheugenmetingen |
 | #4 Reproduceerbaarheid | npm-lockfile, Python-lock, MIT-licentie, dependencylicenties, virtualenv uit git | Schone CI-build en licentieherkenning op de hoofdbranch |
 | #5 Validatie-eisen | IDS-engine en rapportage | Volledige acceptatiematrix voor semantiek, herkomst, determinisme, foutstatussen en prestaties |
-| #6 Ecosysteem | Windows-build, Python-library, CLI, HTTP API en stdio MCP | Volledige Blueprint-componentadoptie, overige native platformen, SDK-contract en platformintegratie |
+| #6 Ecosysteem | Windows-build, Python-library, CLI, HTTP API, stdio MCP en Blueprint UI 0.4 | Overige native platformen, SDK-contract en platformintegratie |
 | #7 Versies | Script synchroniseert tien versievelden en controleert releasetags | Gepubliceerde release met overeenkomstige versie |
 | #8 SuperCloud | Container en bestaande API | Gezamenlijke acceptatie van #9, #10 en #11 |
 | #9 Containerrelease | Tagworkflow, OCI-labels, dependencylicenties, non-root en healthcheck | Gepubliceerde digest ophalen en controleren |
@@ -34,7 +34,7 @@ Een werkende deelimplementatie sluit een issue niet automatisch. De acceptatiecr
 | #15 IDS-editor | Upload van bestaande IDS-bestanden | Browsereditor met schema- en inhoudsvalidatie |
 | #16 Meten | 3D-viewer | Meetgereedschap en eenhedenacceptatie |
 | #17 Smart Views | Modelweergave en selectie | Bewaarbare filters en kleuren op eigenschappen |
-| #18 BCF-roundtrip | BCF-export en bestaande importcode | Import aansluiten op de issue-UI en configureerbare BCF-servers |
+| #18 BCF-roundtrip | BCF 2.1-import in issue-UI, camera/selectie, statusbewerking en behoud van topicbestanden bij export | Externe API 3.0/OAuth2, status/reacties ophalen en externe testprojectacceptatie |
 | #19 Hoeveelheden | IFC-elementgegevens | Aggregatie, eenheden en Excel-export |
 | #20 Niet-IDS-regels | Aparte kwaliteitsroute | Afgebakende geometrische regels met expliciete herkomst en toetsstatus |
 | #21 Georeferentie | Meerdere modellen in de viewer | Eenheden, coördinatenstelsels en federatieafwijkingen controleren |

@@ -1,6 +1,7 @@
 """Report installed distributions and their bundled license notices."""
 
 import sys
+from pathlib import Path
 from importlib.metadata import distributions
 
 
@@ -11,6 +12,15 @@ def main():
     print(
         "Generated from the installed runtime. Original licenses apply to dependencies.\n"
     )
+    root = Path(__file__).resolve().parents[1]
+    print((root / "THIRD-PARTY-NOTICES.txt").read_text(encoding="utf-8"))
+    for license_file in sorted((root / "viewer/vendor").rglob("*")):
+        if license_file.is_file() and (
+            license_file.name == "LICENSE" or "OFL" in license_file.name
+        ):
+            print(
+                f"\n--- {license_file.relative_to(root)} ---\n{license_file.read_text(encoding='utf-8')}"
+            )
     for dist in sorted(
         distributions(), key=lambda d: d.metadata.get("Name", "").lower()
     ):

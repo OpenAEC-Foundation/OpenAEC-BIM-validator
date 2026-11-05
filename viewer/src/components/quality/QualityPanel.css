@@ -8,11 +8,11 @@
 }
 
 .quality-panel__heading {
+  letter-spacing: 0.08em;
+  margin: 0 0 8px;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  color: var(--theme-text-muted);
-  margin: 0 0 8px;
+  color: var(--oa-text-muted);
 }
 
 .quality-panel__config {
@@ -26,50 +26,27 @@
   flex-direction: column;
   gap: 4px;
   font-size: 12px;
-  color: var(--theme-text-muted);
+  color: var(--oa-text-muted);
 }
 
 .quality-panel__select {
-  background: var(--theme-dialog-input-bg);
-  color: var(--theme-text);
-  border: 1px solid var(--theme-border);
-  border-radius: 4px;
   padding: 6px 8px;
-  font-size: 13px;
 }
 
 .quality-panel__btn {
-  border: 1px solid var(--theme-border);
-  border-radius: 4px;
   padding: 8px 12px;
-  font-size: 13px;
-  cursor: pointer;
-  background: var(--theme-dialog-input-bg);
-  color: var(--theme-text);
-}
-
-.quality-panel__btn--primary {
-  background: var(--theme-accent);
-  border-color: var(--theme-accent);
-  color: var(--theme-btn-primary-text);
-  font-weight: 600;
-}
-
-.quality-panel__btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .quality-panel__error {
-  color: var(--theme-danger-color);
-  font-size: 12px;
   margin: 4px 0 0;
+  color: var(--oa-error);
+  font-size: 12px;
 }
 
 .quality-panel__summary {
+  margin: 0 0 8px;
   font-size: 13px;
   font-weight: 600;
-  margin: 0 0 8px;
 }
 
 .quality-panel__list {
@@ -87,38 +64,11 @@
   gap: 8px;
   width: 100%;
   padding: 6px 8px;
-  border: 1px solid var(--theme-border);
-  border-radius: 4px;
-  background: none;
-  color: var(--theme-text);
-  font-size: 12px;
-  cursor: pointer;
   text-align: left;
-}
-
-.quality-panel__check-header--pass .quality-panel__check-status {
-  color: var(--theme-accent);
-}
-
-.quality-panel__check-header--error .quality-panel__check-status {
-  color: var(--theme-danger-color);
-}
-
-.quality-panel__check-header--warning .quality-panel__check-status {
-  color: var(--domain-warning);
-}
-
-.quality-panel__check-header--info .quality-panel__check-status {
-  color: var(--theme-text-muted);
 }
 
 .quality-panel__check-title {
   flex: 1;
-}
-
-.quality-panel__check-count {
-  font-size: 11px;
-  color: var(--theme-text-muted);
 }
 
 .quality-panel__findings {
@@ -132,22 +82,34 @@
 }
 
 .quality-panel__finding-link {
-  background: none;
-  border: none;
-  color: var(--theme-accent);
-  cursor: pointer;
-  font-size: 12px;
   padding: 0;
   text-align: left;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
-.quality-panel__finding-link:hover {
-  color: var(--theme-accent-hover);
+.quality-panel__check-header--pass .quality-panel__check-status {
+  color: var(--oa-accent);
+}
+
+.quality-panel__check-header--error .quality-panel__check-status {
+  color: var(--oa-error);
+}
+
+.quality-panel__check-header--warning .quality-panel__check-status {
+  color: var(--oa-warning);
+}
+
+.quality-panel__check-header--info .quality-panel__check-status {
+  color: var(--oa-text-muted);
+}
+
+.quality-panel__check-count {
+  font-size: 11px;
+  color: var(--oa-text-muted);
 }
 
 .quality-panel__omitted {
-  color: var(--theme-text-muted);
+  color: var(--oa-text-muted);
   font-style: italic;
 }

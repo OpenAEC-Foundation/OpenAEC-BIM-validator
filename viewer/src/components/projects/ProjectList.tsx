@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 /**
  * ProjectList — Backstage panel for managing projects.
  *
@@ -124,14 +125,14 @@ export default function ProjectList({
 
       {/* Actions bar */}
       <div className="project-list__actions">
-        <button
+        <OaButton kind="primary"
           className="project-list__btn project-list__btn--primary"
           onClick={() => setShowCreate(true)}
           disabled={showCreate}
         >
           + {t("projectsPanel.newProject", "Nieuw project")}
-        </button>
-        <button
+        </OaButton>
+        <OaButton
           className="project-list__btn project-list__btn--icon"
           onClick={() => loadProjects()}
           title={t("projectsPanel.refresh", "Vernieuwen")}
@@ -148,7 +149,7 @@ export default function ProjectList({
             <polyline points="1 20 1 14 7 14" />
             <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
           </svg>
-        </button>
+        </OaButton>
       </div>
 
       {/* Create form */}
@@ -159,7 +160,7 @@ export default function ProjectList({
               {t("projectsPanel.projectName", "Naam")}
             </label>
             <input
-              className="project-list__input"
+              className="oa-field project-list__input"
               type="text"
               placeholder="Kantoorgebouw X"
               value={newName}
@@ -173,7 +174,7 @@ export default function ProjectList({
               {t("projectsPanel.projectDesc", "Beschrijving")}
             </label>
             <input
-              className="project-list__input"
+              className="oa-field project-list__input"
               type="text"
               placeholder="BIM validatie project"
               value={newDesc}
@@ -182,7 +183,7 @@ export default function ProjectList({
             />
           </div>
           <div className="project-list__form-actions">
-            <button
+            <OaButton kind="primary"
               type="submit"
               className="project-list__btn project-list__btn--primary"
               disabled={!newName.trim() || creating}
@@ -190,15 +191,15 @@ export default function ProjectList({
               {creating
                 ? t("projectsPanel.creating", "Aanmaken...")
                 : t("projectsPanel.create", "Aanmaken")}
-            </button>
-            <button
+            </OaButton>
+            <OaButton
               type="button"
               className="project-list__btn project-list__btn--secondary"
               onClick={() => setShowCreate(false)}
               disabled={creating}
             >
               {t("projectsPanel.cancel", "Annuleren")}
-            </button>
+            </OaButton>
           </div>
         </form>
       )}
@@ -253,7 +254,7 @@ export default function ProjectList({
                   </span>
                 </div>
               </div>
-              <button
+              <OaButton kind="danger"
                 className="project-list__btn project-list__btn--danger project-list__btn--small"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -264,7 +265,7 @@ export default function ProjectList({
                 }
               >
                 {confirmDelete === project.id ? "!" : "\u00d7"}
-              </button>
+              </OaButton>
             </div>
           ))
         )}

@@ -1,3 +1,4 @@
+import { Icon, Button as OaButton } from "@openaec/ui-react";
 interface RibbonButtonProps {
   icon: string;
   label: string;
@@ -18,17 +19,16 @@ export default function RibbonButton({
   onClick,
 }: RibbonButtonProps) {
   return (
-    <button
+    <OaButton
+      kind="quiet"
+      aria-pressed={active}
       className={`ribbon-btn${size === "small" ? " small" : ""}${size === "medium" ? " medium" : ""}${active ? " active" : ""}`}
       title={title || label}
       disabled={disabled}
       onClick={onClick}
     >
-      <div
-        className="ribbon-btn-icon"
-        dangerouslySetInnerHTML={{ __html: icon }}
-      />
+      <span className="ribbon-btn-icon"><Icon id={icon} size={size === "small" ? 16 : 24} /></span>
       <span className="ribbon-btn-label">{label}</span>
-    </button>
+    </OaButton>
   );
 }

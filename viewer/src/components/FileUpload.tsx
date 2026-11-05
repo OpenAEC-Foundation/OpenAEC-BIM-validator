@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 /**
  * FileUpload Component
  *
@@ -243,14 +244,14 @@ export function FileUpload({
               </span>
             </div>
             {!disabled && (
-              <button
+              <OaButton kind="quiet"
                 type="button"
                 className="file-clear-btn"
                 onClick={handleClear}
                 aria-label="Clear selected file"
               >
                 &#x2715;
-              </button>
+              </OaButton>
             )}
           </div>
         ) : (
@@ -289,13 +290,13 @@ export function FileUpload({
         .file-upload {
           display: flex;
           flex-direction: column;
-          gap: var(--spacing-sm);
+          gap: var(--oa-space-sm);
         }
 
         .file-upload-label {
-          font-size: var(--font-size-base);
+          font-size: var(--oa-size-body);
           font-weight: 600;
-          color: var(--color-text);
+          color: var(--oa-text);
         }
 
         .file-upload-zone {
@@ -303,39 +304,39 @@ export function FileUpload({
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          padding: var(--spacing-xl) var(--spacing-lg);
+          padding: var(--oa-space-2xl) var(--oa-space-xl);
           min-height: 150px;
-          border: 2px dashed var(--color-border);
-          border-radius: var(--radius-lg);
-          background-color: var(--color-surface);
+          border: 2px dashed var(--oa-border);
+          border-radius: var(--oa-radius-large);
+          background-color: var(--oa-panel);
           cursor: pointer;
           transition: border-color var(--transition-fast),
             background-color var(--transition-fast);
         }
 
         .file-upload-zone:hover:not(.file-upload-zone--disabled) {
-          border-color: var(--color-primary);
-          background-color: var(--color-hover);
+          border-color: var(--oa-accent);
+          background-color: var(--oa-hover);
         }
 
         .file-upload-zone:focus-visible {
-          outline: 2px solid var(--color-primary);
+          outline: 2px solid var(--oa-accent);
           outline-offset: 2px;
         }
 
         .file-upload-zone--drag-over {
-          border-color: var(--color-primary);
-          background-color: var(--color-active);
+          border-color: var(--oa-accent);
+          background-color: var(--oa-accent);
           border-style: solid;
         }
 
         .file-upload-zone--has-file {
-          border-color: var(--color-success);
+          border-color: var(--oa-success);
           border-style: solid;
         }
 
         .file-upload-zone--error {
-          border-color: var(--color-error);
+          border-color: var(--oa-error);
         }
 
         .file-upload-zone--disabled {
@@ -360,52 +361,52 @@ export function FileUpload({
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: var(--spacing-sm);
+          gap: var(--oa-space-sm);
           text-align: center;
         }
 
         .file-upload-selected {
           flex-direction: row;
-          gap: var(--spacing-md);
+          gap: var(--oa-space-lg);
         }
 
         .upload-icon {
-          font-size: var(--font-size-3xl);
+          font-size: var(--oa-size-page-heading);
           line-height: 1;
         }
 
         .upload-text {
-          font-size: var(--font-size-base);
-          color: var(--color-text);
+          font-size: var(--oa-size-body);
+          color: var(--oa-text);
         }
 
         .upload-link {
-          color: var(--color-primary);
+          color: var(--oa-accent);
           text-decoration: underline;
           font-weight: 500;
         }
 
         .upload-hint {
-          font-size: var(--font-size-sm);
-          color: var(--color-text-secondary);
+          font-size: var(--oa-size-body);
+          color: var(--oa-text-secondary);
         }
 
         .file-info {
           display: flex;
           flex-direction: column;
           align-items: flex-start;
-          gap: var(--spacing-xs);
+          gap: var(--oa-space-xs);
         }
 
         .file-name {
           font-weight: 600;
-          color: var(--color-text);
+          color: var(--oa-text);
           word-break: break-all;
         }
 
         .file-size {
-          font-size: var(--font-size-sm);
-          color: var(--color-text-secondary);
+          font-size: var(--oa-size-body);
+          color: var(--oa-text-secondary);
         }
 
         .file-clear-btn {
@@ -416,24 +417,24 @@ export function FileUpload({
           height: 32px;
           padding: 0;
           border: none;
-          border-radius: var(--radius-full);
-          background-color: var(--color-border);
-          color: var(--color-text);
+          border-radius: var(--oa-radius-full);
+          background-color: var(--oa-border);
+          color: var(--oa-text);
           cursor: pointer;
           transition: background-color var(--transition-fast);
         }
 
         .file-clear-btn:hover {
-          background-color: var(--color-error);
-          color: var(--color-text-light);
+          background-color: var(--oa-error);
+          color: var(--oa-text-on-accent);
         }
 
         .file-upload-error {
-          padding: var(--spacing-sm) var(--spacing-md);
+          padding: var(--oa-space-sm) var(--oa-space-lg);
           background-color: rgba(219, 76, 64, 0.1);
-          border-radius: var(--radius-sm);
-          color: var(--color-error);
-          font-size: var(--font-size-sm);
+          border-radius: var(--oa-radius-small);
+          color: var(--oa-error);
+          font-size: var(--oa-size-body);
         }
 
         .file-upload-meta {
@@ -442,8 +443,8 @@ export function FileUpload({
         }
 
         .max-size-indicator {
-          font-size: var(--font-size-xs);
-          color: var(--color-text-secondary);
+          font-size: var(--oa-size-label);
+          color: var(--oa-text-secondary);
         }
       `}</style>
     </div>

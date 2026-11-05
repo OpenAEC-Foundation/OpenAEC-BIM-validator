@@ -14,11 +14,11 @@
 }
 
 .cloud-dialog__label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--theme-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--oa-text-secondary);
 }
 
 .cloud-dialog__project-row {
@@ -30,39 +30,19 @@
 .cloud-dialog__select {
   flex: 1;
   padding: 6px 8px;
-  border: 1px solid var(--theme-border);
-  border-radius: 3px;
-  background: var(--theme-surface);
-  color: var(--theme-text);
-  font-size: 12px;
-  outline: none;
-}
-
-.cloud-dialog__select:focus {
-  border-color: var(--theme-accent);
 }
 
 .cloud-dialog__input {
   padding: 6px 8px;
-  border: 1px solid var(--theme-border);
-  border-radius: 3px;
-  background: var(--theme-surface);
-  color: var(--theme-text);
-  font-size: 12px;
-  outline: none;
-}
-
-.cloud-dialog__input:focus {
-  border-color: var(--theme-accent);
 }
 
 /* File list */
 .cloud-dialog__files {
   max-height: 240px;
   overflow-y: auto;
-  border: 1px solid var(--theme-border);
+  border: 1px solid var(--oa-border);
   border-radius: 3px;
-  background: var(--theme-bg-lighter);
+  background: var(--oa-panel);
 }
 
 .cloud-dialog__table {
@@ -80,9 +60,9 @@
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--theme-text-secondary);
-  background: var(--theme-surface);
-  border-bottom: 1px solid var(--theme-border);
+  color: var(--oa-text-secondary);
+  background: var(--oa-panel);
+  border-bottom: 1px solid var(--oa-border);
 }
 
 .cloud-dialog__table tbody tr {
@@ -91,16 +71,12 @@
 }
 
 .cloud-dialog__table tbody tr:hover {
-  background: var(--theme-hover);
-}
-
-.cloud-dialog__table tbody tr.cloud-dialog__row--selected {
-  background: var(--theme-hover-strong);
+  background: var(--oa-hover);
 }
 
 .cloud-dialog__table td {
   padding: 5px 8px;
-  border-bottom: 1px solid var(--theme-border-subtle);
+  border-bottom: 1px solid var(--oa-border-subtle);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -113,7 +89,7 @@
 .cloud-dialog__notice {
   padding: 16px;
   text-align: center;
-  color: var(--theme-text-secondary);
+  color: var(--oa-text-secondary);
   font-size: 12px;
   font-style: italic;
 }
@@ -127,12 +103,12 @@
 }
 
 .cloud-dialog__error {
-  font-size: 11px;
-  color: var(--theme-danger-color);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 11px;
+  color: var(--oa-error);
 }
 
 .cloud-dialog__actions {
@@ -144,56 +120,15 @@
 /* Buttons */
 .cloud-dialog__btn {
   padding: 6px 14px;
-  border: 1px solid var(--theme-border);
-  border-radius: 3px;
-  background: var(--theme-surface);
-  color: var(--theme-text);
-  font-size: 12px;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
   white-space: nowrap;
 }
 
-.cloud-dialog__btn:hover:not(:disabled) {
-  background: var(--theme-hover);
-}
-
-.cloud-dialog__btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.cloud-dialog__btn--primary {
-  background: var(--theme-accent);
-  color: var(--theme-btn-primary-text);
-  border-color: var(--theme-accent);
-}
-
-.cloud-dialog__btn--primary:hover:not(:disabled) {
-  background: var(--theme-accent-hover);
-}
-
-.cloud-dialog__btn--secondary {
-  background: transparent;
-}
-
 .cloud-dialog__btn--danger {
-  color: var(--theme-danger-color);
-  border-color: transparent;
-  background: transparent;
   padding: 2px 6px;
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.cloud-dialog__btn--danger:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--theme-danger-color) 10%, transparent);
 }
 
 .cloud-dialog__btn--small {
   padding: 2px 6px;
-  font-size: 12px;
 }
 
 .cloud-dialog__btn--icon {
@@ -201,4 +136,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.cloud-dialog__table tbody tr.cloud-dialog__row--selected {
+  background: var(--oa-pressed);
 }

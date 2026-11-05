@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 /**
  * BcfPlatformSection — BCF Platform auth, project selection, and push.
  */
@@ -83,13 +84,13 @@ export function BcfPlatformSection() {
             Bekijk project op platform →
           </a>
         )}
-        <button
+        <OaButton
           type="button"
           className="bcf-panel__btn bcf-panel__btn--secondary"
           onClick={bcfResetPush}
         >
           Terug
-        </button>
+        </OaButton>
       </div>
     );
   }
@@ -116,7 +117,7 @@ export function BcfPlatformSection() {
         <label className="bcf-panel__label">Project</label>
         <div className="bcf-panel__btn-row">
           <select
-            className="bcf-panel__select"
+            className="oa-field bcf-panel__select"
             value={bcfSelectedProjectId ?? ""}
             onChange={(e) => bcfSelectProject(e.target.value || null)}
             style={{ flex: 1 }}
@@ -128,14 +129,14 @@ export function BcfPlatformSection() {
               </option>
             ))}
           </select>
-          <button
+          <OaButton
             type="button"
             className="bcf-panel__btn bcf-panel__btn--secondary"
             onClick={bcfRefreshProjects}
             title="Ververs projecten"
           >
             ↻
-          </button>
+          </OaButton>
         </div>
       </div>
 
@@ -144,15 +145,15 @@ export function BcfPlatformSection() {
 
       {/* Push button */}
       {queuedIssues.length > 0 && (
-        <button
+        <OaButton kind="primary"
           type="button"
           className="bcf-panel__btn bcf-panel__btn--primary"
           disabled={!bcfSelectedProjectId || queuedIssues.length === 0}
           onClick={() => bcfPushIssues()}
-          style={{ width: "100%", marginTop: "var(--spacing-sm)" }}
+          style={{ width: "100%", marginTop: "var(--oa-space-sm)" }}
         >
           Push {queuedIssues.length} issue{queuedIssues.length !== 1 ? "s" : ""} naar platform
-        </button>
+        </OaButton>
       )}
 
       {bcfSelectedProjectId && bcfPlatformUrl && (
@@ -173,14 +174,14 @@ export function BcfPlatformSection() {
         </div>
       )}
 
-      <button
+      <OaButton kind="danger"
         type="button"
         className="bcf-panel__btn bcf-panel__btn--danger"
         onClick={bcfLogout}
-        style={{ marginTop: "var(--spacing-sm)" }}
+        style={{ marginTop: "var(--oa-space-sm)" }}
       >
         {bcfAuth.method === "oidc" ? "Uitloggen" : "Verbinding verbreken"}
-      </button>
+      </OaButton>
     </div>
   );
 }
@@ -220,7 +221,7 @@ function AuthSection() {
       <div className="bcf-panel__field">
         <label className="bcf-panel__label">Platform URL</label>
         <input
-          className="bcf-panel__input"
+          className="oa-field bcf-panel__input"
           type="url"
           placeholder="https://bcf.openaec.com"
           value={apiKeyUrl}
@@ -234,7 +235,7 @@ function AuthSection() {
 
       {/* OIDC login */}
       {bcfOidcAvailable && (
-        <button
+        <OaButton kind="primary"
           type="button"
           className="bcf-panel__btn bcf-panel__btn--primary"
           onClick={bcfLoginOidc}
@@ -242,25 +243,25 @@ function AuthSection() {
           style={{ width: "100%" }}
         >
           Inloggen met OpenAEC
-        </button>
+        </OaButton>
       )}
 
       {/* API key fallback */}
       {!showApiKey ? (
-        <button
+        <OaButton
           type="button"
           className="bcf-panel__btn bcf-panel__btn--secondary"
           onClick={() => setShowApiKey(true)}
-          style={{ width: "100%", marginTop: "var(--spacing-xs)" }}
+          style={{ width: "100%", marginTop: "var(--oa-space-xs)" }}
         >
           {bcfOidcAvailable ? "Of gebruik API key" : "Verbind met API key"}
-        </button>
+        </OaButton>
       ) : (
-        <form onSubmit={handleApiKeyConnect} style={{ marginTop: "var(--spacing-xs)" }}>
+        <form onSubmit={handleApiKeyConnect} style={{ marginTop: "var(--oa-space-xs)" }}>
           <div className="bcf-panel__field">
             <label className="bcf-panel__label">API Key</label>
             <input
-              className="bcf-panel__input"
+              className="oa-field bcf-panel__input"
               type="password"
               placeholder="bcfk_..."
               value={apiKey}
@@ -268,7 +269,7 @@ function AuthSection() {
               disabled={isConnecting}
             />
           </div>
-          <button
+          <OaButton kind="primary"
             type="submit"
             className="bcf-panel__btn bcf-panel__btn--primary"
             disabled={!apiKeyUrl.trim() || !apiKey.trim() || isConnecting}
@@ -282,12 +283,12 @@ function AuthSection() {
             ) : (
               "Verbinden"
             )}
-          </button>
+          </OaButton>
         </form>
       )}
 
       {bcfError && (
-        <div className="bcf-panel__status bcf-panel__status--error" style={{ marginTop: "var(--spacing-sm)" }}>
+        <div className="bcf-panel__status bcf-panel__status--error" style={{ marginTop: "var(--oa-space-sm)" }}>
           <span className="bcf-panel__status-dot" />
           {bcfError}
         </div>
@@ -326,14 +327,14 @@ function CreateProjectForm({ onCreated }: { onCreated: () => void }) {
 
   if (!showForm) {
     return (
-      <button
+      <OaButton
         type="button"
         className="bcf-panel__btn bcf-panel__btn--secondary"
         onClick={() => setShowForm(true)}
-        style={{ width: "100%", marginTop: "var(--spacing-xs)" }}
+        style={{ width: "100%", marginTop: "var(--oa-space-xs)" }}
       >
         + Nieuw project aanmaken
-      </button>
+      </OaButton>
     );
   }
 
@@ -342,7 +343,7 @@ function CreateProjectForm({ onCreated }: { onCreated: () => void }) {
       <div className="bcf-panel__field">
         <label className="bcf-panel__label">Projectnaam</label>
         <input
-          className="bcf-panel__input"
+          className="oa-field bcf-panel__input"
           type="text"
           placeholder="Mijn BIM project"
           value={name}
@@ -354,7 +355,7 @@ function CreateProjectForm({ onCreated }: { onCreated: () => void }) {
       <div className="bcf-panel__field">
         <label className="bcf-panel__label">Beschrijving (optioneel)</label>
         <input
-          className="bcf-panel__input"
+          className="oa-field bcf-panel__input"
           type="text"
           placeholder="IDS validatie resultaten"
           value={description}
@@ -363,22 +364,22 @@ function CreateProjectForm({ onCreated }: { onCreated: () => void }) {
         />
       </div>
       <div className="bcf-panel__btn-row">
-        <button
+        <OaButton kind="primary"
           type="submit"
           className="bcf-panel__btn bcf-panel__btn--primary"
           disabled={!name.trim() || creating}
           style={{ flex: 1 }}
         >
           {creating ? "Aanmaken..." : "Aanmaken"}
-        </button>
-        <button
+        </OaButton>
+        <OaButton
           type="button"
           className="bcf-panel__btn bcf-panel__btn--secondary"
           onClick={() => setShowForm(false)}
           disabled={creating}
         >
           Annuleer
-        </button>
+        </OaButton>
       </div>
     </form>
   );

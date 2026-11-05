@@ -1,8 +1,10 @@
+import { applyDisplay, type Theme } from "@openaec/ui-react";
 const PREFIX = "openaec-bim-validator:";
 
 export function getSetting(key: string, fallback: string): string {
   try {
-    return localStorage.getItem(PREFIX + key) ?? fallback;
+    const value = localStorage.getItem(PREFIX + key) ?? fallback;
+    return key === "theme" ? normalizeTheme(value) : value;
   } catch {
     return fallback;
   }
@@ -16,6 +18,14 @@ export function setSetting(key: string, value: string): void {
   }
 }
 
+export function normalizeTheme(theme?: string): Theme {
+  const legacy: Record<string, Theme> = { forge: "dark", openaec: "dark", contrast: "high-contrast-dark" };
+  const themes: Theme[] = ["light", "dark", "blueprint", "high-contrast-dark", "high-contrast-light"];
+  const normalized = legacy[theme ?? ""] ?? (themes.includes(theme as Theme) ? theme as Theme : "light");
+  return normalized;
+}
+
 export function applyTheme(theme?: string): void {
-  document.documentElement.setAttribute("data-theme", theme || "light");
+  document.documentElement.removeAttribute("data-theme");
+  applyDisplay({ theme: normalizeTheme(theme) });
 }

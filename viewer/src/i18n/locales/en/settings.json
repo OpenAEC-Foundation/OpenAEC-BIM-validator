@@ -18,7 +18,9 @@
     "light": "Light",
     "forge": "Forge (dark amber)",
     "blueprint": "Blueprint (blue)",
-    "contrast": "High contrast"
+    "contrast": "High contrast",
+    "contrastDark": "High contrast dark",
+    "contrastLight": "High contrast light"
   },
   "about": {
     "appName": "OpenAEC BIM Validator",

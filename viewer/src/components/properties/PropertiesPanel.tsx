@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 /**
  * PropertiesPanel — tabbed IFC property viewer.
  *
@@ -110,7 +111,7 @@ function Section({
 
   return (
     <div className="props-section">
-      <button
+      <OaButton kind="quiet"
         type="button"
         className="props-section__toggle"
         onClick={() => setOpen(!open)}
@@ -122,7 +123,7 @@ function Section({
         {count !== undefined && (
           <span className="props-section__count">{count}</span>
         )}
-      </button>
+      </OaButton>
       {open && <div className="props-section__body">{children}</div>}
     </div>
   );
@@ -303,7 +304,7 @@ export function PropertiesPanel() {
                   : undefined;
 
           return (
-            <button
+            <OaButton
               key={tab.id}
               type="button"
               className={`props-tabs__tab ${activeTab === tab.id ? "props-tabs__tab--active" : ""}`}
@@ -313,7 +314,7 @@ export function PropertiesPanel() {
               {badge !== undefined && badge > 0 && (
                 <span className="props-tabs__badge">{badge}</span>
               )}
-            </button>
+            </OaButton>
           );
         })}
       </div>

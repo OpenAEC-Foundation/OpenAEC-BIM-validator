@@ -15,7 +15,7 @@ Programmatic usage:
     print(f"Overall pass: {result.overall_pass}")
 """
 
-__version__ = "2026.45.4"
+__version__ = "2026.45.5"
 
 # CLI app - entry point for ifc-validate command
 from ifc_validator.cli import app

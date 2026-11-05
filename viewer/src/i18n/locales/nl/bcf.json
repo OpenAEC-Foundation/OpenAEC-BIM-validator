@@ -1,0 +1,20 @@
+{
+  "import": "BCF importeren",
+  "opening": "BCF openen…",
+  "file": "BCF-bestand",
+  "tooLarge": "BCF-bestand is groter dan 50 MB.",
+  "failed": "BCF-import mislukt.",
+  "imported": "{{count}} issues toegevoegd; {{skipped}} bestaande issues overgeslagen.",
+  "success": "Gelukt.",
+  "error": "Fout.",
+  "localExport": "Lokale export",
+  "download": "Download als BCF ZIP ({{count}} issues)",
+  "downloading": "Downloaden…",
+  "empty": "Geen BCF-issues. Importeer een BCF-bestand of maak issues vanuit de validatieresultaten.",
+  "clear": "Wis alles",
+  "remove": "Verwijder issue",
+  "sourceBcf": "BCF",
+  "sourceSpec": "Specificatie",
+  "sourceReq": "Eis",
+  "sourceElement": "Element"
+}

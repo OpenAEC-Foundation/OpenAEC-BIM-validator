@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 /**
  * IdsSelector Component
  *
@@ -329,14 +330,14 @@ export function IdsSelector({
                   </span>
                 </div>
                 {!disabled && (
-                  <button
+                  <OaButton kind="quiet"
                     type="button"
                     className="ids-file-clear-btn"
                     onClick={handleClearFile}
                     aria-label="Clear selected IDS file"
                   >
                     &#x2715;
-                  </button>
+                  </OaButton>
                 )}
               </div>
             ) : (
@@ -370,36 +371,36 @@ export function IdsSelector({
         .ids-selector {
           display: flex;
           flex-direction: column;
-          gap: var(--spacing-md);
+          gap: var(--oa-space-lg);
         }
 
         .ids-selector-label {
-          font-size: var(--font-size-base);
+          font-size: var(--oa-size-body);
           font-weight: 600;
-          color: var(--color-text);
+          color: var(--oa-text);
         }
 
         .ids-options {
           display: flex;
           flex-direction: column;
-          gap: var(--spacing-sm);
+          gap: var(--oa-space-sm);
         }
 
         @media (min-width: 768px) {
           .ids-options {
             flex-direction: row;
-            gap: var(--spacing-md);
+            gap: var(--oa-space-lg);
           }
         }
 
         .ids-option {
           display: flex;
           align-items: flex-start;
-          gap: var(--spacing-sm);
-          padding: var(--spacing-md);
-          border: 2px solid var(--color-border);
-          border-radius: var(--radius-md);
-          background-color: var(--color-surface);
+          gap: var(--oa-space-sm);
+          padding: var(--oa-space-lg);
+          border: 2px solid var(--oa-border);
+          border-radius: var(--oa-radius-medium);
+          background-color: var(--oa-panel);
           cursor: pointer;
           transition: border-color var(--transition-fast),
             background-color var(--transition-fast);
@@ -407,13 +408,13 @@ export function IdsSelector({
         }
 
         .ids-option:hover:not(.ids-option--disabled) {
-          border-color: var(--color-primary);
-          background-color: var(--color-hover);
+          border-color: var(--oa-accent);
+          background-color: var(--oa-hover);
         }
 
         .ids-option--selected {
-          border-color: var(--color-primary);
-          background-color: var(--color-hover);
+          border-color: var(--oa-accent);
+          background-color: var(--oa-hover);
         }
 
         .ids-option--disabled {
@@ -440,17 +441,17 @@ export function IdsSelector({
           width: 20px;
           height: 20px;
           min-width: 20px;
-          border: 2px solid var(--color-border);
-          border-radius: var(--radius-full);
-          background-color: var(--color-background);
+          border: 2px solid var(--oa-border);
+          border-radius: var(--oa-radius-full);
+          background-color: var(--oa-panel);
           transition: border-color var(--transition-fast),
             background-color var(--transition-fast);
           margin-top: 2px;
         }
 
         .ids-option-radio:checked + .ids-option-indicator {
-          border-color: var(--color-primary);
-          background-color: var(--color-primary);
+          border-color: var(--oa-accent);
+          background-color: var(--oa-accent);
         }
 
         .ids-option-radio:checked + .ids-option-indicator::after {
@@ -458,40 +459,40 @@ export function IdsSelector({
           display: block;
           width: 8px;
           height: 8px;
-          border-radius: var(--radius-full);
-          background-color: var(--color-text-light);
+          border-radius: var(--oa-radius-full);
+          background-color: var(--oa-text-on-accent);
         }
 
         .ids-option-radio:focus-visible + .ids-option-indicator {
-          outline: 2px solid var(--color-primary);
+          outline: 2px solid var(--oa-accent);
           outline-offset: 2px;
         }
 
         .ids-option-content {
           display: flex;
           flex-direction: column;
-          gap: var(--spacing-xs);
+          gap: var(--oa-space-xs);
         }
 
         .ids-option-label {
           font-weight: 600;
-          color: var(--color-text);
-          font-size: var(--font-size-base);
+          color: var(--oa-text);
+          font-size: var(--oa-size-body);
         }
 
         .ids-option-description {
-          font-size: var(--font-size-sm);
-          color: var(--color-text-secondary);
+          font-size: var(--oa-size-body);
+          color: var(--oa-text-secondary);
         }
 
         /* Custom Upload Zone */
         .ids-custom-upload {
           display: flex;
           flex-direction: column;
-          gap: var(--spacing-sm);
-          margin-top: var(--spacing-sm);
-          padding-left: var(--spacing-md);
-          border-left: 3px solid var(--color-primary);
+          gap: var(--oa-space-sm);
+          margin-top: var(--oa-space-sm);
+          padding-left: var(--oa-space-lg);
+          border-left: 3px solid var(--oa-accent);
         }
 
         .ids-upload-zone {
@@ -499,39 +500,39 @@ export function IdsSelector({
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          padding: var(--spacing-lg);
+          padding: var(--oa-space-xl);
           min-height: 100px;
-          border: 2px dashed var(--color-border);
-          border-radius: var(--radius-md);
-          background-color: var(--color-surface);
+          border: 2px dashed var(--oa-border);
+          border-radius: var(--oa-radius-medium);
+          background-color: var(--oa-panel);
           cursor: pointer;
           transition: border-color var(--transition-fast),
             background-color var(--transition-fast);
         }
 
         .ids-upload-zone:hover:not(.ids-upload-zone--disabled) {
-          border-color: var(--color-primary);
-          background-color: var(--color-hover);
+          border-color: var(--oa-accent);
+          background-color: var(--oa-hover);
         }
 
         .ids-upload-zone:focus-visible {
-          outline: 2px solid var(--color-primary);
+          outline: 2px solid var(--oa-accent);
           outline-offset: 2px;
         }
 
         .ids-upload-zone--drag-over {
-          border-color: var(--color-primary);
-          background-color: var(--color-active);
+          border-color: var(--oa-accent);
+          background-color: var(--oa-accent);
           border-style: solid;
         }
 
         .ids-upload-zone--has-file {
-          border-color: var(--color-success);
+          border-color: var(--oa-success);
           border-style: solid;
         }
 
         .ids-upload-zone--error {
-          border-color: var(--color-error);
+          border-color: var(--oa-error);
         }
 
         .ids-upload-zone--disabled {
@@ -556,53 +557,53 @@ export function IdsSelector({
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: var(--spacing-xs);
+          gap: var(--oa-space-xs);
           text-align: center;
         }
 
         .ids-upload-selected {
           flex-direction: row;
-          gap: var(--spacing-md);
+          gap: var(--oa-space-lg);
         }
 
         .ids-upload-icon {
-          font-size: var(--font-size-2xl);
+          font-size: var(--oa-size-page-heading);
           line-height: 1;
         }
 
         .ids-upload-text {
-          font-size: var(--font-size-sm);
-          color: var(--color-text);
+          font-size: var(--oa-size-body);
+          color: var(--oa-text);
         }
 
         .ids-upload-link {
-          color: var(--color-primary);
+          color: var(--oa-accent);
           text-decoration: underline;
           font-weight: 500;
         }
 
         .ids-upload-hint {
-          font-size: var(--font-size-xs);
-          color: var(--color-text-secondary);
+          font-size: var(--oa-size-label);
+          color: var(--oa-text-secondary);
         }
 
         .ids-file-info {
           display: flex;
           flex-direction: column;
           align-items: flex-start;
-          gap: var(--spacing-xs);
+          gap: var(--oa-space-xs);
         }
 
         .ids-file-name {
           font-weight: 600;
-          color: var(--color-text);
+          color: var(--oa-text);
           word-break: break-all;
-          font-size: var(--font-size-sm);
+          font-size: var(--oa-size-body);
         }
 
         .ids-file-size {
-          font-size: var(--font-size-xs);
-          color: var(--color-text-secondary);
+          font-size: var(--oa-size-label);
+          color: var(--oa-text-secondary);
         }
 
         .ids-file-clear-btn {
@@ -613,24 +614,24 @@ export function IdsSelector({
           height: 28px;
           padding: 0;
           border: none;
-          border-radius: var(--radius-full);
-          background-color: var(--color-border);
-          color: var(--color-text);
+          border-radius: var(--oa-radius-full);
+          background-color: var(--oa-border);
+          color: var(--oa-text);
           cursor: pointer;
           transition: background-color var(--transition-fast);
         }
 
         .ids-file-clear-btn:hover {
-          background-color: var(--color-error);
-          color: var(--color-text-light);
+          background-color: var(--oa-error);
+          color: var(--oa-text-on-accent);
         }
 
         .ids-upload-error {
-          padding: var(--spacing-sm) var(--spacing-md);
+          padding: var(--oa-space-sm) var(--oa-space-lg);
           background-color: rgba(219, 76, 64, 0.1);
-          border-radius: var(--radius-sm);
-          color: var(--color-error);
-          font-size: var(--font-size-sm);
+          border-radius: var(--oa-radius-small);
+          color: var(--oa-error);
+          font-size: var(--oa-size-body);
         }
       `}</style>
     </div>

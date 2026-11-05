@@ -1,3 +1,4 @@
+import { Tabs } from "@openaec/ui-react";
 /**
  * RightPanel — tabbed panel for validation, clashes, BCF.
  *
@@ -27,23 +28,8 @@ export function RightPanel() {
   return (
     <div className="panel">
       {/* Tab bar */}
-      <div className="tab-bar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            className={`tab-bar__tab ${
-              activeTab === tab.id ? "tab-bar__tab--active" : ""
-            }`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-            {tab.id === "bcf" && bcfIssueCount > 0 && (
-              <span className="tab-bar__badge">{bcfIssueCount}</span>
-            )}
-          </button>
-        ))}
-      </div>
+      <Tabs label="Resultaten" tabs={TABS.map(tab => ({ id: tab.id, label: tab.id === "bcf" && bcfIssueCount ? `BCF (${bcfIssueCount})` : tab.label }))}
+        active={activeTab} onSelect={id => setActiveTab(id as RightPanelTab)} />
 
       {/* Tab content */}
       <div className="panel__content">

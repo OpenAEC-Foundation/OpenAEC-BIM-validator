@@ -10,6 +10,7 @@ import enSettings from "./locales/en/settings.json";
 import enFeedback from "./locales/en/feedback.json";
 import enCloud from "./locales/en/cloud.json";
 import enProjectIo from "./locales/en/projectIo.json";
+import enBcf from "./locales/en/bcf.json";
 // Dutch
 import nlCommon from "./locales/nl/common.json";
 import nlRibbon from "./locales/nl/ribbon.json";
@@ -19,13 +20,15 @@ import nlFeedback from "./locales/nl/feedback.json";
 import nlCloud from "./locales/nl/cloud.json";
 import nlProjectIo from "./locales/nl/projectIo.json";
 
+import nlBcf from "./locales/nl/bcf.json";
+
 export const LANGUAGES = [
   { code: "auto", name: "Auto-detect" },
   { code: "en", name: "English" },
   { code: "nl", name: "Nederlands" },
 ];
 
-const ns = ["common", "ribbon", "backstage", "settings", "feedback", "cloud", "projectIo"];
+const ns = ["common", "ribbon", "backstage", "settings", "feedback", "cloud", "projectIo", "bcf"];
 
 const savedLang = getSetting("language", "nl");
 
@@ -33,8 +36,8 @@ i18next
   .use(initReactI18next)
   .init({
     resources: {
-      en: { common: enCommon, ribbon: enRibbon, backstage: enBackstage, settings: enSettings, feedback: enFeedback, cloud: enCloud, projectIo: enProjectIo },
-      nl: { common: nlCommon, ribbon: nlRibbon, backstage: nlBackstage, settings: nlSettings, feedback: nlFeedback, cloud: nlCloud, projectIo: nlProjectIo },
+      en: { common: enCommon, ribbon: enRibbon, backstage: enBackstage, settings: enSettings, feedback: enFeedback, cloud: enCloud, projectIo: enProjectIo, bcf: enBcf },
+      nl: { common: nlCommon, ribbon: nlRibbon, backstage: nlBackstage, settings: nlSettings, feedback: nlFeedback, cloud: nlCloud, projectIo: nlProjectIo, bcf: nlBcf },
     },
     ns,
     defaultNS: "common",

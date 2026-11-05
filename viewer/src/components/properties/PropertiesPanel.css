@@ -12,17 +12,17 @@
 
 /* Header */
 .props-panel__header {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  background-color: var(--color-hover);
-  border-radius: var(--radius-sm);
+  padding: var(--oa-space-xs) var(--oa-space-sm);
+  background-color: var(--oa-hover);
+  border-radius: var(--oa-radius-small);
   flex-shrink: 0;
 }
 
 .props-panel__type {
   display: inline-block;
-  padding: 1px var(--spacing-xs);
-  background-color: var(--color-primary);
-  color: var(--theme-btn-primary-text);
+  padding: 1px var(--oa-space-xs);
+  background-color: var(--oa-accent);
+  color: var(--oa-text-on-accent);
   font-size: 9px;
   font-weight: 600;
   border-radius: 2px;
@@ -32,52 +32,44 @@
 
 .props-panel__name {
   margin: 2px 0 1px;
-  font-size: var(--font-size-xs);
+  font-size: var(--oa-size-label);
   font-weight: 600;
-  color: var(--color-text);
+  color: var(--oa-text);
   line-height: 1.2;
 }
 
 .props-panel__id {
   display: block;
   font-size: 9px;
-  font-family: var(--font-family-mono);
-  color: var(--color-text-secondary);
+  font-family: var(--oa-font-mono);
+  color: var(--oa-text-secondary);
   word-break: break-all;
   line-height: 1.3;
 }
 
 .props-panel__status {
-  margin: var(--spacing-sm) 0;
+  margin: var(--oa-space-sm) 0;
   font-size: 11px;
-  color: var(--color-text-secondary);
+  color: var(--oa-text-secondary);
   text-align: center;
 }
 
 .props-panel__status--error {
-  color: var(--color-error);
+  color: var(--oa-error);
 }
 
 /* Tab bar (compact layout) */
 .props-tabs {
   display: flex;
-  border-bottom: 1px solid var(--color-border);
-  background-color: var(--color-surface);
   flex-shrink: 0;
   margin-top: 2px;
+  border-bottom: 1px solid var(--oa-border);
+  background-color: var(--oa-panel);
 }
 
 .props-tabs__tab {
   flex: 1;
   padding: 4px 2px;
-  border: none;
-  background: none;
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all var(--transition-fast);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   display: flex;
@@ -86,31 +78,15 @@
   gap: 3px;
 }
 
-.props-tabs__tab:hover {
-  color: var(--color-text);
-  background-color: var(--color-hover);
-}
-
-.props-tabs__tab--active {
-  color: var(--color-primary);
-  border-bottom-color: var(--color-primary);
-  font-weight: 600;
-}
-
 .props-tabs__badge {
-  font-size: 8px;
-  background-color: var(--color-border);
-  color: var(--color-text-secondary);
   padding: 0 3px;
-  border-radius: var(--radius-full);
-  line-height: 1.4;
   min-width: 14px;
   text-align: center;
-}
-
-.props-tabs__tab--active .props-tabs__badge {
-  background-color: var(--color-primary);
-  color: var(--theme-btn-primary-text);
+  font-size: 8px;
+  background-color: var(--oa-border);
+  color: var(--oa-text-secondary);
+  border-radius: var(--oa-radius-full);
+  line-height: 1.4;
 }
 
 /* Tab body — scrollable content area */
@@ -121,42 +97,24 @@
 }
 
 /* Collapsible section */
-.props-section {
-  border-bottom: 1px solid var(--color-border);
-}
-
-.props-section:last-child {
-  border-bottom: none;
-}
 
 .props-section__toggle {
   display: flex;
   align-items: center;
   gap: 4px;
   width: 100%;
-  padding: 3px var(--spacing-xs);
-  border: none;
-  background: none;
-  cursor: pointer;
+  padding: 3px var(--oa-space-xs);
   text-align: left;
-  transition: background-color var(--transition-fast);
-}
-
-.props-section__toggle:hover {
-  background-color: var(--color-hover);
 }
 
 .props-section__arrow {
-  font-size: 10px;
-  color: var(--color-text-secondary);
   width: 10px;
   flex-shrink: 0;
+  font-size: 10px;
+  color: var(--oa-text-secondary);
 }
 
 .props-section__title {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-text);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   flex: 1;
@@ -164,19 +122,22 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--oa-text);
 }
 
 .props-section__count {
-  font-size: 9px;
-  color: var(--color-text-secondary);
-  background-color: var(--color-surface);
   padding: 0 4px;
-  border-radius: var(--radius-full);
   flex-shrink: 0;
+  font-size: 9px;
+  color: var(--oa-text-secondary);
+  background-color: var(--oa-panel);
+  border-radius: var(--oa-radius-full);
 }
 
 .props-section__body {
-  padding: 0 var(--spacing-xs) 3px;
+  padding: 0 var(--oa-space-xs) 3px;
 }
 
 /* Property table */
@@ -196,7 +157,7 @@
 
 .props-table__key {
   padding: 2px 4px 2px 0;
-  color: var(--color-text-secondary);
+  color: var(--oa-text-secondary);
   white-space: nowrap;
   vertical-align: top;
   width: 42%;
@@ -207,7 +168,20 @@
 
 .props-table__value {
   padding: 2px 0;
-  color: var(--color-text);
+  color: var(--oa-text);
   font-weight: 500;
   word-break: break-word;
+}
+
+.props-tabs__tab--active .props-tabs__badge {
+  background-color: var(--oa-accent);
+  color: var(--oa-text-on-accent);
+}
+
+.props-section {
+  border-bottom: 1px solid var(--oa-border);
+}
+
+.props-section:last-child {
+  border-bottom: none;
 }

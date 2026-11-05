@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 /**
  * ClashPanel — clash detection between loaded models (or within one).
  *
@@ -74,7 +75,7 @@ export function ClashPanel() {
         <label className="clash-panel__label">
           Model A
           <select
-            className="clash-panel__select"
+            className="oa-field clash-panel__select"
             value={effectiveA}
             onChange={(e) => setModelA(e.target.value)}
           >
@@ -89,7 +90,7 @@ export function ClashPanel() {
         <label className="clash-panel__label">
           Model B (optioneel — leeg = binnen model A)
           <select
-            className="clash-panel__select"
+            className="oa-field clash-panel__select"
             value={modelB}
             onChange={(e) => setModelB(e.target.value)}
           >
@@ -104,14 +105,14 @@ export function ClashPanel() {
           </select>
         </label>
 
-        <button
+        <OaButton kind="primary"
           type="button"
           className="clash-panel__btn clash-panel__btn--primary"
           onClick={handleRun}
           disabled={running || !effectiveA}
         >
           {running ? "Bezig met detectie…" : "Detecteer clashes"}
-        </button>
+        </OaButton>
 
         {error && <p className="clash-panel__error">{error}</p>}
       </div>
@@ -134,23 +135,23 @@ export function ClashPanel() {
                 className="clash-panel__item"
               >
                 <span className="clash-panel__type">{clash.type}</span>
-                <button
+                <OaButton
                   type="button"
                   className="clash-panel__element"
                   title={`Selecteer ${clash.a_name}`}
                   onClick={() => selectElement(clash.a_global_id, true)}
                 >
                   {clash.a_ifc_class}: {clash.a_name}
-                </button>
+                </OaButton>
                 <span className="clash-panel__vs">×</span>
-                <button
+                <OaButton
                   type="button"
                   className="clash-panel__element"
                   title={`Selecteer ${clash.b_name}`}
                   onClick={() => selectElement(clash.b_global_id, true)}
                 >
                   {clash.b_ifc_class}: {clash.b_name}
-                </button>
+                </OaButton>
               </li>
             ))}
           </ul>

@@ -12,3 +12,13 @@ license texts. Consult that version-specific inventory for binary distributions.
 
 WebView2Loader.dll is distributed under the Microsoft Edge WebView2 SDK license.
 https://www.nuget.org/packages/Microsoft.Web.WebView2
+
+OpenAEC Blueprint UI 0.4.0 is licensed LGPL-3.0-only.
+Source: https://github.com/OpenAEC-Foundation/OpenAEC-Blueprint
+Revision and local compatibility changes: viewer/vendor/blueprint-source.json
+Corresponding React, token and component source: viewer/vendor/
+Rebuild the frontend with npm ci and npm run build in viewer/ to replace or
+modify the UI library. The application source remains MIT licensed.
+Bundled fonts retain their SIL Open Font License notices in
+viewer/vendor/openaec-web/fonts/. Font and UI sources are included in the
+public source repository for every release.

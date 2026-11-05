@@ -1,3 +1,4 @@
+import { Button as OaButton } from "@openaec/ui-react";
 /**
  * OptimizeDialog — run the IFC optimizer on a loaded model.
  *
@@ -105,7 +106,7 @@ export function OptimizeDialog({ open, onClose }: OptimizeDialogProps) {
               <label className="optimize-dialog__label">
                 Model
                 <select
-                  className="optimize-dialog__select"
+                  className="oa-field optimize-dialog__select"
                   value={effectiveModel}
                   onChange={(e) => setModel(e.target.value)}
                   disabled={running}
@@ -137,14 +138,14 @@ export function OptimizeDialog({ open, onClose }: OptimizeDialogProps) {
               ))}
             </div>
 
-            <button
+            <OaButton kind="primary"
               type="button"
               className="optimize-dialog__btn optimize-dialog__btn--primary"
               onClick={handleRun}
               disabled={running || selected.size === 0 || !effectiveModel}
             >
               {running ? "Bezig met optimaliseren…" : "Optimaliseer"}
-            </button>
+            </OaButton>
 
             {error && <p className="optimize-dialog__error">{error}</p>}
 

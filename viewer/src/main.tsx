@@ -9,13 +9,16 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // Components
-import App from './App';
 
 // Styles
-import './styles/fonts.css';
-import './themes.css';
+import '../vendor/openaec-web/openaec-fonts.css';
+import '../vendor/openaec-web/openaec-tokens.css';
+import '../vendor/openaec-web/openaec-components.css';
+import { OpenAECProvider } from '@openaec/ui-react';
 import './styles/brand.css';
 import './styles/responsive.css';
+
+import App from './App';
 
 // i18n
 import './i18n/config';
@@ -34,6 +37,6 @@ const root = createRoot(rootElement);
 
 root.render(
   <StrictMode>
-    <App />
+    <OpenAECProvider sprite={`${import.meta.env.BASE_URL}openaec/bim.svg`}><App /></OpenAECProvider>
   </StrictMode>
 );

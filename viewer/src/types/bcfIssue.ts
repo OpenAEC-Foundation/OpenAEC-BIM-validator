@@ -35,6 +35,8 @@ export interface BcfIssue {
   remoteTopicGuid?: string;
   /** PNG data URL of captured viewpoint screenshot */
   screenshot?: string;
+  /** Original topic files (base64), retained for lossless BCF file round trips. */
+  archive?: { files: Record<string, string> };
 }
 
 /** Helper to create a BcfIssue from a TopicMapping */
