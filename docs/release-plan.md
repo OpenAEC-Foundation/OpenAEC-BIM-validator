@@ -11,3 +11,31 @@ De bestaande Python-validatiekern, FastAPI-server, React-viewer en Tauri-shell b
 7. Documentatie: README in Engels en Nederlands, ondersteunde platformen en beperkingen expliciet, verwijzingen naar versiegebonden test- en releasebewijzen.
 
 Gedeelde basis: https://github.com/OpenAEC-Foundation/OpenAEC-Blueprint. Bestaande bronnen en gegevenslicenties blijven leidend; interpretatieregels blijven gescheiden van IDS-conformiteit.
+
+## Acceptatie per issue
+
+Een werkende deelimplementatie sluit een issue niet automatisch. De acceptatiecriteria in het gekoppelde issue blijven leidend.
+
+| Issue | Geleverde basis | Nog te verifiëren of implementeren |
+|---|---|---|
+| #2 Frappe-integratie | Zelfstandige viewer en server | Browserruntime, storage-adapter, hostintegratie en naamruimte |
+| #3 Browservalidatie | Servervalidatie als referentie | Pyodide/wasm-proef met gelijkwaardige resultaten, tijd- en geheugenmetingen |
+| #4 Reproduceerbaarheid | npm-lockfile, Python-lock, MIT-licentie, dependencylicenties, virtualenv uit git | Schone CI-build en licentieherkenning op de hoofdbranch |
+| #5 Validatie-eisen | IDS-engine en rapportage | Volledige acceptatiematrix voor semantiek, herkomst, determinisme, foutstatussen en prestaties |
+| #6 Ecosysteem | Windows-build, Python-library, CLI, HTTP API en stdio MCP | Volledige Blueprint-componentadoptie, overige native platformen, SDK-contract en platformintegratie |
+| #7 Versies | Script synchroniseert tien versievelden en controleert releasetags | Gepubliceerde release met overeenkomstige versie |
+| #8 SuperCloud | Container en bestaande API | Gezamenlijke acceptatie van #9, #10 en #11 |
+| #9 Containerrelease | Tagworkflow, OCI-labels, dependencylicenties, non-root en healthcheck | Gepubliceerde digest ophalen en controleren |
+| #10 Servicecontract | Asynchrone validatiejobs | Gedeeld `/v1/tools`-contract en MCP over HTTP |
+| #11 Isolatie | Bestaande tenantfilters voor projecten | API-keys, sleutelgebonden jobs/bestanden, limieten en bewaartermijnen zonder vertrouwde proxyheaders |
+| #12 Clashdetectie | Bestaande clashroute en vieweronderdelen | Duplicaten, groepering, viewpoints en prestatieacceptatie volledig toetsen |
+| #13 Modelversies | Project- en bestandsopslag | Revisies, modelvergelijking en nalevingsverloop |
+| #14 Hercontrole | Handmatig aanroepbare validatie | Triggers, idempotentie en automatische hercontrole |
+| #15 IDS-editor | Upload van bestaande IDS-bestanden | Browsereditor met schema- en inhoudsvalidatie |
+| #16 Meten | 3D-viewer | Meetgereedschap en eenhedenacceptatie |
+| #17 Smart Views | Modelweergave en selectie | Bewaarbare filters en kleuren op eigenschappen |
+| #18 BCF-roundtrip | BCF-export en bestaande importcode | Import aansluiten op de issue-UI en configureerbare BCF-servers |
+| #19 Hoeveelheden | IFC-elementgegevens | Aggregatie, eenheden en Excel-export |
+| #20 Niet-IDS-regels | Aparte kwaliteitsroute | Afgebakende geometrische regels met expliciete herkomst en toetsstatus |
+| #21 Georeferentie | Meerdere modellen in de viewer | Eenheden, coördinatenstelsels en federatieafwijkingen controleren |
+| #22 NL-SfB | Eigenschappen beschikbaar voor validatie | Versiebeheerde codelijst, herkomst en inhoudelijke classificatiecontrole |
